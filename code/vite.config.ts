@@ -13,8 +13,10 @@ export default defineConfig({
         vite: {
           build: {
             outDir: 'dist/main',
+            emptyOutDir: true,
+            target: 'node14',
             rollupOptions: {
-              external: ['better-sqlite3', 'electron-store']
+              external: ['electron', 'better-sqlite3', 'electron-store']
             }
           }
         }
@@ -22,6 +24,11 @@ export default defineConfig({
       {
         // Preload script
         entry: 'src/preload/index.ts',
+        vite: {
+          build: {
+            outDir: 'dist/preload'
+          }
+        },
         onstart(args) {
           args[0].preload = {
             preload: args[0].preload,

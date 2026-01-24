@@ -97,31 +97,49 @@ export function GanttChart() {
   const [zoom, setZoom] = useState<'day' | 'week' | 'month'>('week');
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
 
-  // Generate timeline weeks (5 weeks)
+  // Generate timeline weeks dynamically based on task dates
   const generateTimeline = () => {
+    const ganttData = generateGanttData();
+    const filteredData = selectedStatus
+      ? ganttData.filter((item) => item.status === selectedStatus)
+      : ganttData;
+
+    // Find min start date and max end date
+    const allDates = filteredData.flatMap(item => [item.startDate, item.endDate]);
+    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+
+    // Add padding (1 week before and after)
+    minDate.setDate(minDate.getDate() - 7);
+    maxDate.setDate(maxDate.getDate() + 7);
+
+    // Calculate total weeks
+    const totalWeeks = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
     const weeks = [];
-    const startDate = new Date('2026-01-15');
-    for (let i = 0; i < 5; i++) {
-      const weekStart = new Date(startDate);
+
+    for (let i = 0; i < totalWeeks; i++) {
+      const weekStart = new Date(minDate);
       weekStart.setDate(weekStart.getDate() + i * 7);
       weeks.push({
         label: `Week ${i + 1}`,
         start: weekStart,
       });
     }
-    return weeks;
+
+    return { weeks, minDate, maxDate };
   };
 
-  const timeline = generateTimeline();
+  const { weeks: timeline, minDate, maxDate } = generateTimeline();
   const ganttData = generateGanttData();
 
   const filteredData = selectedStatus
     ? ganttData.filter((item) => item.status === selectedStatus)
     : ganttData;
 
-  const calculateBarWidth = (startDate: Date, endDate: Date, totalWeeks: number) => {
-    const startDiff = (startDate.getTime() - timeline[0].start.getTime()) / (1000 * 60 * 60 * 24 * 7);
+  const calculateBarWidth = (startDate: Date, endDate: Date) => {
+    const startDiff = (startDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24 * 7);
     const duration = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 7);
+    const totalWeeks = timeline.length;
     return {
       left: `${(startDiff / totalWeeks) * 100}%`,
       width: `${(duration / totalWeeks) * 100}%`,
@@ -282,7 +300,7 @@ export function GanttChart() {
                   className="flex-1 p-3.5 text-center border-r border-border-light"
                 >
                   <div className="text-xs font-medium text-text-secondary">
-                    {week.label}
+                    {week.label} ({week.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
                   </div>
                 </div>
               ))}
@@ -293,7 +311,7 @@ export function GanttChart() {
         {/* Gantt Rows */}
         <div className="min-w-max">
           {filteredData.map((row) => {
-            const barStyle = calculateBarWidth(row.startDate, row.endDate, 5);
+            const barStyle = calculateBarWidth(row.startDate, row.endDate);
             const statusColor = getStatusColor(row.status);
             const isCompleted = row.status === 'completed';
 
