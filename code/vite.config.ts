@@ -1,0 +1,45 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import electron from 'vite-plugin-electron';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    electron([
+      {
+        // Main process entry point
+        entry: 'src/main/index.ts',
+        vite: {
+          build: {
+            outDir: 'dist/main',
+            rollupOptions: {
+              external: ['better-sqlite3', 'electron-store']
+            }
+          }
+        }
+      },
+      {
+        // Preload script
+        entry: 'src/preload/index.ts',
+        onstart(args) {
+          args[0].preload = {
+            preload: args[0].preload,
+            contextIsolation: true,
+            nodeIntegration: false,
+          }
+        }
+      }
+    ])
+  ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src/renderer'),
+      '@shared': path.resolve(__dirname, './src/shared')
+    }
+  },
+  base: './',
+  server: {
+    port: 5173
+  }
+});
