@@ -1,12 +1,12 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import * as electron from 'electron';
 import path from 'path';
-import { initDatabaseSingleton, getDatabase } from './db/schema';
+import { initDatabaseSingleton } from './db/schema';
 import { registerIPCHandlers } from './ipc/handlers';
 
-let mainWindow: BrowserWindow | null = null;
+let mainWindow: electron.BrowserWindow | null = null;
 
 function createWindow(): void {
-  mainWindow = new BrowserWindow({
+  mainWindow = new electron.BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 1024,
@@ -18,7 +18,7 @@ function createWindow(): void {
     },
     titleBarStyle: 'default',
   });
-
+  
   // Load the app
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173');
@@ -26,24 +26,16 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
-
-  // Load the app
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
-  } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
-  }
-
+  
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
 // App lifecycle
-app.whenReady().then(() => {
+electron.app.whenReady().then(() => {
   // Initialize database
-  initDatabaseSingleton(app);
+  initDatabaseSingleton(electron.app);
   
   // Register IPC handlers
   registerIPCHandlers();
@@ -51,20 +43,20 @@ app.whenReady().then(() => {
   // Create window
   createWindow();
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+  electron.app.on('activate', () => {
+    if (electron.BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
 });
 
-app.on('window-all-closed', () => {
+electron.app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    electron.app.quit();
   }
 });
 
-app.on('before-quit', () => {
+electron.app.on('before-quit', () => {
   // Close database connection
   const { closeDatabase } = require('./db/schema');
   closeDatabase();

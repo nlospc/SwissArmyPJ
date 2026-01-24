@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from './store';
 import { ProjectList } from './ProjectList';
 import { WorkPackageList } from './WorkPackageList';
@@ -14,10 +14,14 @@ import {
   CogIcon,
   BellIcon,
   CalendarIcon,
-} from './icons.tsx';
+} from './icons';
 
 function App() {
-  const { view, setView, currentProject, setCurrentProject, projects } = useStore();
+  const { view, setView, currentProject, setCurrentProject, fetchProjects } = useStore();
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
   const [today] = useState(() => {
     const date = new Date();
     return date.toLocaleDateString('en-US', {

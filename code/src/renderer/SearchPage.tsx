@@ -1,22 +1,9 @@
 import { useState } from 'react';
-import { useStore } from './store';
 import { MagnifyingGlassIcon, XMarkIcon } from './icons';
-
-interface SearchResult {
-  id: string;
-  type: 'project' | 'task' | 'file';
-  title: string;
-  description?: string;
-  project?: string;
-  status?: string;
-  updatedAt: Date;
-}
-
-const MOCK_SEARCH_RESULTS: SearchResult[] = [];
 
 export function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedType] = useState<string>('all');
 
   const searchTypes = [
     { id: 'all', label: 'All Types' },
@@ -24,14 +11,6 @@ export function SearchPage() {
     { id: 'tasks', label: 'Tasks' },
     { id: 'files', label: 'Files' },
   ];
-
-  const filteredResults = MOCK_SEARCH_RESULTS.filter(result => {
-    const matchesType = selectedType === 'all' || result.type === selectedType;
-    const matchesQuery = searchQuery === '' ||
-      result.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      result.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesQuery;
-  });
 
   return (
     <div className="p-6 h-full flex flex-col">

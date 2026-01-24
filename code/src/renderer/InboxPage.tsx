@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useStore } from './store';
 import { CloudArrowUpIcon, CheckCircleIcon, XCircleIcon, ClockIcon, DocumentIcon } from './icons';
 import { formatDate } from './utils';
 
@@ -54,7 +53,7 @@ const MOCK_FILES: FileItem[] = [
 ];
 
 export function InboxPage() {
-  const [files, setFiles] = useState<FileItem[]>(MOCK_FILES);
+  const [files] = useState<FileItem[]>(MOCK_FILES);
   const [isDragging, setIsDragging] = useState(false);
 
   const pendingFiles = files.filter(f => f.status === 'pending').length;

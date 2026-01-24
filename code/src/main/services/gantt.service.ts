@@ -1,5 +1,6 @@
 import { getDatabase } from '../db/schema';
-import type { GanttTask, GanttDependency, ApiResponse } from '@shared/types';
+import { v4 as uuidv4 } from 'uuid';
+import type { GanttTask, ApiResponse, GanttView, GanttViewInput } from '@shared/types';
 
 interface TaskNode {
   id: number;
@@ -187,11 +188,14 @@ export class GanttService {
           progress: wp.progress,
           status: wp.status,
           priority: wp.priority,
+          type: wp.type || 'task',
+          scheduling_mode: wp.scheduling_mode || 'manual',
           parent_id: wp.parent_id,
           children: [],
           dependencies: [],
           isCritical: node.isCritical,
           slack: node.slack,
+          expanded: true,
         };
 
         ganttTasks.push(ganttTask);
@@ -223,6 +227,175 @@ export class GanttService {
       }
 
       return { success: true, data: ganttTasks };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  // View management methods
+  getViews(projectId: number | null): ApiResponse<GanttView[]> {
+    try {
+      let stmt;
+      if (projectId === null) {
+        // Get global views
+        stmt = this.db.prepare(`
+          SELECT * FROM gantt_views
+          WHERE project_id IS NULL
+          ORDER BY created_at DESC
+        `);
+      } else {
+        // Get project-specific views
+        stmt = this.db.prepare(`
+          SELECT * FROM gantt_views
+          WHERE project_id = ? OR project_id IS NULL
+          ORDER BY created_at DESC
+        `);
+        stmt = stmt.bind(projectId);
+      }
+      const views = stmt.all() as any[];
+      
+      const parsedViews = views.map(v => ({
+        ...v,
+        filters: v.filters ? JSON.parse(v.filters) : undefined,
+        grouping: v.grouping ? JSON.parse(v.grouping) : undefined,
+        sorting: v.sorting ? JSON.parse(v.sorting) : undefined,
+        columns: v.columns ? JSON.parse(v.columns) : undefined,
+      }));
+      
+      return { success: true, data: parsedViews };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  createView(input: GanttViewInput): ApiResponse<GanttView> {
+    try {
+      const uuid = uuidv4();
+      const now = new Date().toISOString();
+      
+      const stmt = this.db.prepare(`
+        INSERT INTO gantt_views (
+          uuid, project_id, name, scope, filters, grouping, sorting, columns, zoom_level, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      const result = stmt.run(
+        uuid,
+        input.project_id || null,
+        input.name,
+        input.scope,
+        input.filters ? JSON.stringify(input.filters) : null,
+        input.grouping ? JSON.stringify(input.grouping) : null,
+        input.sorting ? JSON.stringify(input.sorting) : null,
+        input.columns ? JSON.stringify(input.columns) : null,
+        input.zoomLevel || 'week',
+        now,
+        now
+      );
+      
+      const newView = this.db.prepare('SELECT * FROM gantt_views WHERE id = ?').get(result.lastInsertRowid) as any;
+      
+      const parsedView = {
+        ...newView,
+        filters: newView.filters ? JSON.parse(newView.filters) : undefined,
+        grouping: newView.grouping ? JSON.parse(newView.grouping) : undefined,
+        sorting: newView.sorting ? JSON.parse(newView.sorting) : undefined,
+        columns: newView.columns ? JSON.parse(newView.columns) : undefined,
+      };
+      
+      return { success: true, data: parsedView };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  updateView(id: number, input: Partial<GanttViewInput>): ApiResponse<GanttView> {
+    try {
+      const now = new Date().toISOString();
+      const updates: string[] = ['updated_at = ?'];
+      const values: any[] = [now];
+      
+      if (input.name !== undefined) {
+        updates.push('name = ?');
+        values.push(input.name);
+      }
+      if (input.scope !== undefined) {
+        updates.push('scope = ?');
+        values.push(input.scope);
+      }
+      if (input.filters !== undefined) {
+        updates.push('filters = ?');
+        values.push(input.filters ? JSON.stringify(input.filters) : null);
+      }
+      if (input.grouping !== undefined) {
+        updates.push('grouping = ?');
+        values.push(input.grouping ? JSON.stringify(input.grouping) : null);
+      }
+      if (input.sorting !== undefined) {
+        updates.push('sorting = ?');
+        values.push(input.sorting ? JSON.stringify(input.sorting) : null);
+      }
+      if (input.columns !== undefined) {
+        updates.push('columns = ?');
+        values.push(input.columns ? JSON.stringify(input.columns) : null);
+      }
+      if (input.zoomLevel !== undefined) {
+        updates.push('zoom_level = ?');
+        values.push(input.zoomLevel);
+      }
+      
+      values.push(id);
+      
+      const stmt = this.db.prepare(`
+        UPDATE gantt_views SET ${updates.join(', ')} WHERE id = ?
+      `);
+      stmt.run(...values);
+      
+      const updatedView = this.db.prepare('SELECT * FROM gantt_views WHERE id = ?').get(id) as any;
+      
+      const parsedView = {
+        ...updatedView,
+        filters: updatedView.filters ? JSON.parse(updatedView.filters) : undefined,
+        grouping: updatedView.grouping ? JSON.parse(updatedView.grouping) : undefined,
+        sorting: updatedView.sorting ? JSON.parse(updatedView.sorting) : undefined,
+        columns: updatedView.columns ? JSON.parse(updatedView.columns) : undefined,
+      };
+      
+      return { success: true, data: parsedView };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  deleteView(id: number): ApiResponse<void> {
+    try {
+      const stmt = this.db.prepare('DELETE FROM gantt_views WHERE id = ?');
+      stmt.run(id);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  setFavoriteView(id: number, isFavorite: boolean): ApiResponse<GanttView> {
+    try {
+      const now = new Date().toISOString();
+      const stmt = this.db.prepare(`
+        UPDATE gantt_views SET scope = ?, updated_at = ? WHERE id = ?
+      `);
+      stmt.run(isFavorite ? 'favorite' : 'private', now, id);
+      
+      const updatedView = this.db.prepare('SELECT * FROM gantt_views WHERE id = ?').get(id) as any;
+      
+      const parsedView = {
+        ...updatedView,
+        filters: updatedView.filters ? JSON.parse(updatedView.filters) : undefined,
+        grouping: updatedView.grouping ? JSON.parse(updatedView.grouping) : undefined,
+        sorting: updatedView.sorting ? JSON.parse(updatedView.sorting) : undefined,
+        columns: updatedView.columns ? JSON.parse(updatedView.columns) : undefined,
+      };
+      
+      return { success: true, data: parsedView };
     } catch (error) {
       return { success: false, error: String(error) };
     }

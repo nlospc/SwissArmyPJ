@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../db/schema';
 import type { WorkPackage, WorkPackageInput, WorkPackageUpdate, ApiResponse } from '@shared/types';
+import { progressFromStatus } from '@shared/workPackageRules';
 
 export class WorkPackageService {
   private get db() {
@@ -51,13 +52,16 @@ export class WorkPackageService {
     try {
       const uuid = uuidv4();
       const now = new Date().toISOString();
+
+      const status = input.status || 'todo';
+      const progress = progressFromStatus(status, input.progress ?? 0);
       
       const stmt = this.db.prepare(`
         INSERT INTO work_packages (
           uuid, project_id, parent_id, name, description, start_date, end_date,
-          duration_days, progress, status, priority, budget_planned, created_at, updated_at
+          duration_days, progress, status, priority, type, scheduling_mode, budget_planned, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const result = stmt.run(
@@ -69,9 +73,11 @@ export class WorkPackageService {
         input.start_date || null,
         input.end_date || null,
         input.duration_days || null,
-        input.progress || 0,
-        input.status || 'todo',
+        progress,
+        status,
         input.priority || 'medium',
+        input.type || 'task',
+        input.scheduling_mode || 'manual',
         input.budget_planned || 0,
         now,
         now
@@ -92,6 +98,11 @@ export class WorkPackageService {
         return { success: false, error: 'Work package not found' };
       }
 
+      const nextStatus = input.status ?? existing.data.status;
+      const nextProgress = progressFromStatus(nextStatus, input.progress ?? existing.data.progress);
+      const shouldUpdateProgress =
+        input.progress !== undefined || (input.status !== undefined && (input.status === 'todo' || input.status === 'done'));
+
       const stmt = this.db.prepare(`
         UPDATE work_packages
         SET name = COALESCE(?, name),
@@ -102,6 +113,8 @@ export class WorkPackageService {
             progress = COALESCE(?, progress),
             status = COALESCE(?, status),
             priority = COALESCE(?, priority),
+            type = COALESCE(?, type),
+            scheduling_mode = COALESCE(?, scheduling_mode),
             parent_id = COALESCE(?, parent_id),
             budget_planned = COALESCE(?, budget_planned),
             updated_at = ?
@@ -114,9 +127,11 @@ export class WorkPackageService {
         input.start_date ?? null,
         input.end_date ?? null,
         input.duration_days ?? null,
-        input.progress ?? null,
+        shouldUpdateProgress ? nextProgress : null,
         input.status ?? null,
         input.priority ?? null,
+        input.type ?? null,
+        input.scheduling_mode ?? null,
         input.parent_id ?? null,
         input.budget_planned ?? null,
         now,

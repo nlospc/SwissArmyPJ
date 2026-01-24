@@ -1,72 +1,99 @@
-import { ipcMain } from 'electron';
+import * as electron from 'electron';
 import { projectService } from '../services/project.service';
 import { workPackageService } from '../services/workpackage.service';
 import { dependencyService } from '../services/dependency.service';
 import { ganttService } from '../services/gantt.service';
-import type { IPCChannel } from '@shared/types';
 
 export function registerIPCHandlers(): void {
   // Project handlers
-  ipcMain.handle('project:getAll', async () => {
+  electron.ipcMain.handle('project:getAll', async () => {
     return projectService.getAll();
   });
 
-  ipcMain.handle('project:getById', async (_event, id: number) => {
+  electron.ipcMain.handle('project:getById', async (_event, id: number) => {
     return projectService.getById(id);
   });
 
-  ipcMain.handle('project:create', async (_event, input: any) => {
+  electron.ipcMain.handle('project:create', async (_event, input: any) => {
     return projectService.create(input);
   });
 
-  ipcMain.handle('project:update', async (_event, id: number, input: any) => {
+  electron.ipcMain.handle('project:update', async (_event, id: number, input: any) => {
     return projectService.update(id, input);
   });
 
-  ipcMain.handle('project:delete', async (_event, id: number) => {
+  electron.ipcMain.handle('project:delete', async (_event, id: number) => {
     return projectService.delete(id);
   });
 
   // Work Package handlers
-  ipcMain.handle('workPackage:getAll', async () => {
+  electron.ipcMain.handle('workPackage:getAll', async () => {
     return workPackageService.getAll();
   });
 
-  ipcMain.handle('workPackage:getByProject', async (_event, projectId: number) => {
+  electron.ipcMain.handle('workPackage:getByProject', async (_event, projectId: number) => {
     return workPackageService.getByProject(projectId);
   });
 
-  ipcMain.handle('workPackage:create', async (_event, input: any) => {
+  electron.ipcMain.handle('workPackage:create', async (_event, input: any) => {
     return workPackageService.create(input);
   });
 
-  ipcMain.handle('workPackage:update', async (_event, id: number, input: any) => {
+  electron.ipcMain.handle('workPackage:update', async (_event, id: number, input: any) => {
     return workPackageService.update(id, input);
   });
 
-  ipcMain.handle('workPackage:delete', async (_event, id: number) => {
+  electron.ipcMain.handle('workPackage:delete', async (_event, id: number) => {
     return workPackageService.delete(id);
   });
 
   // Dependency handlers
-  ipcMain.handle('dependency:getAll', async () => {
+  electron.ipcMain.handle('dependency:getAll', async () => {
     return dependencyService.getAll();
   });
 
-  ipcMain.handle('dependency:create', async (_event, input: any) => {
+  electron.ipcMain.handle('dependency:create', async (_event, input: any) => {
     return dependencyService.create(input);
   });
 
-  ipcMain.handle('dependency:delete', async (_event, id: number) => {
+  electron.ipcMain.handle('dependency:delete', async (_event, id: number) => {
     return dependencyService.delete(id);
   });
 
   // Gantt handlers
-  ipcMain.handle('gantt:getState', async (_event, projectId: number) => {
+  electron.ipcMain.handle('gantt:getState', async (_event, projectId: number) => {
     return ganttService.getGanttState(projectId);
   });
 
-  ipcMain.handle('gantt:updateTaskDates', async (_event, id: number, startDate: string, endDate: string) => {
+  electron.ipcMain.handle('gantt:updateTaskDates', async (_event, id: number, startDate: string, endDate: string) => {
     return workPackageService.updateDates(id, startDate, endDate);
+  });
+
+  electron.ipcMain.handle('gantt:createDependency', async (_event, input: any) => {
+    return dependencyService.create(input);
+  });
+
+  electron.ipcMain.handle('gantt:updateSchedulingMode', async (_event, id: number, mode: 'manual' | 'automatic') => {
+    return workPackageService.update(id, { scheduling_mode: mode });
+  });
+
+  electron.ipcMain.handle('gantt:getViews', async (_event, projectId: number | null) => {
+    return ganttService.getViews(projectId);
+  });
+
+  electron.ipcMain.handle('gantt:createView', async (_event, input: any) => {
+    return ganttService.createView(input);
+  });
+
+  electron.ipcMain.handle('gantt:updateView', async (_event, id: number, input: any) => {
+    return ganttService.updateView(id, input);
+  });
+
+  electron.ipcMain.handle('gantt:deleteView', async (_event, id: number) => {
+    return ganttService.deleteView(id);
+  });
+
+  electron.ipcMain.handle('gantt:setFavoriteView', async (_event, id: number, isFavorite: boolean) => {
+    return ganttService.setFavoriteView(id, isFavorite);
   });
 }

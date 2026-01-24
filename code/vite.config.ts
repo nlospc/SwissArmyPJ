@@ -11,6 +11,11 @@ export default defineConfig({
         // Main process entry point
         entry: 'src/main/index.ts',
         vite: {
+          resolve: {
+            alias: {
+              '@shared': path.resolve(__dirname, './src/shared'),
+            },
+          },
           build: {
             outDir: 'dist/main',
             emptyOutDir: true,
@@ -25,15 +30,13 @@ export default defineConfig({
         // Preload script
         entry: 'src/preload/index.ts',
         vite: {
+          resolve: {
+            alias: {
+              '@shared': path.resolve(__dirname, './src/shared'),
+            },
+          },
           build: {
             outDir: 'dist/preload'
-          }
-        },
-        onstart(args) {
-          args[0].preload = {
-            preload: args[0].preload,
-            contextIsolation: true,
-            nodeIntegration: false,
           }
         }
       }

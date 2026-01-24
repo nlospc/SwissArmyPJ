@@ -1,17 +1,17 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { app } from 'electron';
+import type { App } from 'electron';
 
 const DB_NAME = 'swissarmypm.db';
 
 // Get the user data path for the database
-function getDbPath(appInstance: any): string {
+function getDbPath(appInstance: App): string {
   const userDataPath = appInstance.getPath('userData');
   return path.join(userDataPath, DB_NAME);
 }
 
 // Initialize database and create tables
-export function initDatabase(appInstance: any): Database.Database {
+export function initDatabase(appInstance: App): Database.Database {
   const dbPath = getDbPath(appInstance);
   const db = new Database(dbPath);
 
@@ -50,6 +50,8 @@ export function initDatabase(appInstance: any): Database.Database {
       progress INTEGER DEFAULT 0 CHECK(progress >= 0 AND progress <= 100),
       status TEXT DEFAULT 'todo' CHECK(status IN ('todo', 'in_progress', 'done', 'blocked')),
       priority TEXT DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high', 'critical')),
+      type TEXT DEFAULT 'task' CHECK(type IN ('task', 'phase', 'milestone', 'bug')),
+      scheduling_mode TEXT DEFAULT 'manual' CHECK(scheduling_mode IN ('manual', 'automatic')),
       budget_planned REAL DEFAULT 0,
       budget_actual REAL DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
@@ -146,6 +148,25 @@ export function initDatabase(appInstance: any): Database.Database {
     )
   `);
 
+  // Create Gantt Views table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS gantt_views (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT UNIQUE NOT NULL,
+      project_id INTEGER,
+      name TEXT NOT NULL,
+      scope TEXT DEFAULT 'private' CHECK(scope IN ('private', 'public', 'favorite')),
+      filters TEXT,
+      grouping TEXT,
+      sorting TEXT,
+      columns TEXT,
+      zoom_level TEXT DEFAULT 'week' CHECK(zoom_level IN ('day', 'week', 'month', 'quarter')),
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes for better performance
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_work_packages_project ON work_packages(project_id);
@@ -163,7 +184,6 @@ export function initDatabase(appInstance: any): Database.Database {
 
 // Get database instance (singleton)
 let dbInstance: Database.Database | null = null;
-let appInstance: any = null;
 
 export function getDatabase(): Database.Database {
   if (!dbInstance) {
@@ -172,9 +192,8 @@ export function getDatabase(): Database.Database {
   return dbInstance;
 }
 
-export function initDatabaseSingleton(appInstance: any): void {
-  appInstance = appInstance;
-  dbInstance = initDatabase(appInstance);
+export function initDatabaseSingleton(app: App): void {
+  dbInstance = initDatabase(app);
 }
 
 // Close database connection

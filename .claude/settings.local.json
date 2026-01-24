@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C D:/CODE/SwissArmyPJ diff)",
+      "Bash(git -C D:/CODE/SwissArmyPJ log --oneline -5)"
+    ]
+  }
+}

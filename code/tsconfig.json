@@ -23,7 +23,7 @@
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/renderer", "src/shared"],
+  "include": ["src/renderer"],
   "references": [
     { "path": "./tsconfig.main.json" }
   ]

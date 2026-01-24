@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useStore } from './store';
-import { BellIcon, MoonIcon, SunIcon, CogIcon, UserIcon, InboxIcon } from './icons';
+import { SunIcon, CogIcon, UserIcon, InboxIcon } from './icons';
 
 type Tab = 'general' | 'workspace' | 'inbox' | 'profile';
 

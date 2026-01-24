@@ -34,6 +34,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getState: (projectId: number) => ipcRenderer.invoke('gantt:getState', projectId),
     updateTaskDates: (id: number, startDate: string, endDate: string) =>
       ipcRenderer.invoke('gantt:updateTaskDates', id, startDate, endDate),
+    createDependency: (input: any) => ipcRenderer.invoke('gantt:createDependency', input),
+    updateSchedulingMode: (id: number, mode: 'manual' | 'automatic') =>
+      ipcRenderer.invoke('gantt:updateSchedulingMode', id, mode),
+    getViews: (projectId: number | null) => ipcRenderer.invoke('gantt:getViews', projectId),
+    createView: (input: any) => ipcRenderer.invoke('gantt:createView', input),
+    updateView: (id: number, input: any) => ipcRenderer.invoke('gantt:updateView', id, input),
+    deleteView: (id: number) => ipcRenderer.invoke('gantt:deleteView', id),
+    setFavoriteView: (id: number, isFavorite: boolean) => ipcRenderer.invoke('gantt:setFavoriteView', id, isFavorite),
   },
 });
 
@@ -63,6 +71,13 @@ declare global {
       gantt: {
         getState: (projectId: number) => Promise<any>;
         updateTaskDates: (id: number, startDate: string, endDate: string) => Promise<any>;
+        createDependency: (input: any) => Promise<any>;
+        updateSchedulingMode: (id: number, mode: 'manual' | 'automatic') => Promise<any>;
+        getViews: (projectId: number | null) => Promise<any>;
+        createView: (input: any) => Promise<any>;
+        updateView: (id: number, input: any) => Promise<any>;
+        deleteView: (id: number) => Promise<any>;
+        setFavoriteView: (id: number, isFavorite: boolean) => Promise<any>;
       };
     };
   }
