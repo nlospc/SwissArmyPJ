@@ -18,8 +18,9 @@ import {
   TaskTypeIcon,
   PhaseTypeIcon,
   BugTypeIcon,
+  ExclamationTriangleIcon,
 } from './icons';
-import type { Project, WorkPackage, WorkPackageType } from '@shared/types';
+import type { Project, WorkPackage, Dependency, WorkPackageType } from '@shared/types';
 
 type RenderUnit = 'day' | 'week' | 'month';
 
@@ -58,6 +59,13 @@ const getPriorityColor = (priority: string) => {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Scale pixel calculations (v1.0 constraints)
+const PIXELS_PER_DAY = {
+  day: 24,   // Day scale: 1 day = 24px
+  week: 8,   // Week scale: 1 day = 8px
+  month: 2,  // Month scale: 1 day = 2px
+} as const;
 
 const formatLocalISODate = (date: Date) => {
   const y = date.getFullYear();
@@ -377,12 +385,118 @@ const TodayMarker = ({ viewStart, viewEnd, headerHeight }: TodayMarkerProps) => 
   return (
     <div
       className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
-      style={{ left: `calc(320px + ${position}%)`, marginTop: `${headerHeight}px` }}
+      style={{ left: `calc(520px + ${position}%)`, marginTop: `${headerHeight}px` }}
     >
       <div className="absolute top-0 -translate-x-1/2 -translate-y-full bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap">
         Today
       </div>
     </div>
+  );
+};
+
+// Dependency Lines Component (FS-only for v1.0)
+interface DependencyLinesProps {
+  dependencies: Dependency[];
+  workPackages: WorkPackage[];
+  viewStart: Date;
+  viewEnd: Date;
+  taskRowHeight: number;
+  headerHeight: number;
+}
+
+const DependencyLines = ({
+  dependencies,
+  workPackages,
+  viewStart,
+  viewEnd,
+  taskRowHeight,
+  headerHeight,
+}: DependencyLinesProps) => {
+  const taskMap = new Map(workPackages.map((wp) => [wp.id, wp]));
+  const taskIndexMap = new Map(workPackages.map((wp, index) => [wp.id, index]));
+
+  // Filter only FS (Finish-to-Start) dependencies for v1.0
+  const fsDependencies = dependencies.filter((dep) => dep.type === 'finish_to_start');
+
+  const lines = fsDependencies
+    .map((dep) => {
+      const predecessor = taskMap.get(dep.predecessor_id);
+      const successor = taskMap.get(dep.successor_id);
+
+      if (!predecessor || !successor) return null;
+
+      const predIndex = taskIndexMap.get(dep.predecessor_id);
+      const succIndex = taskIndexMap.get(dep.successor_id);
+
+      if (predIndex === undefined || succIndex === undefined) return null;
+
+      const predEnd = predecessor.end_date ? new Date(predecessor.end_date) : null;
+      const succStart = successor.start_date ? new Date(successor.start_date) : null;
+
+      if (!predEnd || !succStart) return null;
+
+      const totalDuration = viewEnd.getTime() - viewStart.getTime();
+      if (totalDuration <= 0) return null;
+
+      // Check for conflict (FS violation: successor.start < predecessor.finish)
+      const hasConflict = succStart.getTime() < predEnd.getTime();
+
+      const predX = ((predEnd.getTime() - viewStart.getTime()) / totalDuration) * 100;
+      const succX = ((succStart.getTime() - viewStart.getTime()) / totalDuration) * 100;
+      const predY = headerHeight + (predIndex + 0.5) * taskRowHeight;
+      const succY = headerHeight + (succIndex + 0.5) * taskRowHeight;
+
+      // Simple FS connector: right of pred -> left of succ
+      const midX = (predX + succX) / 2;
+      const path = `M ${predX} ${predY} L ${midX} ${predY} L ${midX} ${succY} L ${succX} ${succY}`;
+
+      return { id: dep.id, path, hasConflict };
+    })
+    .filter((line): line is { id: number; path: string; hasConflict: boolean } => line !== null);
+
+  return (
+    <svg
+      className="absolute inset-0 pointer-events-none"
+      style={{ top: `${headerHeight}px`, left: '520px', right: 0 }}
+      width="100%"
+      height="100%"
+      preserveAspectRatio="none"
+    >
+      <defs>
+        <marker
+          id="arrowhead"
+          markerWidth="10"
+          markerHeight="7"
+          refX="9"
+          refY="3.5"
+          orient="auto"
+        >
+          <polygon points="0 0, 10 3.5, 0 7" fill="#9CA3AF" />
+        </marker>
+        <marker
+          id="arrowhead-conflict"
+          markerWidth="10"
+          markerHeight="7"
+          refX="9"
+          refY="3.5"
+          orient="auto"
+        >
+          <polygon points="0 0, 10 3.5, 0 7" fill="#DC2626" />
+        </marker>
+      </defs>
+      {lines.map((line) => (
+        <path
+          key={line.id}
+          d={line.path}
+          stroke={line.hasConflict ? "#DC2626" : "#9CA3AF"}
+          strokeWidth="2"
+          fill="none"
+          markerEnd={line.hasConflict ? "url(#arrowhead-conflict)" : "url(#arrowhead)"}
+          opacity={line.hasConflict ? "1" : "0.6"}
+          vectorEffect="non-scaling-stroke"
+        />
+      ))}
+    </svg>
   );
 };
 
@@ -406,7 +520,7 @@ const ProjectRow = ({ project, viewStart, viewEnd, onClick }: ProjectRowProps) =
 
   return (
     <div className="flex border-b border-border-light hover:bg-background-hover transition-colors cursor-pointer group">
-      <div className="w-[320px] p-4 border-r border-border-light flex items-center gap-3">
+      <div className="w-[520px] p-4 border-r border-border-light flex items-center gap-3">
         <div
           className="w-3 h-3 rounded-full flex-shrink-0"
           style={{ backgroundColor: statusColor }}
@@ -453,7 +567,7 @@ const ProjectRow = ({ project, viewStart, viewEnd, onClick }: ProjectRowProps) =
 
 // Work Package Row Component with Drag Support
 interface WorkPackageRowProps {
-  task: WorkPackage & { type?: WorkPackageType };
+  task: WorkPackage & { type?: WorkPackageType; hasConflict?: boolean };
   viewStart: Date;
   viewEnd: Date;
   level: number;
@@ -496,6 +610,7 @@ const WorkPackageRow = ({
   const priorityColor = getPriorityColor(task.priority);
   const hasChildren = false;
   const isMilestone = task.type === 'milestone';
+  const hasConflict = task.hasConflict || false;
 
   const TypeIcon = useMemo(() => {
     switch (task.type) {
@@ -532,7 +647,7 @@ const WorkPackageRow = ({
       }`}
       style={{ paddingLeft: `${level * 16 + 12}px` }}
     >
-      <div className="w-[320px] px-3 border-r border-border-light flex items-center justify-between h-[34px]">
+      <div className="w-[520px] px-3 border-r border-border-light flex items-center justify-between h-[34px]">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {hasChildren && (
             <button
@@ -584,18 +699,20 @@ const WorkPackageRow = ({
           <>
             {isMilestone ? (
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-[20px] h-[20px] cursor-pointer hover:opacity-80 transition-opacity"
+                className={`absolute top-1/2 -translate-y-1/2 w-[20px] h-[20px] cursor-pointer hover:opacity-80 transition-opacity ${
+                  hasConflict ? 'ring-2 ring-red-500 ring-offset-2' : ''
+                }`}
                 style={{
                   left: `calc(${barStyle.left} + ${parseFloat(barStyle.width) / 2 - 3.5}%)`,
                   transform: 'rotate(45deg)',
-                  backgroundColor: statusColor,
+                  backgroundColor: hasConflict ? '#DC2626' : statusColor,
                 }}
                 onClick={() => onSelectTask(task.id)}
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   onBeginDrag(task, 'milestone_move', e);
                 }}
-                title={`Milestone: ${task.name}`}
+                title={`Milestone: ${task.name}${hasConflict ? ' (Dependency Conflict!)' : ''}`}
               />
             ) : (
               <div
@@ -605,12 +722,12 @@ const WorkPackageRow = ({
                 style={{
                   left: barStyle.left,
                   width: barStyle.width,
-                  backgroundColor: `${statusColor}20`,
-                  borderColor: statusColor,
+                  backgroundColor: hasConflict ? '#FEE2E2' : `${statusColor}20`,
+                  borderColor: hasConflict ? '#DC2626' : statusColor,
                 }}
                 onClick={() => onSelectTask(task.id)}
                 onMouseDown={(e) => onBeginDrag(task, 'move', e)}
-                title={task.name}
+                title={hasConflict ? 'Dependency Conflict! This task violates dependency constraints.' : task.name}
               >
                 <div
                   className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize"
@@ -629,9 +746,10 @@ const WorkPackageRow = ({
                   title="Resize end"
                 />
                 <div className="flex items-center gap-1.5 overflow-hidden">
+                  {hasConflict && <ExclamationTriangleIcon className="w-3 h-3 text-red-600 flex-shrink-0" />}
                   <div
                     className="w-3 h-3 rounded flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: statusColor }}
+                    style={{ backgroundColor: hasConflict ? '#DC2626' : statusColor }}
                   >
                     <span className="text-[8px] font-bold text-white">{task.progress}</span>
                   </div>
@@ -939,6 +1057,7 @@ export function GanttChart() {
   const { projects, setCurrentProject } = useStore();
   const {
     workPackages,
+    dependencies,
     selectedProjectId,
     selectedTaskId,
     timelineWindow,
@@ -1558,7 +1677,7 @@ export function GanttChart() {
               {/* Timeline Header */}
               <div className="sticky top-0 z-20 bg-white border-b border-border-light">
                 <div className="flex min-w-max">
-                  <div className="w-[320px] p-3.5 text-xs font-medium text-text-secondary uppercase tracking-wide border-r border-border">
+                  <div className="w-[520px] p-3.5 text-xs font-medium text-text-secondary uppercase tracking-wide border-r border-border">
                     Project Name
                   </div>
                   <div className="flex-1 flex" ref={timelineRef} onMouseDown={handlePanStart} onDoubleClick={handleAutoZoom}>
@@ -1610,7 +1729,7 @@ export function GanttChart() {
               {/* Timeline Header */}
               <div className="sticky top-0 z-20 bg-white border-b border-border-light">
                 <div className="flex min-w-max">
-                  <div className="w-[320px] p-3.5 text-xs font-medium text-text-secondary uppercase tracking-wide border-r border-border">
+                  <div className="w-[520px] p-3.5 text-xs font-medium text-text-secondary uppercase tracking-wide border-r border-border">
                     Task Name
                   </div>
                   <div className="flex-1 flex" ref={timelineRef} onMouseDown={handlePanStart} onDoubleClick={handleAutoZoom}>
@@ -1632,7 +1751,17 @@ export function GanttChart() {
               {/* Gantt Rows Container */}
               <div className="relative">
                 {/* Today Marker */}
-                <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={50} />
+                <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={56} />
+
+                {/* Dependency Lines Overlay */}
+                <DependencyLines
+                  dependencies={dependencies}
+                  workPackages={filteredWorkPackages}
+                  viewStart={viewStart}
+                  viewEnd={viewEnd}
+                  taskRowHeight={34}
+                  headerHeight={56}
+                />
 
                 {/* Gantt Rows */}
                 <div className="min-w-max">

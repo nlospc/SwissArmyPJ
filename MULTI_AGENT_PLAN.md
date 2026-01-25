@@ -28,26 +28,59 @@ The delivery approach is **doc-driven** and **role-separated**:
 
 ---
 
-## 1. Inputs (Frozen Design Artifacts)
+## 1. Inputs (Updated Design Artifacts)
+
+> **Direction update (explicit):** The previous v1.0 spec was **too minimal** compared to the OpenProject UX you want. We are updating scope to match the “Gantt as a drawer + editable task table + relations UI” pattern.
 
 ### 1.1 Source of Truth
 
-* `design.md` — design objective, philosophy, layout rules, non-goals, success criteria
-* `components.md` — component inventory, responsibilities, constraints
-* `interactions.md` — interaction semantics, states, save rules, anti-error rules
+* `design.md`
+* `components.md`
+* `interactions.md`
 
-### 1.2 Immutable v1.0 Scope (Non-Goals)
+### 1.2 Revised v1.0 Scope (now aligned to OpenProject patterns)
 
-* No dependency arrows
-* No resources/assignees
-* No collaboration
-* No dashboards/reports
-* No AI buttons in primary UI
-* No complex filtering/search
+**In-scope (must):**
 
----
+* Gantt is a **drawer-like** component: can expand/collapse; supports fullscreen
+* Left side is an **editable task table** with **hierarchy** (parent/child)
+
+  * create/edit tasks inline
+  * create child items (Design/Dev/Test etc.) under a parent
+  * default collapsed; expandable via caret
+  * configurable visible columns (field picker)
+  * sort (at least by start date / finish date / ID)
+* Right side is timeline canvas with strict row sync
+* Context menu on task row / bar with core actions (open details, duplicate, delete, create child)
+* **Task Details page/drawer** for a single task
+
+  * shows basic fields (type/status/priority/dates/duration)
+  * shows relations summary (predecessor/successor)
+  * shows **linked local files** list (attachments/links)
+  * allows **Open in external app** (Word/Excel/Typora/etc.) via OS default handler
+
+**v1.0 relations (minimum viable):**
+
+* Create predecessor/successor relations (Finish-to-Start only)
+* Render simple connector lines
+* Detect and highlight violations (no auto-reschedule)
+
+**Out of scope (still):**
+
+* resource management / assignees
+* collaboration
+* baselines / critical path
+* complex dependency types (SS/FF) and lag
+* in-app document rendering/editing (markdown preview/editor, Office parsing)
+  (still):**
+* resource management
+* collaboration
+* baselines / critical path
+* complex dependency types (SS/FF) and lag
 
 ## 2. High-Level Architecture Fit (Local-first / Electron)
+
+High-Level Architecture Fit (Local-first / Electron)
 
 ### 2.1 Product Reality
 
