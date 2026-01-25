@@ -11,8 +11,6 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   ChartBarIcon,
-  EyeIcon,
-  EyeSlashIcon,
   CalendarIcon,
   ArrowsPointingOutIcon,
   ArrowLeftIcon,
@@ -20,12 +18,10 @@ import {
   TaskTypeIcon,
   PhaseTypeIcon,
   BugTypeIcon,
-  ExclamationTriangleIcon,
 } from './icons';
-import type { Project, WorkPackage, Dependency, WorkPackageType, SchedulingMode } from '@shared/types';
-import { clampProgress, progressFromStatus, statusFromProgress } from '@shared/workPackageRules';
+import type { Project, WorkPackage, WorkPackageType } from '@shared/types';
 
-type RenderUnit = 'day' | 'week' | 'month' | 'quarter';
+type RenderUnit = 'day' | 'week' | 'month';
 
 // Color mappings
 const STATUS_COLORS = {
@@ -111,19 +107,6 @@ const endOfMonth = (date: Date) => {
   return d;
 };
 
-const startOfQuarter = (date: Date) => {
-  const d = clampDateOnly(date);
-  const qStartMonth = Math.floor(d.getMonth() / 3) * 3;
-  d.setMonth(qStartMonth, 1);
-  return d;
-};
-
-const endOfQuarter = (date: Date) => {
-  const d = startOfQuarter(date);
-  d.setMonth(d.getMonth() + 3, 0);
-  return d;
-};
-
 const isSameDay = (a: Date, b: Date) => {
   return (
     a.getFullYear() === b.getFullYear() &&
@@ -147,8 +130,6 @@ const snapStartForUnit = (date: Date, unit: RenderUnit) => {
       return startOfWeekMonday(date);
     case 'month':
       return startOfMonth(date);
-    case 'quarter':
-      return startOfQuarter(date);
   }
 };
 
@@ -160,17 +141,7 @@ const snapEndForUnit = (date: Date, unit: RenderUnit) => {
       return endOfWeekSunday(date);
     case 'month':
       return endOfMonth(date);
-    case 'quarter':
-      return endOfQuarter(date);
   }
-};
-
-const getRenderUnitForWindow = (from: Date, to: Date): RenderUnit => {
-  const spanDays = Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY_MS));
-  if (spanDays <= 90) return 'day';
-  if (spanDays <= 365) return 'week';
-  if (spanDays <= 365 * 2) return 'month';
-  return 'quarter';
 };
 
 // Timeline generation (render strategy only; data always stays at date-level)
@@ -235,17 +206,6 @@ const generateTimeline = (viewStart: Date, viewEnd: Date, unit: RenderUnit) => {
         const end = new Date(cursor);
         end.setMonth(end.getMonth() + 1);
         push(start, end, start.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
-        cursor = end;
-      }
-      break;
-    }
-    case 'quarter': {
-      while (cursor <= to) {
-        const start = new Date(cursor);
-        const end = new Date(cursor);
-        end.setMonth(end.getMonth() + 3);
-        const quarter = Math.floor(start.getMonth() / 3) + 1;
-        push(start, end, `Q${quarter} ${start.getFullYear()}`);
         cursor = end;
       }
       break;
@@ -426,127 +386,6 @@ const TodayMarker = ({ viewStart, viewEnd, headerHeight }: TodayMarkerProps) => 
   );
 };
 
-// Dependency Lines Component
-interface DependencyLinesProps {
-  dependencies: Dependency[];
-  workPackages: WorkPackage[];
-  viewStart: Date;
-  viewEnd: Date;
-  taskRowHeight: number;
-  headerHeight: number;
-}
-
-const DependencyLines = ({
-  dependencies,
-  workPackages,
-  viewStart,
-  viewEnd,
-  taskRowHeight,
-  headerHeight,
-}: DependencyLinesProps) => {
-  const taskMap = new Map(workPackages.map((wp) => [wp.id, wp]));
-  const taskIndexMap = new Map(workPackages.map((wp, index) => [wp.id, index]));
-
-  const lines = dependencies
-    .map((dep) => {
-      const predecessor = taskMap.get(dep.predecessor_id);
-      const successor = taskMap.get(dep.successor_id);
-
-      if (!predecessor || !successor) return null;
-
-      const predIndex = taskIndexMap.get(dep.predecessor_id);
-      const succIndex = taskIndexMap.get(dep.successor_id);
-
-      if (predIndex === undefined || succIndex === undefined) return null;
-
-      const predStart = predecessor.end_date ? new Date(predecessor.end_date) : null;
-      const succStart = successor.start_date ? new Date(successor.start_date) : null;
-
-      if (!predStart || !succStart) return null;
-
-      const totalDuration = viewEnd.getTime() - viewStart.getTime();
-      if (totalDuration <= 0) return null;
-
-      const predX = ((predStart.getTime() - viewStart.getTime()) / totalDuration) * 100;
-      const succX = ((succStart.getTime() - viewStart.getTime()) / totalDuration) * 100;
-      const predY = headerHeight + (predIndex + 0.5) * taskRowHeight;
-      const succY = headerHeight + (succIndex + 0.5) * taskRowHeight;
-
-      let path = '';
-      const midX = (predX + succX) / 2;
-
-      switch (dep.type) {
-        case 'finish_to_start':
-          path = `M ${predX} ${predY} L ${midX} ${predY} L ${midX} ${succY} L ${succX} ${succY}`;
-          break;
-        case 'start_to_start': {
-          const predStartX = predecessor.start_date
-            ? ((new Date(predecessor.start_date).getTime() - viewStart.getTime()) / totalDuration) * 100
-            : predX;
-          path = `M ${predStartX} ${predY} L ${midX} ${predY} L ${midX} ${succY} L ${succX} ${succY}`;
-          break;
-        }
-        case 'finish_to_finish': {
-          const succEndX = successor.end_date
-            ? ((new Date(successor.end_date).getTime() - viewStart.getTime()) / totalDuration) * 100
-            : succX;
-          path = `M ${predX} ${predY} L ${midX} ${predY} L ${midX} ${succY} L ${succEndX} ${succY}`;
-          break;
-        }
-        case 'start_to_finish': {
-          const predStartX2 = predecessor.start_date
-            ? ((new Date(predecessor.start_date).getTime() - viewStart.getTime()) / totalDuration) * 100
-            : predX;
-          const succEndX2 = successor.end_date
-            ? ((new Date(successor.end_date).getTime() - viewStart.getTime()) / totalDuration) * 100
-            : succX;
-          path = `M ${predStartX2} ${predY} L ${midX} ${predY} L ${midX} ${succY} L ${succEndX2} ${succY}`;
-          break;
-        }
-        default:
-          path = `M ${predX} ${predY} L ${succX} ${succY}`;
-      }
-
-      return { id: dep.id, path, predId: dep.predecessor_id, succId: dep.successor_id };
-    })
-    .filter((line): line is { id: number; path: string; predId: number; succId: number } => line !== null);
-
-  return (
-    <svg
-      className="absolute inset-0 pointer-events-none"
-      style={{ top: `${headerHeight}px`, left: '320px', right: 0 }}
-      width="100%"
-      height="100%"
-      preserveAspectRatio="none"
-    >
-      <defs>
-        <marker
-          id="arrowhead"
-          markerWidth="10"
-          markerHeight="7"
-          refX="9"
-          refY="3.5"
-          orient="auto"
-        >
-          <polygon points="0 0, 10 3.5, 0 7" fill="#9CA3AF" />
-        </marker>
-      </defs>
-      {lines.map((line) => (
-        <path
-          key={line.id}
-          d={line.path}
-          stroke="#9CA3AF"
-          strokeWidth="2"
-          fill="none"
-          markerEnd="url(#arrowhead)"
-          opacity="0.6"
-          vectorEffect="non-scaling-stroke"
-        />
-      ))}
-    </svg>
-  );
-};
-
 // Project Row Component
 interface ProjectRowProps {
   project: Project;
@@ -614,7 +453,7 @@ const ProjectRow = ({ project, viewStart, viewEnd, onClick }: ProjectRowProps) =
 
 // Work Package Row Component with Drag Support
 interface WorkPackageRowProps {
-  task: WorkPackage & { type?: WorkPackageType; scheduling_mode?: SchedulingMode; hasConflict?: boolean };
+  task: WorkPackage & { type?: WorkPackageType };
   viewStart: Date;
   viewEnd: Date;
   level: number;
@@ -657,8 +496,6 @@ const WorkPackageRow = ({
   const priorityColor = getPriorityColor(task.priority);
   const hasChildren = false;
   const isMilestone = task.type === 'milestone';
-  const isAutomatic = task.scheduling_mode === 'automatic';
-  const hasConflict = task.hasConflict || false;
 
   const TypeIcon = useMemo(() => {
     switch (task.type) {
@@ -695,7 +532,7 @@ const WorkPackageRow = ({
       }`}
       style={{ paddingLeft: `${level * 16 + 12}px` }}
     >
-      <div className="w-[320px] p-3 border-r border-border-light flex items-center justify-between">
+      <div className="w-[320px] px-3 border-r border-border-light flex items-center justify-between h-[34px]">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {hasChildren && (
             <button
@@ -742,72 +579,63 @@ const WorkPackageRow = ({
         </div>
       </div>
 
-      <div className="flex-1 relative h-[56px] p-3">
+      <div className="flex-1 relative h-[34px] px-2">
         {barStyle.visible && (
           <>
             {isMilestone ? (
               <div
-                className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity ${
-                  hasConflict ? 'ring-2 ring-red-500 ring-offset-2' : ''
-                }`}
+                className="absolute top-1/2 -translate-y-1/2 w-[20px] h-[20px] cursor-pointer hover:opacity-80 transition-opacity"
                 style={{
-                  left: `calc(${barStyle.left} + ${parseFloat(barStyle.width) / 2 - 3}%)`,
+                  left: `calc(${barStyle.left} + ${parseFloat(barStyle.width) / 2 - 3.5}%)`,
                   transform: 'rotate(45deg)',
-                  backgroundColor: hasConflict ? '#DC2626' : statusColor,
+                  backgroundColor: statusColor,
                 }}
                 onClick={() => onSelectTask(task.id)}
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   onBeginDrag(task, 'milestone_move', e);
                 }}
-                title={`Milestone: ${task.name}${hasConflict ? ' (Dependency Conflict!)' : ''}`}
+                title={`Milestone: ${task.name}`}
               />
             ) : (
               <div
-                className={`absolute top-1/2 -translate-y-1/2 h-8 rounded border-2 flex items-center justify-between px-3 cursor-pointer transition-opacity ${
+                className={`absolute top-1/2 -translate-y-1/2 h-[18px] rounded border-2 flex items-center px-2 cursor-pointer transition-opacity ${
                   isDragging ? 'opacity-50' : 'hover:opacity-80'
                 }`}
                 style={{
                   left: barStyle.left,
                   width: barStyle.width,
-                  backgroundColor: hasConflict ? '#FEE2E2' : `${statusColor}20`,
-                  borderColor: hasConflict ? '#DC2626' : statusColor,
-                  borderStyle: isAutomatic ? 'dashed' : 'solid',
+                  backgroundColor: `${statusColor}20`,
+                  borderColor: statusColor,
                 }}
                 onClick={() => onSelectTask(task.id)}
                 onMouseDown={(e) => onBeginDrag(task, 'move', e)}
-                title={hasConflict ? 'Dependency Conflict! This task violates dependency constraints.' : task.name}
+                title={task.name}
               >
-                {!isAutomatic && (
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    onBeginDrag(task, 'resize_start', e);
+                  }}
+                  title="Resize start"
+                />
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    onBeginDrag(task, 'resize_end', e);
+                  }}
+                  title="Resize end"
+                />
+                <div className="flex items-center gap-1.5 overflow-hidden">
                   <div
-                    className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize"
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      onBeginDrag(task, 'resize_start', e);
-                    }}
-                    title="Resize start"
-                  />
-                )}
-                {!isAutomatic && (
-                  <div
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize"
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      onBeginDrag(task, 'resize_end', e);
-                    }}
-                    title="Resize end"
-                  />
-                )}
-                <div className="flex items-center gap-2">
-                  {hasConflict && <ExclamationTriangleIcon className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />}
-                  <TypeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${hasConflict ? 'text-red-600' : 'text-text-tertiary'}`} />
-                  <div
-                    className="w-4 h-4 rounded flex items-center justify-center"
-                    style={{ backgroundColor: hasConflict ? '#DC2626' : statusColor }}
+                    className="w-3 h-3 rounded flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: statusColor }}
                   >
-                    <span className="text-[10px] font-bold text-white">{task.progress}%</span>
+                    <span className="text-[8px] font-bold text-white">{task.progress}</span>
                   </div>
-                  <span className="text-xs font-medium text-text-primary truncate">{task.name}</span>
+                  <span className="text-[10px] font-medium text-text-primary truncate">{task.name}</span>
                 </div>
               </div>
             )}
@@ -1111,7 +939,6 @@ export function GanttChart() {
   const { projects, setCurrentProject } = useStore();
   const {
     workPackages,
-    dependencies,
     selectedProjectId,
     selectedTaskId,
     timelineWindow,
@@ -1126,13 +953,12 @@ export function GanttChart() {
     updateWorkPackage,
     createWorkPackage,
     deleteWorkPackage,
-    zenMode,
-    toggleZenMode,
   } = useGanttStore();
 
   const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState<WorkPackage | null>(null);
+  const [scale, setScale] = useState<RenderUnit>('week'); // User-selected scale
   const ganttRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -1170,7 +996,7 @@ export function GanttChart() {
 
   const viewStart = timelineWindow.from;
   const viewEnd = timelineWindow.to;
-  const renderUnit = useMemo(() => getRenderUnitForWindow(viewStart, viewEnd), [viewStart, viewEnd]);
+  const renderUnit = scale; // Use user-selected scale
   const windowSpanDays = useMemo(
     () => Math.max(1, Math.round((viewEnd.getTime() - viewStart.getTime()) / DAY_MS)),
     [viewEnd, viewStart]
@@ -1639,13 +1465,27 @@ export function GanttChart() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            className={`btn btn-ghost p-1 ${zenMode ? 'text-primary bg-background-hover' : ''}`}
-            onClick={toggleZenMode}
-            title={zenMode ? 'Exit Zen Mode' : 'Enter Zen Mode'}
-          >
-            {zenMode ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-          </button>
+          {/* Scale Selector */}
+          <div className="flex items-center bg-background-secondary rounded border border-border">
+            <button
+              className={`px-2 py-1 text-xs ${scale === 'day' ? 'text-primary bg-background-hover' : 'text-text-tertiary'}`}
+              onClick={() => setScale('day')}
+            >
+              Day
+            </button>
+            <button
+              className={`px-2 py-1 text-xs ${scale === 'week' ? 'text-primary bg-background-hover' : 'text-text-tertiary'}`}
+              onClick={() => setScale('week')}
+            >
+              Week
+            </button>
+            <button
+              className={`px-2 py-1 text-xs ${scale === 'month' ? 'text-primary bg-background-hover' : 'text-text-tertiary'}`}
+              onClick={() => setScale('month')}
+            >
+              Month
+            </button>
+          </div>
 
           {viewMode === 'workpackages' && (
             <div className="flex items-center gap-2">
@@ -1793,16 +1633,6 @@ export function GanttChart() {
               <div className="relative">
                 {/* Today Marker */}
                 <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={50} />
-
-                {/* Dependency Lines Overlay */}
-                <DependencyLines
-                  dependencies={dependencies}
-                  workPackages={filteredWorkPackages}
-                  viewStart={viewStart}
-                  viewEnd={viewEnd}
-                  taskRowHeight={56}
-                  headerHeight={50}
-                />
 
                 {/* Gantt Rows */}
                 <div className="min-w-max">
