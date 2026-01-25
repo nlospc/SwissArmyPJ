@@ -142,3 +142,56 @@ The Gantt chart is a core feature with specific implementation details:
 - No existing Cursor rules or Copilot instructions to incorporate
 - Database migrations are not implemented - schema changes require manual database deletion for now
 - CSV import uses `csv-parse` library - see `workpackage.service.ts` for import logic
+
+## Recent Updates (2025-01-25)
+
+### Phase 1B: Gantt Chart UI Refactoring
+
+**Completed:**
+- Split panel layout with draggable divider for task list and timeline
+- True HTML `<table>` implementation for task list (ensures perfect column alignment)
+- Circular progress indicator with percentage display
+- Fixed table header and content alignment issues
+- ID display changed from `#1` to pure number format
+- Type column uses symbols: Task, Phase, ⚐ (milestone), Issue
+
+**Components:**
+- `TaskTable.tsx` - New table-based task list component
+- `TaskTablePanel.tsx` - Legacy flex-based panel (deprecated)
+- `TaskTimelinePanel.tsx` - Timeline bar rendering
+- `InlineCellEditor.tsx` - In-place cell editing
+- `TableHeaderRow.tsx` - Sortable table headers
+
+**Known Issues (TODO):**
+1. ~~type=milestone showing as ⚐ symbol~~ - Revert to text display
+2. Timeline header shows two rows for day/week zoom, causing misalignment with task list
+3. Timeline view limited to Oct 31 - need to extend date range
+4. Column picker button alignment needs review
+
+**Layout Structure:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Header (Controls & Filters)                                 │
+├───────────────┬──┬──────────────────────────────────────────────────┤
+│  Task List    │░░│  Gantt Timeline                                    │
+│  (80-930px)   │░░│  (flex-1)                                         │
+│               │░░│                                                   │
+│  ┌─────────┐  │░░│  ┌─────────────────────────────────────────────┐ │ │
+│  │ HTML    │  │░░│  │ Timeline Header (day/week shows 2 rows)   │ │ │
+│  │ <table> │  │░░│  ├─────────────────────────────────────────────┤ │ │
+│  │         │  │░░│  │ ┌─────────────────────────────────────────┐│ │ │
+│  │         │  │░░│  │ │ Task Bars                                  ││ │ │
+│  │         │  │░░│  │ └─────────────────────────────────────────┘│ │ │
+│  │         │  │░░│  └─────────────────────────────────────────────┘ │ │
+│  └─────────┘  │░░│                                                   │
+└───────────────┴──┴──────────────────────────────────────────────────┘
+                ↑
+           Drag to resize (default: 520px)
+```
+
+**File Changes:**
+- `src/renderer/GanttChart.tsx` - Main layout with split panel
+- `src/renderer/components/gantt/TaskTable.tsx` - New table component
+- `src/renderer/components/gantt/TaskTimelinePanel.tsx` - Timeline rendering
+- `src/renderer/components/gantt/InlineCellEditor.tsx` - Cell editing
+- `src/renderer/components/gantt/TableHeaderRow.tsx` - Header with sorting

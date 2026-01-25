@@ -513,7 +513,7 @@ export const useGanttStore = create<GanttStoreState>((set, get) => ({
 
     const dayMs = 24 * 60 * 60 * 1000;
     const minSpanDays = 7;
-    const maxSpanDays = 365 * 10;
+    const maxSpanDays = 365 * 50; // Extended to 50 years
 
     const { from, to } = get().timelineWindow;
     const fromMs = from.getTime();

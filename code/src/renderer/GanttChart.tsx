@@ -6,21 +6,17 @@ import {
   DownloadIcon,
   MinusIcon,
   XMarkIcon,
-  PencilIcon,
-  TrashIcon,
   ChevronRightIcon,
-  ChevronDownIcon,
   ChartBarIcon,
   CalendarIcon,
   ArrowsPointingOutIcon,
   ArrowLeftIcon,
-  MilestoneTypeIcon,
-  TaskTypeIcon,
-  PhaseTypeIcon,
-  BugTypeIcon,
-  ExclamationTriangleIcon,
 } from './icons';
 import type { Project, WorkPackage, Dependency, WorkPackageType } from '@shared/types';
+import { TableHeaderRow, type Column, type SortConfig, sortWorkPackages } from './components/gantt/TableHeaderRow';
+import { TaskTable } from './components/gantt/TaskTable';
+import { TaskTimelinePanel } from './components/gantt/TaskTimelinePanel';
+import { progressFromStatus, statusFromProgress, clampProgress } from './components/gantt/InlineCellEditor';
 
 type RenderUnit = 'day' | 'week' | 'month';
 
@@ -39,33 +35,11 @@ const WP_STATUS_COLORS: Record<string, string> = {
   blocked: '#DC2626',
 };
 
-const PRIORITY_COLORS: Record<string, string> = {
-  low: '#6B7280',
-  medium: '#FE9A00',
-  high: '#DC2626',
-  critical: '#7C3AED',
-};
-
 const getStatusColor = (status: string) => {
   return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || STATUS_COLORS.active;
 };
 
-const getWPStatusColor = (status: string) => {
-  return WP_STATUS_COLORS[status] || WP_STATUS_COLORS.todo;
-};
-
-const getPriorityColor = (priority: string) => {
-  return PRIORITY_COLORS[priority] || PRIORITY_COLORS.medium;
-};
-
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-// Scale pixel calculations (v1.0 constraints)
-const PIXELS_PER_DAY = {
-  day: 24,   // Day scale: 1 day = 24px
-  week: 8,   // Week scale: 1 day = 8px
-  month: 2,  // Month scale: 1 day = 2px
-} as const;
 
 const formatLocalISODate = (date: Date) => {
   const y = date.getFullYear();
@@ -565,205 +539,6 @@ const ProjectRow = ({ project, viewStart, viewEnd, onClick }: ProjectRowProps) =
   );
 };
 
-// Work Package Row Component with Drag Support
-interface WorkPackageRowProps {
-  task: WorkPackage & { type?: WorkPackageType; hasConflict?: boolean };
-  viewStart: Date;
-  viewEnd: Date;
-  level: number;
-  expandedTasks: Set<number>;
-  onToggleExpand: (taskId: number) => void;
-  onSelectTask: (taskId: number) => void;
-  selectedTaskId: number | null;
-  onEditTask: (task: WorkPackage) => void;
-  onDeleteTask: (taskId: number) => void;
-  onBeginDrag: (
-    task: WorkPackage,
-    kind: 'move' | 'resize_start' | 'resize_end' | 'milestone_move',
-    e: React.MouseEvent
-  ) => void;
-  isDragging: boolean;
-}
-
-const WorkPackageRow = ({
-  task,
-  viewStart,
-  viewEnd,
-  level,
-  expandedTasks,
-  onToggleExpand,
-  onSelectTask,
-  selectedTaskId,
-  onEditTask,
-  onDeleteTask,
-  onBeginDrag,
-  isDragging,
-}: WorkPackageRowProps) => {
-  const barStyle = calculateBarStyle(
-    task.start_date ? new Date(task.start_date) : null,
-    task.end_date ? new Date(task.end_date) : null,
-    viewStart,
-    viewEnd
-  );
-
-  const statusColor = getWPStatusColor(task.status);
-  const priorityColor = getPriorityColor(task.priority);
-  const hasChildren = false;
-  const isMilestone = task.type === 'milestone';
-  const hasConflict = task.hasConflict || false;
-
-  const TypeIcon = useMemo(() => {
-    switch (task.type) {
-      case 'milestone':
-        return MilestoneTypeIcon;
-      case 'phase':
-        return PhaseTypeIcon;
-      case 'bug':
-        return BugTypeIcon;
-      case 'task':
-      default:
-        return TaskTypeIcon;
-    }
-  }, [task.type]);
-
-  const typeIconClass = useMemo(() => {
-    switch (task.type) {
-      case 'milestone':
-        return 'text-purple-600';
-      case 'phase':
-        return 'text-amber-600';
-      case 'bug':
-        return 'text-rose-600';
-      case 'task':
-      default:
-        return 'text-slate-500';
-    }
-  }, [task.type]);
-
-  return (
-    <div
-      className={`flex border-b border-border-light hover:bg-background-hover transition-colors ${
-        selectedTaskId === task.id ? 'bg-background-hover' : ''
-      }`}
-      style={{ paddingLeft: `${level * 16 + 12}px` }}
-    >
-      <div className="w-[520px] px-3 border-r border-border-light flex items-center justify-between h-[34px]">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {hasChildren && (
-            <button
-              className="flex-shrink-0 text-text-tertiary hover:text-text-primary"
-              onClick={() => onToggleExpand(task.id)}
-            >
-              {expandedTasks.has(task.id) ? (
-                <ChevronDownIcon className="w-4 h-4" />
-              ) : (
-                <ChevronRightIcon className="w-4 h-4" />
-              )}
-            </button>
-          )}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <TypeIcon className={`w-4 h-4 flex-shrink-0 ${typeIconClass}`} />
-              <div className="text-sm font-medium text-text-primary truncate">{task.name}</div>
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: priorityColor }}
-                title={`Priority: ${task.priority}`}
-              />
-              <span className="text-xs text-text-tertiary">{task.progress}%</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            className="p-1 text-text-tertiary hover:text-text-primary hover:bg-background-hover rounded"
-            onClick={() => onEditTask(task)}
-            title="Edit task"
-          >
-            <PencilIcon className="w-3.5 h-3.5" />
-          </button>
-          <button
-            className="p-1 text-text-tertiary hover:text-red-500 hover:bg-red-50 rounded"
-            onClick={() => onDeleteTask(task.id)}
-            title="Delete task"
-          >
-            <TrashIcon className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 relative h-[34px] px-2">
-        {barStyle.visible && (
-          <>
-            {isMilestone ? (
-              <div
-                className={`absolute top-1/2 -translate-y-1/2 w-[20px] h-[20px] cursor-pointer hover:opacity-80 transition-opacity ${
-                  hasConflict ? 'ring-2 ring-red-500 ring-offset-2' : ''
-                }`}
-                style={{
-                  left: `calc(${barStyle.left} + ${parseFloat(barStyle.width) / 2 - 3.5}%)`,
-                  transform: 'rotate(45deg)',
-                  backgroundColor: hasConflict ? '#DC2626' : statusColor,
-                }}
-                onClick={() => onSelectTask(task.id)}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  onBeginDrag(task, 'milestone_move', e);
-                }}
-                title={`Milestone: ${task.name}${hasConflict ? ' (Dependency Conflict!)' : ''}`}
-              />
-            ) : (
-              <div
-                className={`absolute top-1/2 -translate-y-1/2 h-[18px] rounded border-2 flex items-center px-2 cursor-pointer transition-opacity ${
-                  isDragging ? 'opacity-50' : 'hover:opacity-80'
-                }`}
-                style={{
-                  left: barStyle.left,
-                  width: barStyle.width,
-                  backgroundColor: hasConflict ? '#FEE2E2' : `${statusColor}20`,
-                  borderColor: hasConflict ? '#DC2626' : statusColor,
-                }}
-                onClick={() => onSelectTask(task.id)}
-                onMouseDown={(e) => onBeginDrag(task, 'move', e)}
-                title={hasConflict ? 'Dependency Conflict! This task violates dependency constraints.' : task.name}
-              >
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize"
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    onBeginDrag(task, 'resize_start', e);
-                  }}
-                  title="Resize start"
-                />
-                <div
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize"
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    onBeginDrag(task, 'resize_end', e);
-                  }}
-                  title="Resize end"
-                />
-                <div className="flex items-center gap-1.5 overflow-hidden">
-                  {hasConflict && <ExclamationTriangleIcon className="w-3 h-3 text-red-600 flex-shrink-0" />}
-                  <div
-                    className="w-3 h-3 rounded flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: hasConflict ? '#DC2626' : statusColor }}
-                  >
-                    <span className="text-[8px] font-bold text-white">{task.progress}</span>
-                  </div>
-                  <span className="text-[10px] font-medium text-text-primary truncate">{task.name}</span>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // Task Modal
 interface TaskModalProps {
   task: WorkPackage | null;
@@ -1106,6 +881,26 @@ export function GanttChart() {
   // View mode: 'projects' or 'workpackages'
   const [viewMode, setViewMode] = useState<'projects' | 'workpackages'>('projects');
 
+  // Table columns state
+  const [columns, setColumns] = useState<Column[]>([
+    { key: 'id', label: 'ID', width: 80, visible: true, sortable: true },
+    { key: 'type', label: 'Type', width: 90, visible: true, sortable: false },
+    { key: 'subject', label: 'Subject', width: 220, visible: true, sortable: false },
+    { key: 'status', label: 'Status', width: 100, visible: true, sortable: true },
+    { key: 'startDate', label: 'Start', width: 120, visible: true, sortable: true },
+    { key: 'finishDate', label: 'Finish', width: 120, visible: true, sortable: true },
+    { key: 'duration', label: 'Duration', width: 100, visible: true, sortable: false },
+    { key: 'priority', label: 'Priority', width: 100, visible: true, sortable: true },
+  ]);
+
+  // Sort state
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+
+  // Panel split state (left panel width in pixels)
+  const [leftPanelWidth, setLeftPanelWidth] = useState(520);
+  const [isResizing, setIsResizing] = useState(false);
+  const splitDividerRef = useRef<HTMLDivElement>(null);
+
   // Load projects on mount
   useEffect(() => {
     if (projects.length === 0) {
@@ -1128,9 +923,13 @@ export function GanttChart() {
 
   // Filter work packages by status
   const filteredWorkPackages = useMemo(() => {
-    if (!selectedStatus) return workPackages;
-    return workPackages.filter((wp) => wp.status === selectedStatus);
-  }, [workPackages, selectedStatus]);
+    let result = workPackages;
+    if (selectedStatus) {
+      result = result.filter((wp) => wp.status === selectedStatus);
+    }
+    // Apply sorting
+    return sortWorkPackages(result, sortConfig);
+  }, [workPackages, selectedStatus, sortConfig]);
 
   // Handle auto-zoom
   const handleAutoZoom = useCallback(() => {
@@ -1295,6 +1094,30 @@ export function GanttChart() {
     if (!panState) return;
     setPanState(null);
   }, [panState]);
+
+  // Handle split divider drag start
+  const handleSplitDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  const handleSplitDragMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing || !ganttRef.current) return;
+
+      const rect = ganttRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const minWidth = 300;
+      const maxWidth = rect.width - 300;
+      const newWidth = Math.max(minWidth, Math.min(maxWidth, x));
+      setLeftPanelWidth(newWidth);
+    },
+    [isResizing]
+  );
+
+  const handleSplitDragEnd = useCallback(() => {
+    setIsResizing(false);
+  }, []);
 
   // Handle new task
   const handleNewTask = () => {
@@ -1512,6 +1335,18 @@ export function GanttChart() {
     };
   }, [panState, handlePanEnd, handlePanMove]);
 
+  // Set up split divider resize event listeners
+  useEffect(() => {
+    if (!isResizing) return;
+
+    window.addEventListener('mousemove', handleSplitDragMove);
+    window.addEventListener('mouseup', handleSplitDragEnd);
+    return () => {
+      window.removeEventListener('mousemove', handleSplitDragMove);
+      window.removeEventListener('mouseup', handleSplitDragEnd);
+    };
+  }, [isResizing, handleSplitDragMove, handleSplitDragEnd]);
+
   const currentProject = projects.find((p) => p.id === selectedProjectId);
 
   return (
@@ -1726,52 +1561,18 @@ export function GanttChart() {
             </div>
           ) : (
             <>
-              {/* Timeline Header */}
-              <div className="sticky top-0 z-20 bg-white border-b border-border-light">
-                <div className="flex min-w-max">
-                  <div className="w-[520px] p-3.5 text-xs font-medium text-text-secondary uppercase tracking-wide border-r border-border">
-                    Task Name
-                  </div>
-                  <div className="flex-1 flex" ref={timelineRef} onMouseDown={handlePanStart} onDoubleClick={handleAutoZoom}>
-                    {timeline.map((item, index) => (
-                      <div
-                        key={index}
-                        className={`flex-1 p-3.5 text-center border-r border-border-light ${item.isMajor ? 'bg-gray-50' : ''}`}
-                      >
-                        <div className="text-xs font-medium text-text-secondary">{item.label}</div>
-                        {item.subLabel && (
-                          <div className="text-[10px] text-text-tertiary mt-0.5">{item.subLabel}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Gantt Rows Container */}
-              <div className="relative">
-                {/* Today Marker */}
-                <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={56} />
-
-                {/* Dependency Lines Overlay */}
-                <DependencyLines
-                  dependencies={dependencies}
-                  workPackages={filteredWorkPackages}
-                  viewStart={viewStart}
-                  viewEnd={viewEnd}
-                  taskRowHeight={34}
-                  headerHeight={56}
-                />
-
-                {/* Gantt Rows */}
-                <div className="min-w-max">
-                  {filteredWorkPackages.map((task) => (
-                    <WorkPackageRow
-                      key={task.id}
-                      task={task}
-                      viewStart={viewStart}
-                      viewEnd={viewEnd}
-                      level={0}
+              {/* Split panel layout: Task List (left) + Gantt Timeline (right) */}
+              <div className="flex flex-1 overflow-hidden">
+                {/* Left Panel - Task List Table */}
+                <div
+                  className="flex-shrink-0 border-r border-border bg-white overflow-hidden flex flex-col"
+                  style={{ width: `${leftPanelWidth}px` }}
+                >
+                  {/* Table Header and Rows Container */}
+                  <div className="flex-1 overflow-auto">
+                    {/* Table with integrated header */}
+                    <TaskTable
+                      tasks={filteredWorkPackages}
                       expandedTasks={expandedTasks}
                       onToggleExpand={(taskId) => {
                         const newExpanded = new Set(expandedTasks);
@@ -1782,14 +1583,73 @@ export function GanttChart() {
                         }
                         setExpandedTasks(newExpanded);
                       }}
-                      onSelectTask={handleSelectTask}
                       selectedTaskId={selectedTaskId}
                       onEditTask={handleEditTask}
                       onDeleteTask={handleDeleteTask}
-                      onBeginDrag={handleBeginDrag}
-                      isDragging={dragState?.taskId === task.id}
+                      columns={columns}
+                      sortConfig={sortConfig}
                     />
-                  ))}
+                  </div>
+                </div>
+
+                {/* Split Divider - Draggable */}
+                <div
+                  ref={splitDividerRef}
+                  className={`flex-shrink-0 relative z-30 cursor-col-resize bg-border hover:bg-primary transition-colors ${
+                    isResizing ? 'bg-primary' : ''
+                  }`}
+                  style={{ width: '4px' }}
+                  onMouseDown={handleSplitDragStart}
+                >
+                  {/* Drag handle indicator */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 bg-background-secondary rounded-full opacity-0 hover:opacity-100 transition-opacity" />
+                </div>
+
+                {/* Right Panel - Gantt Timeline */}
+                <div className="flex-1 relative overflow-hidden flex flex-col min-w-0">
+                  {/* Timeline Header */}
+                  <div className="sticky top-0 z-20 bg-white border-b border-border-light flex-shrink-0" style={{ height: '40px' }}>
+                    <div className="flex min-w-max h-full" ref={timelineRef} onMouseDown={handlePanStart} onDoubleClick={handleAutoZoom}>
+                      {timeline.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex-1 flex flex-col justify-center items-center text-center border-r border-border-light last:border-r-0"
+                        >
+                          <div className="text-xs font-medium text-text-secondary leading-none">{item.label}</div>
+                          {item.subLabel && (
+                            <div className="text-[10px] text-text-tertiary leading-tight mt-0.5">{item.subLabel}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Timeline Content */}
+                  <div className="flex-1 overflow-auto relative">
+                    {/* Today Marker */}
+                    <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={40} />
+
+                    {/* Dependency Lines Overlay */}
+                    <DependencyLines
+                      dependencies={dependencies}
+                      workPackages={filteredWorkPackages}
+                      viewStart={viewStart}
+                      viewEnd={viewEnd}
+                      taskRowHeight={34}
+                      headerHeight={40}
+                    />
+
+                    {/* Timeline Bars */}
+                    <TaskTimelinePanel
+                      tasks={filteredWorkPackages}
+                      viewStart={viewStart}
+                      viewEnd={viewEnd}
+                      selectedTaskId={selectedTaskId}
+                      onSelectTask={handleSelectTask}
+                      onBeginDrag={handleBeginDrag}
+                      isDraggingTask={dragState?.taskId === selectedTaskId}
+                    />
+                  </div>
                 </div>
               </div>
             </>
