@@ -1,242 +1,224 @@
-# Gantt Chart (Timeline) — Full Functional Description (UI + Behaviors)
+# PRD 章节｜Timeline / Gantt（时间轴规划视图）
 
-> Mental model: **a Work Package table on the left + a time-scaled timeline on the right**, kept in sync.
-> You plan by editing rows (attributes) and by manipulating bars (dates/duration) and lines (dependencies).
+## 1. 目标与定位（Why this exists）
 
----
+Timeline / Gantt 不是一个“项目计划软件”，而是一个 **时间投影视图（Temporal Projection View）**。
 
-## 1) What the Gantt chart is “made of”
+它的目标是：
+- 让用户**快速理解工作在时间维度上的分布**
+- 让用户通过**直接操作（拖拽）**完成 80% 的排期调整
+- 在不强制依赖自动排期的前提下，**暴露风险、冲突与不一致**
 
-### 1.1 Left side: Work package table (the “structured list”)
-- A grid of **work packages** (tasks, phases, milestones, bugs… whatever your project types are).
-- You can:
-  - **Create new work packages** directly from the table (a “create new work package” row/link at the bottom).
-  - **Edit fields inline** (subject, type, status, dates, etc. depending on configured columns).
-  - **Filter / sort / group** the list (same general “table view” mechanics as work packages).
-  - **Save views** (private/public), and mark some as favorites.
-
-### 1.2 Right side: Timeline canvas (the “time geometry”)
-- A horizontal time axis (zoomable).
-- Each work package can appear as:
-  - **Bar** (for items with start+finish / duration, e.g., phases/tasks)
-  - **Point marker** (for milestones — a fixed date “dot/diamond-like” concept)
-- Supports:
-  - Dragging bars to shift dates
-  - Resizing bars to change duration
-  - Dependency lines between items (predecessor/follower)
-  - Visual indicators like “today” line
-
-### 1.3 One dataset, two lenses
-- The **table and timeline are the same objects** shown differently.
-- Selecting/expanding/collapsing in the table affects what’s visible on the timeline.
+> 核心原则：  
+> **系统展示时间事实，决策始终由人完成。**
 
 ---
 
-## 2) Getting into the Gantt chart
+## 2. 适用对象（Who）
 
-### 2.1 Project-level Gantt charts module
-- Inside a specific project, you open the **Gantt charts** module from the project menu.
-- Typical use: planning and tracking *within one project*.
-
-### 2.2 Global (cross-project) Gantt charts module
-- From “Global modules” you can open **Gantt charts** across projects.
-- Typical use: portfolio-ish views, multi-project milestone oversight, “what’s happening where”.
+- 单项目负责人：进行阶段规划与日常排期调整  
+- 多项目 / 项目集负责人：跨项目对齐关键节点与里程碑  
+- PM / PMO：生成可复用、可汇报的时间视图（而非一次性甘特图）
 
 ---
 
-## 3) Views: how you browse different Gantt setups
+## 3. 核心设计原则（Non-negotiables）
 
-### 3.1 Built-in / default views (typical)
-- “All open” view: shows work packages with an “open” status.
-- “Milestones” view: shows items of type “Milestone” (or types configured to be treated as milestones).
+1. **时间轴是视角，不是数据**
+   - 数据层只存在 start / end
+   - by day / week / month 仅为 UI 投影
 
-### 3.2 Saved views (your real power tool)
-- Views can be:
-  - **Favorite** (quick access)
-  - **Public** (shareable to others)
-  - **Private** (personal)
-- A view is essentially a remembered combination of:
-  - Filters
-  - Grouping
-  - Sorting
-  - Columns (table)
-  - Possibly chart configuration options (labels/zoom behaviors)
+2. **拖拽优先，表单其次**
+   - 时间相关编辑的第一路径是直接操作
+
+3. **Zoom，而非模式切换**
+   - 用户调整的是“看多细”，不是“切到哪种时间轴”
+
+4. **风险提示，不自动决策**
+   - 冲突必须被看见，但不会被系统擅自修正
 
 ---
 
-## 4) Core interactions: editing schedule directly on the chart
+## 4. 信息架构（Information Architecture）
 
-### 4.1 Setting start/finish dates (and duration)
-- You can set dates in:
-  - The table (by editing date fields)
-  - The timeline (drag + resize)
-- Drag behaviors (conceptually):
-  - **Drag the bar** → shift both start and finish together
-  - **Drag bar edges** → change duration by moving start or finish
+### 4.1 视图结构
 
-### 4.2 Milestones behave differently
-- Milestones are a **single date** (displayed as a point in time, not a bar length).
-- Their date can be influenced by relations unless you intentionally keep them independent.
+Timeline 视图由两部分组成：
 
----
+- **左侧：结构化工作项列表（Tree）**
+- **右侧：时间轴画布（Canvas）**
 
-## 5) Dependencies (relations) in the Gantt chart
-
-### 5.1 What is displayed (and what is not)
-Displayed in the Gantt chart:
-- **Predecessor / Successor** (a “timing” relation: follows / precedes)
-- **Parent / Child** hierarchy (structural relation)
-
-Not displayed in the Gantt chart (even if they exist):
-- “related to”, “blocked by”, “duplicates”, “includes”, etc.
-
-### 5.2 Creating dependencies in the Gantt view
-- You can add **dependencies (predecessor/successor)** directly within the Gantt chart UI.
-- Dependencies are rendered as connecting lines between bars/milestones.
-
-### 5.3 Lag (buffer) between linked items
-- You can insert a **lag** (e.g., “start 2 weeks after predecessor finishes”).
-- This is how you build buffers without manually eyeballing empty space.
+两者始终保持同步：
+- 同一条工作项在列表与时间轴中是一一映射关系
+- 折叠 / 展开仅影响可视范围，不影响数据
 
 ---
 
-## 6) Scheduling modes: manual vs automatic (per work package)
+### 4.2 左侧结构区（Work Item Tree）
 
-### 6.1 Manual scheduling (default mindset: “I decide dates”)
-- You freely set start/finish dates.
-- Even if relations exist, **moving a predecessor does NOT automatically move the successor**.
-- Useful when:
-  - Deadlines are fixed externally
-  - You want top-down planning stability
-  - You don’t want chain-reactions
+#### 支持能力
+- 层级结构（Parent / Child）
+- 折叠 / 展开
+- 父项本身也是一等工作项
 
-### 6.2 Automatic scheduling (constraint mindset: “dates are derived”)
-- You cannot arbitrarily set a manual start date the same way; dates are derived based on:
-  - Predecessors (dependency constraints)
-  - Children (hierarchy constraints)
-- A work package can only switch to automatic mode if it has **predecessors or children**.
-- Useful when:
-  - You want bottom-up realism
-  - You want dependencies to behave like “physics”
-  - You want schedule propagation
-
-### 6.3 Mixing modes is allowed
-- Scheduling mode is **per work package**, so you can blend:
-  - Manually-fixed key milestones/phases
-  - Automatically-derived sub-tasks
+#### 行为规则
+- 父项可拥有独立的 start / end
+- 子项的时间跨度可能：
+  - 完全覆盖父项
+  - 超出父项（需提示不一致）
+- 折叠时：
+  - 子项隐藏
+  - 父项时间条仍显示
 
 ---
 
-## 7) Hierarchy: parent/child phases and rollups
+## 5. 时间轴设计（Timeline Axis）
 
-### 7.1 Indentation and structure
-- Work packages can be arranged in **parent/child** relationships.
-- The Gantt chart reflects this hierarchy (expand/collapse).
+### 5.1 时间窗口（Timeline Window）
 
-### 7.2 Parent range vs children range (why you see clamps/brackets)
-- The chart can visualize differences between:
-  - Parent’s own dates
-  - Children’s earliest start / latest finish range
-- If children extend beyond parent (or fit inside), the chart shows bracket/clamp-like indicators
-  to highlight mismatch (a “parent doesn’t cover its children” smell).
+时间轴始终存在一个可视窗口（viewport）：
 
----
+优先级规则：
+1. 用户手动拖动 / 缩放
+2. 自动 Fit to content（包裹当前可见工作项）
+3. 默认窗口（如：今天 ± 3 个月）
 
-## 8) Visual language in the chart (colors/lines/symbols)
-
-### 8.1 Dependency line
-- A **blue line** connects predecessor and follower (dependency).
-
-### 8.2 “Today” marker
-- A **vertical red dotted line** indicates today’s date.
-
-### 8.3 Aggregation clamp (children span)
-- A **black clamp/bracket** can indicate the duration from:
-  - earliest-starting child → latest-ending child
-  (useful to see real span even if parent dates differ)
+任务本身可以跨越任意时间范围，不受窗口限制。
 
 ---
 
-## 9) Navigation and focus tools (because timelines are big beasts)
+### 5.2 Zoom 机制（关键）
 
-### 9.1 Zoom in/out
-- Buttons (plus/minus) to change time scale granularity.
-- Used to go from “year view” down to “week/day-ish view” depending on the dataset.
+Timeline 不存在“by day / by week / by month 模式切换”。
 
-### 9.2 Auto-zoom
-- Auto-zoom fits the visible items into a “best view” window.
-- Sometimes auto-zoom can be locked/controlled by the view’s configuration.
+仅存在 **Zoom Level**。
 
-### 9.3 Zen mode (focus)
-- A “Zen mode” exists to reduce UI noise and focus on planning (conceptually: more canvas, less chrome).
+Zoom 影响：
+- 时间刻度密度
+- 标签显示规则
+- 拖拽时的吸附粒度（Snap）
 
----
+#### 推荐映射规则（示例）
 
-## 10) Context menu (right click): fast actions without leaving the view
-- Right-clicking a work package row in Gantt view opens a quick context menu.
-- The exact options can differ slightly compared to the Work Packages module table view,
-  but the intent is:
-  - quick creation / management actions
-  - structural operations
-  - copy/move-like actions (depending on permissions/config)
+| Zoom Level | 主刻度 | 次刻度 | 拖拽吸附 |
+|-----------|--------|--------|----------|
+| 高        | Day    | Hour / Day | Day |
+| 中        | Week   | Day    | Day |
+| 低        | Month  | Week   | Week / Month |
 
 ---
 
-## 11) Multi-project / portfolio-like planning
+## 6. 工作项在时间轴上的表现（Visual Semantics）
 
-### 11.1 Cross-project timelines
-- You can create timelines spanning multiple projects via:
-  - Global Gantt charts module, or
-  - Filters like “Include projects” (including sub-projects)
+### 6.1 类型与形态
 
-### 11.2 Aggregation by project (high-level milestone overview)
-- You can group by **Project** and then collapse to get a high-level view.
-- Collapsing projects can still leave key milestone rows visible in an aggregated way,
-  enabling “executive scanning” across projects.
+| 类型 | 视觉形态 | 行为 |
+|----|----|----|
+| Task / Phase | 横向时间条 | 可拖动、可调边界 |
+| Milestone | 菱形 / 点 | 仅单点拖动 |
+| Issue / Bug | 短条 + Icon | 同 Task |
+| 冲突项 | 红色边框 / ⚠️ | 可拖动，需确认 |
 
----
-
-## 12) Export and sharing
-
-### 12.1 Gantt PDF export (often Enterprise add-on)
-- You can export the Gantt chart to PDF.
-- Export parameters typically include:
-  - zoom level/time scale
-  - column width
-  - paper size
-- Intended for stakeholder sharing and printing.
-
-### 12.2 Shareable via views
-- Public views + consistent filters = “here’s the live plan link”.
-- More reliable than screenshots, because it stays current.
+形态必须清晰表达“是否有 duration”。
 
 ---
 
-## 13) Practical “workflow loops” this design supports
-
-### 13.1 Planning loop (top-down)
-1) Create phases and milestones
-2) Add tasks under phases (children)
-3) Manually set high-level dates
-4) Optionally switch lower-level tasks to automatic scheduling so dependencies behave
-
-### 13.2 Tracking loop (daily/weekly)
-1) Filter to “open” items
-2) Zoom to current month/quarter
-3) Drag/reschedule what moved
-4) Inspect dependency chains for knock-on risk
-5) Export PDF for reporting when needed
-
-### 13.3 Portfolio loop (multi-project)
-1) Open global Gantt view
-2) Group by project
-3) Collapse to see only key items/milestones
-4) Use filters to build “program slices” (by customer, BU, product line, etc. via fields)
+### 6.2 今日指示
+- 时间轴上显示 Today Marker（竖线）
+- 仅作参考，不影响逻辑
 
 ---
 
-## 14) Boundaries (important “what it doesn’t do” in the Gantt)
-- It does **not** show every relation type visually — only predecessor/successor and parent/child are chart-native.
-- Baseline-style comparisons are generally a *separate capability* (often table/baseline features rather than a pure “two bars: planned vs actual” MS Project style overlay).
+## 7. 拖拽交互规范（Primary Interaction）
+
+### 7.1 基本规则
+
+| 操作 | 结果 |
+|----|----|
+| 拖动条中部 | 平移 start + end |
+| 拖动左边缘 | 修改 start |
+| 拖动右边缘 | 修改 end |
+| 拖动里程碑 | 修改单一日期 |
+
+拖动行为默认受当前 Zoom 的吸附规则影响。
 
 ---
+
+### 7.2 精调机制（防止粗操作）
+
+拖动时显示浮层信息：
+- 当前 start / end
+- Duration（天数）
+
+辅助键：
+- `Shift`：保持 duration，仅平移
+- `Ctrl / Cmd`：临时切换到 day 级精度
+
+---
+
+## 8. 依赖与冲突（Constraints, not automation）
+
+### 8.1 支持的依赖类型
+- Finish → Start（前置 / 后继）
+
+### 8.2 行为原则
+- 系统 **不自动重排**
+- 拖动造成冲突时：
+  - 即时视觉提示（红边 / icon）
+- 松手后：
+  - 提示冲突原因
+  - 提供选项：继续 / 撤销 / 查看依赖
+
+---
+
+## 9. 日期字段编辑（Form Interaction）
+
+### 9.1 日期选择方式
+
+使用 **Range Picker**（单一弹窗）：
+
+流程：
+1. 点击 Start Date
+2. 打开 Range Calendar
+3. 第一次点击 → Start
+4. 第二次点击 → End
+5. 自动关闭弹窗并提交
+
+### 9.2 辅助规则
+- 仅选择 Start 后退出：
+  - 默认 End = Start（或 Start + 1 天，可配置）
+- Hover 显示：
+  - 已选择区间天数
+
+---
+
+## 10. 多项目 / 项目集支持（MSP-first）
+
+- Timeline 支持跨项目视图
+- 可按：
+  - Project
+  - Owner
+  - 自定义字段
+ 进行分组
+- 折叠后用于：
+  - 高层里程碑扫描
+  - 管理层时间对齐
+
+---
+
+## 11. 非目标（Out of Scope for v1）
+
+- 复杂自动排期算法
+- 多基线对比（Planned vs Actual 双条）
+- 资源负载平衡
+- 甘特图导出即报表设计
+
+---
+
+## 12. 一句话总结（用于对齐团队）
+
+> Timeline / Gantt 是一个 **时间可视化与直接操作界面**，  
+> 不是一个替用户做决定的调度系统。  
+>  
+> 我们让时间变得清晰，而不是变得“自动”。
+

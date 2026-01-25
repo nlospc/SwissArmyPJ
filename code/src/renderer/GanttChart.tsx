@@ -20,6 +20,7 @@ import {
   TaskTypeIcon,
   PhaseTypeIcon,
   BugTypeIcon,
+  ExclamationTriangleIcon,
 } from './icons';
 import type { Project, WorkPackage, Dependency, WorkPackageType, SchedulingMode } from '@shared/types';
 import { clampProgress, progressFromStatus, statusFromProgress } from '@shared/workPackageRules';
@@ -395,6 +396,36 @@ const calculateBarStyle = (
   };
 };
 
+// Today Marker Component
+interface TodayMarkerProps {
+  viewStart: Date;
+  viewEnd: Date;
+  headerHeight: number;
+}
+
+const TodayMarker = ({ viewStart, viewEnd, headerHeight }: TodayMarkerProps) => {
+  const today = clampDateOnly(new Date());
+  const totalDuration = viewEnd.getTime() - viewStart.getTime();
+
+  // Only show if today is within the view
+  if (today.getTime() < viewStart.getTime() || today.getTime() > viewEnd.getTime()) {
+    return null;
+  }
+
+  const position = ((today.getTime() - viewStart.getTime()) / totalDuration) * 100;
+
+  return (
+    <div
+      className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+      style={{ left: `calc(320px + ${position}%)`, marginTop: `${headerHeight}px` }}
+    >
+      <div className="absolute top-0 -translate-x-1/2 -translate-y-full bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap">
+        Today
+      </div>
+    </div>
+  );
+};
+
 // Dependency Lines Component
 interface DependencyLinesProps {
   dependencies: Dependency[];
@@ -583,7 +614,7 @@ const ProjectRow = ({ project, viewStart, viewEnd, onClick }: ProjectRowProps) =
 
 // Work Package Row Component with Drag Support
 interface WorkPackageRowProps {
-  task: WorkPackage & { type?: WorkPackageType; scheduling_mode?: SchedulingMode };
+  task: WorkPackage & { type?: WorkPackageType; scheduling_mode?: SchedulingMode; hasConflict?: boolean };
   viewStart: Date;
   viewEnd: Date;
   level: number;
@@ -627,6 +658,7 @@ const WorkPackageRow = ({
   const hasChildren = false;
   const isMilestone = task.type === 'milestone';
   const isAutomatic = task.scheduling_mode === 'automatic';
+  const hasConflict = task.hasConflict || false;
 
   const TypeIcon = useMemo(() => {
     switch (task.type) {
@@ -715,18 +747,20 @@ const WorkPackageRow = ({
           <>
             {isMilestone ? (
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
+                className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity ${
+                  hasConflict ? 'ring-2 ring-red-500 ring-offset-2' : ''
+                }`}
                 style={{
                   left: `calc(${barStyle.left} + ${parseFloat(barStyle.width) / 2 - 3}%)`,
                   transform: 'rotate(45deg)',
-                  backgroundColor: statusColor,
+                  backgroundColor: hasConflict ? '#DC2626' : statusColor,
                 }}
                 onClick={() => onSelectTask(task.id)}
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   onBeginDrag(task, 'milestone_move', e);
                 }}
-                title={`Milestone: ${task.name}`}
+                title={`Milestone: ${task.name}${hasConflict ? ' (Dependency Conflict!)' : ''}`}
               />
             ) : (
               <div
@@ -736,12 +770,13 @@ const WorkPackageRow = ({
                 style={{
                   left: barStyle.left,
                   width: barStyle.width,
-                  backgroundColor: `${statusColor}20`,
-                  borderColor: statusColor,
+                  backgroundColor: hasConflict ? '#FEE2E2' : `${statusColor}20`,
+                  borderColor: hasConflict ? '#DC2626' : statusColor,
                   borderStyle: isAutomatic ? 'dashed' : 'solid',
                 }}
                 onClick={() => onSelectTask(task.id)}
                 onMouseDown={(e) => onBeginDrag(task, 'move', e)}
+                title={hasConflict ? 'Dependency Conflict! This task violates dependency constraints.' : task.name}
               >
                 {!isAutomatic && (
                   <div
@@ -764,10 +799,11 @@ const WorkPackageRow = ({
                   />
                 )}
                 <div className="flex items-center gap-2">
-                  <TypeIcon className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" />
+                  {hasConflict && <ExclamationTriangleIcon className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />}
+                  <TypeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${hasConflict ? 'text-red-600' : 'text-text-tertiary'}`} />
                   <div
                     className="w-4 h-4 rounded flex items-center justify-center"
-                    style={{ backgroundColor: statusColor }}
+                    style={{ backgroundColor: hasConflict ? '#DC2626' : statusColor }}
                   >
                     <span className="text-[10px] font-bold text-white">{task.progress}%</span>
                   </div>
@@ -1703,6 +1739,9 @@ export function GanttChart() {
 
               {/* Project Rows */}
               <div className="min-w-max relative">
+                {/* Today Marker */}
+                <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={50} />
+
                 {projects.map((project) => (
                   <ProjectRow
                     key={project.id}
@@ -1752,6 +1791,9 @@ export function GanttChart() {
 
               {/* Gantt Rows Container */}
               <div className="relative">
+                {/* Today Marker */}
+                <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={50} />
+
                 {/* Dependency Lines Overlay */}
                 <DependencyLines
                   dependencies={dependencies}

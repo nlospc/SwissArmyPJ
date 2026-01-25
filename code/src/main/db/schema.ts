@@ -179,6 +179,9 @@ export function initDatabase(appInstance: App): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_ai_proposals_status ON ai_proposals(status);
   `);
 
+  // Run migrations to update existing databases
+  runMigrations(db);
+
   return db;
 }
 
@@ -201,5 +204,72 @@ export function closeDatabase(): void {
   if (dbInstance) {
     dbInstance.close();
     dbInstance = null;
+  }
+}
+
+// Run migrations to update existing database schema
+export function runMigrations(db: Database.Database): void {
+  // Get current database version
+  const getVersion = db.prepare('PRAGMA user_version');
+  const result = getVersion.get() as { user_version: number };
+  const currentVersion = result.user_version;
+
+  if (currentVersion < 1) {
+    // Migration 1: Add type and scheduling_mode columns to work_packages
+    try {
+      // Check if columns exist first
+      const tableInfo = db.pragma('table_info(work_packages)', { simple: false }) as any[];
+      const hasTypeColumn = tableInfo.some((col) => col.name === 'type');
+      const hasSchedulingModeColumn = tableInfo.some((col) => col.name === 'scheduling_mode');
+
+      if (!hasTypeColumn) {
+        db.exec(`ALTER TABLE work_packages ADD COLUMN type TEXT DEFAULT 'task' CHECK(type IN ('task', 'phase', 'milestone', 'bug'))`);
+      }
+
+      if (!hasSchedulingModeColumn) {
+        db.exec(`ALTER TABLE work_packages ADD COLUMN scheduling_mode TEXT DEFAULT 'manual' CHECK(scheduling_mode IN ('manual', 'automatic'))`);
+      }
+
+      // Update version
+      db.exec('PRAGMA user_version = 1');
+      console.log('Migration 1 completed: Added type and scheduling_mode columns');
+    } catch (error) {
+      console.error('Migration 1 failed:', error);
+      throw error;
+    }
+  }
+
+  if (currentVersion < 2) {
+    // Migration 2: Create gantt_views table if it doesn't exist
+    try {
+      const tableInfo = db.pragma('table_list', { simple: false }) as any[];
+      const hasGanttViews = tableInfo.some((tbl) => tbl.name === 'gantt_views');
+
+      if (!hasGanttViews) {
+        db.exec(`
+          CREATE TABLE gantt_views (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT UNIQUE NOT NULL,
+            project_id INTEGER,
+            name TEXT NOT NULL,
+            scope TEXT DEFAULT 'private' CHECK(scope IN ('private', 'public', 'favorite')),
+            filters TEXT,
+            grouping TEXT,
+            sorting TEXT,
+            columns TEXT,
+            zoom_level TEXT DEFAULT 'week' CHECK(zoom_level IN ('day', 'week', 'month', 'quarter')),
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+          )
+        `);
+      }
+
+      db.exec('PRAGMA user_version = 2');
+      console.log('Migration 2 completed: Created gantt_views table');
+    } catch (error) {
+      console.error('Migration 2 failed:', error);
+      throw error;
+    }
   }
 }

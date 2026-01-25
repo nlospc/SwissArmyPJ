@@ -366,9 +366,19 @@ export const useGanttStore = create<GanttStoreState>((set, get) => ({
     try {
       const response = await window.electronAPI.gantt.getState(projectId);
       if (response.success && response.data) {
-        // Backend returns computed Gantt tasks (e.g., critical path/slack). Keep it separate
-        // from editable WorkPackages to preserve the "dates are facts" model.
-        set({ ganttTasks: response.data });
+        // Backend returns computed Gantt tasks (e.g., critical path/slack, conflicts)
+        // Sync hasConflict status to workPackages for UI display
+        const { workPackages } = get();
+        const conflictMap = new Map<number, boolean | undefined>(
+          response.data.map((gt: GanttTask) => [gt.id, gt.hasConflict])
+        );
+
+        const updatedWorkPackages = workPackages.map((wp) => ({
+          ...wp,
+          hasConflict: conflictMap.get(wp.id),
+        }));
+
+        set({ ganttTasks: response.data, workPackages: updatedWorkPackages });
       }
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Failed to load Gantt state' });

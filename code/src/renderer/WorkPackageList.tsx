@@ -15,10 +15,106 @@ import {
   TaskTypeIcon,
   PhaseTypeIcon,
   BugTypeIcon,
+  ChevronDownIcon,
+  ArrowsPointingOutIcon,
 } from './icons';
 import { Modal } from './components/Modal';
 import { WorkPackageForm } from './components/WorkPackageForm';
 import type { WorkPackage, WorkPackageType } from '@shared/types';
+
+// Inline simplified Gantt chart for the toggleable view
+const MiniGanttChart: FC<{
+  workPackages: WorkPackage[];
+  onViewFullGantt: () => void;
+}> = ({ workPackages, onViewFullGantt }) => {
+  // Get date range
+  const dates = workPackages
+    .filter(wp => wp.start_date && wp.end_date)
+    .flatMap(wp => [
+      new Date(wp.start_date!).getTime(),
+      new Date(wp.end_date!).getTime()
+    ]);
+
+  if (dates.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-text-tertiary text-sm">
+        No tasks with dates to display on timeline
+      </div>
+    );
+  }
+
+  const minDate = Math.min(...dates);
+  const maxDate = Math.max(...dates);
+  const padding = (maxDate - minDate) * 0.1;
+  const rangeStart = new Date(minDate - padding);
+  const rangeEnd = new Date(maxDate + padding);
+  const totalRange = rangeEnd.getTime() - rangeStart.getTime();
+
+  const getBarStyle = (startDate: string, endDate: string) => {
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    const left = ((start - rangeStart.getTime()) / totalRange) * 100;
+    const width = Math.max(((end - start) / totalRange) * 100, 1);
+    return { left: `${left}%`, width: `${width}%` };
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'done': return '#00C950';
+      case 'in_progress': return '#2B7FFF';
+      case 'blocked': return '#DC2626';
+      default: return '#6B7280';
+    }
+  };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayPosition = ((today.getTime() - rangeStart.getTime()) / totalRange) * 100;
+
+  return (
+    <div className="relative h-24 bg-background-secondary rounded p-4">
+      {/* Today marker */}
+      {todayPosition >= 0 && todayPosition <= 100 && (
+        <div
+          className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+          style={{ left: `${todayPosition}%` }}
+        >
+          <div className="absolute top-0 -translate-x-1/2 -translate-y-full bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap">
+            Today
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 h-full overflow-x-auto">
+        {workPackages.map((wp) => {
+          if (!wp.start_date || !wp.end_date) return null;
+
+          const barStyle = getBarStyle(wp.start_date, wp.end_date);
+          const statusColor = getStatusColor(wp.status);
+
+          return (
+            <div
+              key={wp.id}
+              className="relative h-8 rounded flex items-center px-2 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+              style={{
+                ...barStyle,
+                backgroundColor: `${statusColor}20`,
+                border: `2px solid ${statusColor}`,
+                minWidth: '80px',
+              }}
+              title={wp.name}
+              onClick={onViewFullGantt}
+            >
+              <span className="text-xs font-medium text-text-primary truncate">
+                {wp.name}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export function WorkPackageList() {
   const {
@@ -32,12 +128,14 @@ export function WorkPackageList() {
     deleteWorkPackage,
     isLoading,
     error,
+    setView,
   } = useStore();
 
   const [filter, setFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingWorkPackage, setEditingWorkPackage] = useState<WorkPackage | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGantt, setShowGantt] = useState(false);
 
   useEffect(() => {
     if (currentProject?.id) {
@@ -207,6 +305,14 @@ export function WorkPackageList() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowGantt(!showGantt)}
+            className={`btn btn-secondary flex items-center gap-2 ${showGantt ? 'bg-primary/10 border-primary' : ''}`}
+            title={showGantt ? 'Hide Timeline' : 'Show Timeline'}
+          >
+            <ArrowsPointingOutIcon className="w-4 h-4" />
+            {showGantt ? 'Hide Timeline' : 'Show Timeline'}
+          </button>
           <select
             className="input"
             value={filter}
@@ -271,6 +377,31 @@ export function WorkPackageList() {
           <p className="text-xs text-text-tertiary">Budget Used</p>
         </div>
       </div>
+
+      {/* Collapsible Timeline/Gantt Section */}
+      {showGantt && (
+        <div className="mb-6 border border-border rounded-lg bg-white overflow-hidden">
+          <div className="bg-background-secondary px-4 py-3 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ArrowsPointingOutIcon className="w-4 h-4 text-text-tertiary" />
+              <span className="text-sm font-medium text-text-secondary">Timeline Overview</span>
+            </div>
+            <button
+              onClick={() => setView('gantt')}
+              className="btn btn-ghost text-xs flex items-center gap-1.5 text-primary"
+            >
+              Open Full Gantt View
+              <ChevronDownIcon className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="p-4">
+            <MiniGanttChart
+              workPackages={filteredTasks}
+              onViewFullGantt={() => setView('gantt')}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Task List */}
       {isLoading && workPackages.length === 0 ? (

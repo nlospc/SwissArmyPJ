@@ -57,6 +57,7 @@ export interface WorkPackage {
   budget_actual: number;
   created_at: string;
   updated_at: string;
+  hasConflict?: boolean; // UI-only: True if task violates dependency constraints
 }
 
 export interface WorkPackageInput {
@@ -178,6 +179,7 @@ export interface GanttTask {
   isCritical: boolean;
   slack: number; // Float/slack in days
   expanded: boolean; // For hierarchy expand/collapse
+  hasConflict?: boolean; // True if task violates dependency constraints
 }
 
 export interface GanttView {

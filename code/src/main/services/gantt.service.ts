@@ -226,6 +226,42 @@ export class GanttService {
         }
       }
 
+      // Detect dependency conflicts
+      // A conflict occurs when a successor starts before its predecessor finishes (for finish_to_start)
+      const detectConflicts = () => {
+        const conflicts = new Set<number>();
+
+        for (const dep of dependencies) {
+          if (dep.type !== 'finish_to_start') continue; // Only check finish_to_start dependencies for now
+
+          const pred = tasksById.get(dep.predecessor_id);
+          const succ = tasksById.get(dep.successor_id);
+
+          if (!pred || !succ) continue;
+          if (!pred.end_date || !succ.start_date) continue;
+
+          const predEnd = new Date(pred.end_date).getTime();
+          const succStart = new Date(succ.start_date).getTime();
+          const lagMs = (dep.lag_days || 0) * 24 * 60 * 60 * 1000;
+
+          // Conflict if successor starts before predecessor ends (plus lag)
+          if (succStart < predEnd + lagMs) {
+            conflicts.add(dep.successor_id);
+          }
+        }
+
+        return conflicts;
+      };
+
+      const conflictingTaskIds = detectConflicts();
+
+      // Mark conflicting tasks
+      for (const task of ganttTasks) {
+        if (conflictingTaskIds.has(task.id)) {
+          task.hasConflict = true;
+        }
+      }
+
       return { success: true, data: ganttTasks };
     } catch (error) {
       return { success: false, error: String(error) };
