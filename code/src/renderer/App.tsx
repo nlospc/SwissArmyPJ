@@ -15,6 +15,7 @@ import {
   BellIcon,
   CalendarIcon,
 } from './icons';
+import { Agentation } from 'agentation';
 
 function App() {
   const { view, setView, currentProject, setCurrentProject, fetchProjects } = useStore();
@@ -41,7 +42,8 @@ function App() {
   ];
 
   return (
-    <div className="flex h-screen bg-background-secondary">
+    <>
+      <div className="flex h-screen bg-background-secondary">
       {/* Sidebar */}
       <aside className="w-[240px] bg-white border-r border-border flex flex-col">
         {/* Logo */}
@@ -110,6 +112,9 @@ function App() {
         </div>
       </main>
     </div>
+    {/* Agentation - Visual feedback tool for AI coding collaboration */}
+    {import.meta.env.DEV && <Agentation />}
+    </>
   );
 }
 
