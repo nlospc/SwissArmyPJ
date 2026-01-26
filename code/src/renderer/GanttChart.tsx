@@ -13,7 +13,7 @@ import {
   ArrowLeftIcon,
 } from './icons';
 import type { Project, WorkPackage, Dependency, WorkPackageType } from '@shared/types';
-import { TableHeaderRow, type Column, type SortConfig, sortWorkPackages } from './components/gantt/TableHeaderRow';
+import { type Column, type SortConfig, sortWorkPackages } from './components/gantt/TableHeaderRow';
 import { TaskTable } from './components/gantt/TaskTable';
 import { TaskTimelinePanel } from './components/gantt/TaskTimelinePanel';
 import { progressFromStatus, statusFromProgress, clampProgress } from './components/gantt/InlineCellEditor';
@@ -881,8 +881,8 @@ export function GanttChart() {
   // View mode: 'projects' or 'workpackages'
   const [viewMode, setViewMode] = useState<'projects' | 'workpackages'>('projects');
 
-  // Table columns state
-  const [columns, setColumns] = useState<Column[]>([
+  // Table columns state (column picker functionality not yet implemented)
+  const [columns, _setColumns] = useState<Column[]>([
     { key: 'id', label: 'ID', width: 80, visible: true, sortable: true },
     { key: 'type', label: 'Type', width: 90, visible: true, sortable: false },
     { key: 'subject', label: 'Subject', width: 220, visible: true, sortable: false },
@@ -893,8 +893,8 @@ export function GanttChart() {
     { key: 'priority', label: 'Priority', width: 100, visible: true, sortable: true },
   ]);
 
-  // Sort state
-  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  // Sort state (sorting functionality not yet implemented)
+  const [sortConfig, _setSortConfig] = useState<SortConfig>(null);
 
   // Panel split state (left panel width in pixels)
   const [leftPanelWidth, setLeftPanelWidth] = useState(520);

@@ -152,17 +152,6 @@ export const TaskTable = ({
     },
   ];
 
-  const handleCellClick = useCallback(
-    (taskId: number, cellKey: string) => {
-      const cell = cells.find((c) => c.key === cellKey);
-      if (!cell || cell.key === 'id' || cell.key === 'duration') {
-        return;
-      }
-      setEditingCell({ key: cellKey, taskId });
-    },
-    [cells]
-  );
-
   const handleCellSave = useCallback(
     async (taskId: number, cellKey: string, value: string) => {
       setEditingCell(null);

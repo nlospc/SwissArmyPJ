@@ -65,14 +65,14 @@ export const useStore = create<AppState>((set) => ({
   setCurrentProject: (project) => set({
     currentProject: project,
     selectedProjectId: project?.id ?? null,
-    workPackages: project ? (project as any).work_packages || [] : [],
+    workPackages: [],
   }),
   setSelectedProjectId: (id) => set((state) => {
     const currentProject = state.projects.find(p => p.id === id) ?? null;
     return {
       selectedProjectId: id,
       currentProject,
-      workPackages: currentProject ? (currentProject as any).work_packages || [] : [],
+      workPackages: [],
     };
   }),
   setWorkPackages: (workPackages) => set({ workPackages }),
