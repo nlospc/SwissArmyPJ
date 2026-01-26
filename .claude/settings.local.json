@@ -11,20 +11,23 @@
       "Bash(git -C D:/CODE/SwissArmyPJ diff 1f7a8bc..ad93f04 -- code/src/main/db/schema.ts)",
       "Bash(npm run type-check:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run dev:*)"
-    ]
+      "Bash(npm run dev:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "mcp__web-search-prime__webSearchPrime",
+      "WebSearch",
+      "mcp__web-reader__webReader",
+      "mcp__zread__read_file",
+      "Bash(npm install:*)",
+      "Bash(npx add-skill:*)"
+    ],
     "deny": [
-      // .env 文件就像一个密码本，存放着项目里连接数据库、调用其他服务的各种密码和 API 密钥。
       "Read(./.env*)",
-      // .ssh 目录是你的“数字钥匙串”，存放着能让你免密登录 GitHub、公司服务器等地方的“钥匙”。绝对不能泄露！
       "Read(~/.ssh/**)",
-      // .aws 目录存放着你的亚马逊云服务（AWS）的“身份凭证”，有了它就能操作你的云服务器、数据库等资源。
       "Read(~/.aws/**)",
-      // .kube 目录存放着 Kubernetes 的配置文件，这是一个管理大量服务器“集装箱”（容器）的复杂工具，泄露了等于暴露了你的服务器集群。
       "Read(~/.kube/**)",
-      // .gitconfig 文件记录了你的个人信息（姓名、邮箱），用于在提交代码时盖上你的“名字印章”。
-      "Read(~/.gitconfig)
+      "Read(~/.gitconfig)"
     ]
-
   }
 }

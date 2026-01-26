@@ -345,7 +345,7 @@ interface TodayMarkerProps {
   headerHeight: number;
 }
 
-const TodayMarker = ({ viewStart, viewEnd, headerHeight }: TodayMarkerProps) => {
+const TodayMarker = ({ viewStart, viewEnd, headerHeight, leftPanelWidth }: TodayMarkerProps & { leftPanelWidth: number }) => {
   const today = clampDateOnly(new Date());
   const totalDuration = viewEnd.getTime() - viewStart.getTime();
 
@@ -359,7 +359,7 @@ const TodayMarker = ({ viewStart, viewEnd, headerHeight }: TodayMarkerProps) => 
   return (
     <div
       className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
-      style={{ left: `calc(520px + ${position}%)`, marginTop: `${headerHeight}px` }}
+      style={{ left: `calc(${leftPanelWidth}px + 4px + ${position}%)`, marginTop: `${headerHeight}px` }}
     >
       <div className="absolute top-0 -translate-x-1/2 -translate-y-full bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap">
         Today
@@ -385,7 +385,8 @@ const DependencyLines = ({
   viewEnd,
   taskRowHeight,
   headerHeight,
-}: DependencyLinesProps) => {
+  leftPanelWidth,
+}: DependencyLinesProps & { leftPanelWidth: number }) => {
   const taskMap = new Map(workPackages.map((wp) => [wp.id, wp]));
   const taskIndexMap = new Map(workPackages.map((wp, index) => [wp.id, index]));
 
@@ -431,7 +432,7 @@ const DependencyLines = ({
   return (
     <svg
       className="absolute inset-0 pointer-events-none"
-      style={{ top: `${headerHeight}px`, left: '520px', right: 0 }}
+      style={{ top: `${headerHeight}px`, left: `${leftPanelWidth + 4}px`, right: 0 }}
       width="100%"
       height="100%"
       preserveAspectRatio="none"
@@ -1038,7 +1039,7 @@ export function GanttChart() {
     const timelineWidth = getTimelineWidthPx();
     if (!timelineWidth) return null;
 
-    const x = clientX - rect.left - 320;
+    const x = clientX - rect.left - leftPanelWidth - 4;
     const clampedX = Math.min(timelineWidth, Math.max(0, x));
     const spanMs = viewEnd.getTime() - viewStart.getTime();
     if (spanMs <= 0) return null;
@@ -1052,7 +1053,7 @@ export function GanttChart() {
     if (!ganttRef.current) return;
 
     const rect = ganttRef.current.getBoundingClientRect();
-    if (e.clientX - rect.left < 320) return; // ignore wheel over table
+    if (e.clientX - rect.left < leftPanelWidth + 4) return; // ignore wheel over table
 
     e.preventDefault();
 
@@ -1175,7 +1176,7 @@ export function GanttChart() {
   // Drag handlers
   const getTimelineWidthPx = () => {
     if (!ganttRef.current) return null;
-    return Math.max(1, ganttRef.current.clientWidth - 320);
+    return Math.max(1, ganttRef.current.clientWidth - leftPanelWidth - 4);
   };
 
   const handleBeginDrag = (
@@ -1534,7 +1535,7 @@ export function GanttChart() {
               {/* Project Rows */}
               <div className="min-w-max relative">
                 {/* Today Marker */}
-                <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={50} />
+                <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={50} leftPanelWidth={520} />
 
                 {projects.map((project) => (
                   <ProjectRow
@@ -1562,7 +1563,7 @@ export function GanttChart() {
           ) : (
             <>
               {/* Split panel layout: Task List (left) + Gantt Timeline (right) */}
-              <div className="flex flex-1 overflow-hidden">
+              <div className="flex overflow-hidden">
                 {/* Left Panel - Task List Table */}
                 <div
                   className="flex-shrink-0 border-r border-border bg-white overflow-hidden flex flex-col"
@@ -1627,7 +1628,7 @@ export function GanttChart() {
                   {/* Timeline Content */}
                   <div className="flex-1 overflow-auto relative">
                     {/* Today Marker */}
-                    <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={40} />
+                    <TodayMarker viewStart={viewStart} viewEnd={viewEnd} headerHeight={40} leftPanelWidth={leftPanelWidth} />
 
                     {/* Dependency Lines Overlay */}
                     <DependencyLines
@@ -1637,6 +1638,7 @@ export function GanttChart() {
                       viewEnd={viewEnd}
                       taskRowHeight={34}
                       headerHeight={40}
+                      leftPanelWidth={leftPanelWidth}
                     />
 
                     {/* Timeline Bars */}
