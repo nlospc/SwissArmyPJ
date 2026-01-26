@@ -120,22 +120,6 @@ When adding features that span multiple files:
 5. **Update renderer store** in `src/renderer/store.ts` or create domain-specific store
 6. **Create/update UI components** in `src/renderer/`
 
-## Gantt Chart Implementation
-
-The Gantt chart is a core feature with specific implementation details:
-
-**State Management**: Uses dedicated `useGanttStore.ts` for UI state (zoom, selection, expansion)
-
-**Critical Path Calculation**: Computed in `gantt.service.ts` using forward/backward pass algorithm
-
-**Task Hierarchy**: Work packages support nested structure via `parent_id` - rendered as collapsible tree in Gantt
-
-**Drag & Drop**: Interactive date adjustment calls `gantt:updateTaskDates` IPC handler
-
-**Dependencies**: Visualized as SVG arrows between task bars, stored in `dependencies` table
-
-**Zoom Levels**: Four levels (day, week, month, quarter) affect timeline rendering in `GanttChart.tsx`
-
 ## Development Notes
 
 - ESLint is configured with relaxed rules for rapid development (`no-explicit-any: off`, `no-unused-vars: off`)
@@ -143,7 +127,47 @@ The Gantt chart is a core feature with specific implementation details:
 - Database migrations are not implemented - schema changes require manual database deletion for now
 - CSV import uses `csv-parse` library - see `workpackage.service.ts` for import logic
 
-## Recent Updates (2025-01-25)
+## Gantt Chart Component Structure
+
+The Gantt chart uses a split-panel layout with a draggable divider:
+
+**Main Component** (`GanttChart.tsx`):
+- Handles timeline generation, zoom/pan, drag-drop for task scheduling
+- Manages view mode (projects vs work packages)
+- Contains task modal for CRUD operations
+- Renders dependency lines (FS-only for v1.0)
+
+**Sub-components** (`src/renderer/components/gantt/`):
+- `TaskTable.tsx` - HTML table-based task list with expand/collapse for hierarchy
+- `TaskTimelinePanel.tsx` - Timeline bar rendering with drag handles
+- `InlineCellEditor.tsx` - In-place cell editing with dropdowns/selects
+- `TableHeaderRow.tsx` - Sortable column headers
+- `TaskTablePanel.tsx` - Legacy flex-based panel (deprecated, use TaskTable.tsx)
+
+**State Management**:
+- `useGanttStore` manages all Gantt-specific state (timeline, tasks, dependencies, loading)
+- Timeline window state tracks `from`/`to` dates for the visible viewport
+- Supports three render units: day, week, month (affects timeline header rendering)
+
+**Drag & Drop**:
+- Tasks can be moved, resized (start/end), or milestones can be repositioned
+- Ctrl/⌘ modifier enables day precision snapping
+- Shift modifier locks duration during move
+- Automatic tasks (`scheduling_mode='automatic'`) are not draggable
+
+**Icons**: All icons defined in `src/renderer/icons.tsx` as React components
+
+## Date Handling Utilities
+
+**Important**: All dates in the database are stored as ISO date strings (`YYYY-MM-DD`). When working with dates:
+
+- Use `parseLocalISODate()` to convert ISO strings to Date objects (preserves local timezone)
+- Use `formatLocalISODate()` to convert Date objects to ISO strings
+- Always clamp dates with `clampDateOnly()` to remove time portion for date-only calculations
+- Timeline snapping functions: `snapStartForUnit()`, `snapEndForUnit()`
+- Week calculations use Monday as start of week (`startOfWeekMonday()`)
+
+## Recent Updates (2025-01-26)
 
 ### Phase 1B: Gantt Chart UI Refactoring
 
@@ -153,45 +177,8 @@ The Gantt chart is a core feature with specific implementation details:
 - Circular progress indicator with percentage display
 - Fixed table header and content alignment issues
 - ID display changed from `#1` to pure number format
-- Type column uses symbols: Task, Phase, ⚐ (milestone), Issue
-
-**Components:**
-- `TaskTable.tsx` - New table-based task list component
-- `TaskTablePanel.tsx` - Legacy flex-based panel (deprecated)
-- `TaskTimelinePanel.tsx` - Timeline bar rendering
-- `InlineCellEditor.tsx` - In-place cell editing
-- `TableHeaderRow.tsx` - Sortable table headers
+- Type column uses text labels: Task, Phase, Milestone, Issue
 
 **Known Issues (TODO):**
-1. ~~type=milestone showing as ⚐ symbol~~ - Revert to text display
-2. Timeline header shows two rows for day/week zoom, causing misalignment with task list
-3. Timeline view limited to Oct 31 - need to extend date range
-4. Column picker button alignment needs review
-
-**Layout Structure:**
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Header (Controls & Filters)                                 │
-├───────────────┬──┬──────────────────────────────────────────────────┤
-│  Task List    │░░│  Gantt Timeline                                    │
-│  (80-930px)   │░░│  (flex-1)                                         │
-│               │░░│                                                   │
-│  ┌─────────┐  │░░│  ┌─────────────────────────────────────────────┐ │ │
-│  │ HTML    │  │░░│  │ Timeline Header (day/week shows 2 rows)   │ │ │
-│  │ <table> │  │░░│  ├─────────────────────────────────────────────┤ │ │
-│  │         │  │░░│  │ ┌─────────────────────────────────────────┐│ │ │
-│  │         │  │░░│  │ │ Task Bars                                  ││ │ │
-│  │         │  │░░│  │ └─────────────────────────────────────────┘│ │ │
-│  │         │  │░░│  └─────────────────────────────────────────────┘ │ │
-│  └─────────┘  │░░│                                                   │
-└───────────────┴──┴──────────────────────────────────────────────────┘
-                ↑
-           Drag to resize (default: 520px)
-```
-
-**File Changes:**
-- `src/renderer/GanttChart.tsx` - Main layout with split panel
-- `src/renderer/components/gantt/TaskTable.tsx` - New table component
-- `src/renderer/components/gantt/TaskTimelinePanel.tsx` - Timeline rendering
-- `src/renderer/components/gantt/InlineCellEditor.tsx` - Cell editing
-- `src/renderer/components/gantt/TableHeaderRow.tsx` - Header with sorting
+1. Timeline header shows two rows for day/week zoom, causing misalignment with task list
+2. Timeline view limited to Oct 31 - need to extend date range
