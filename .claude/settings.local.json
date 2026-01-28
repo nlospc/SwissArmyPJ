@@ -20,7 +20,10 @@
       "mcp__web-reader__webReader",
       "mcp__zread__read_file",
       "Bash(npm install:*)",
-      "Bash(npx add-skill:*)"
+      "Bash(npx add-skill:*)",
+      "Bash(tree:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [
       "Read(./.env*)",

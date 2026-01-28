@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from './store';
 import { ProjectList } from './ProjectList';
 import { WorkPackageList } from './WorkPackageList';
-import { GanttChart } from './GanttChart';
+import { GanttPage } from './pages/GanttPage';
 import { InboxPage } from './InboxPage';
 import { SearchPage } from './SearchPage';
 import { SettingsPage } from './SettingsPage';
@@ -105,7 +105,7 @@ function App() {
         <div className="flex-1 overflow-auto">
           {view === 'projects' && !currentProject && <ProjectList />}
           {view === 'projects' && currentProject && <WorkPackageList />}
-          {view === 'gantt' && <GanttChart />}
+          {view === 'gantt' && <GanttPage />}
           {view === 'inbox' && <InboxPage />}
           {view === 'search' && <SearchPage />}
           {view === 'settings' && <SettingsPage />}
