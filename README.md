@@ -1,33 +1,27 @@
-# SwissArmyPJ
+# SwissArmyPM
 
-A desktop application project - SwissArmyPJ.
+A lightweight desktop project management tool with AI integration.
 
-## Project Structure
+## 🚀 Getting Started
 
-```
-SwissArmyPJ/
-├── requirements-docs/    # Requirements, specs, designs, research
-│   ├── brainstorm/       # Brainstorming notes
-│   ├── specs/            # Functional specifications
-│   ├── ui-designs/       # UI/UX designs
-│   └── research/         # Technical research
-│
-└── code/                 # Source code (Git repository)
-    ├── src/              # Source files
-    ├── docs/             # Code documentation
-    └── templates/        # Project templates
-```
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
 
-## Getting Started
+## 📁 Project Structure
 
-See [code/README.md](code/README.md) for development setup.
+\`\`\`
+SwissArmyPM/
+├── docs/              # Documentation
+├── design/            # Design system
+├── src/
+│   ├── main/         # Electron main process
+│   ├── renderer/     # React frontend
+│   └── shared/      # Shared types
+└── templates/        # App templates
+\`\`\`
 
-## Documentation
+## 📝 License
 
-- Requirements: [requirements-docs/README.md](requirements-docs/README.md)
-- Development: [code/README.md](code/README.md)
-- Docs: [code/docs/README.md](code/docs/README.md)
-
-## Status
-
-Project scaffolded on 2026-01-17.
+MIT
