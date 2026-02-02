@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ViewType = 'inbox' | 'portfolio' | 'projects' | 'search' | 'settings';
+export type ViewType = 'inbox' | 'portfolio' | 'projects' | 'my-work' | 'search' | 'settings';
 
 interface UIState {
   currentView: ViewType;

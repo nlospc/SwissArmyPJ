@@ -119,4 +119,61 @@ export const ipc = {
   search: {
     global: (query: string) => window.electron.invoke<SearchResult[]>('search:global', query),
   },
+
+  // ============================================================================
+  // My Work
+  // ============================================================================
+  myWork: {
+    // Todo List
+    getTodos: (userId: string, includeArchived = false) =>
+      window.electron.invoke<any[]>('mywork:getTodos', { userId, includeArchived }),
+    markDone: (itemId: number, userId: string) =>
+      window.electron.invoke<void>('mywork:markDone', { itemId, userId }),
+    addQuickTask: (projectId: number, title: string, userId: string) =>
+      window.electron.invoke<{ id: number; uuid: string }>('mywork:addQuickTask', { projectId, title, userId }),
+    getStats: (userId: string) =>
+      window.electron.invoke<any>('mywork:getStats', { userId }),
+  },
+
+  // ============================================================================
+  // Time Logging
+  // ============================================================================
+  timeLog: {
+    start: (workItemId: number, userId: string, logType: 'manual' | 'timer' | 'pomodoro') =>
+      window.electron.invoke<{ logId: number; uuid: string }>('timelog:start', { workItemId, userId, logType }),
+    stop: (logId: number, notes?: string) =>
+      window.electron.invoke<{ duration: number }>('timelog:stop', { logId, notes }),
+    logManual: (entry: any) =>
+      window.electron.invoke<{ logId: number; uuid: string }>('timelog:logManual', entry),
+    edit: (logId: number, updates: any, userId: string) =>
+      window.electron.invoke<void>('timelog:edit', { logId, updates, userId }),
+    getToday: (userId: string) =>
+      window.electron.invoke<any[]>('timelog:getToday', { userId }),
+    getWeeklySummary: (userId: string) =>
+      window.electron.invoke<any[]>('timelog:getWeeklySummary', { userId }),
+    getActive: (userId: string) =>
+      window.electron.invoke<any>('timelog:getActive', { userId }),
+  },
+
+  // ============================================================================
+  // Pomodoro
+  // ============================================================================
+  pomodoro: {
+    start: (timeLogId: number, sessionType: 'work' | 'short_break' | 'long_break', durationMinutes: number) =>
+      window.electron.invoke<{ sessionId: number; uuid: string; sessionNumber: number }>('pomodoro:start', { timeLogId, sessionType, durationMinutes }),
+    complete: (sessionId: number, interrupted: boolean) =>
+      window.electron.invoke<{ sessionType: string; sessionNumber: number }>('pomodoro:complete', { sessionId, interrupted }),
+    getSessionCount: (timeLogId: number) =>
+      window.electron.invoke<{ count: number }>('pomodoro:getSessionCount', { timeLogId }),
+  },
+
+  // ============================================================================
+  // Preferences
+  // ============================================================================
+  preferences: {
+    get: (userId: string) =>
+      window.electron.invoke<any>('preferences:get', { userId }),
+    update: (userId: string, updates: any) =>
+      window.electron.invoke<void>('preferences:update', { userId, updates }),
+  },
 };

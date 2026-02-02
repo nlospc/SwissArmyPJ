@@ -13,6 +13,7 @@ import { loadSampleData } from './lib/sampleData';
 import { PortfolioPage } from './pages/PortfolioPage';
 import { InboxPage } from './pages/InboxPage';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { MyWorkPage } from './features/my-work';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
 
@@ -92,6 +93,7 @@ function App() {
         {currentView === 'portfolio' && <PortfolioPage />}
         {currentView === 'inbox' && <InboxPage />}
         {currentView === 'projects' && <ProjectsPage />}
+        {currentView === 'my-work' && <MyWorkPage />}
         {currentView === 'search' && <SearchPage />}
         {currentView === 'settings' && <SettingsPage />}
       </main>

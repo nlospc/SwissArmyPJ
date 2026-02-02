@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "type-check": "tsc -b -f"
+    "type-check": "tsc -b -f",
+    "migrate": "node scripts/migrate.js run",
+    "migrate:status": "node scripts/migrate.js status",
+    "migrate:rollback": "node scripts/migrate.js rollback",
+    "test:ipc": "node scripts/test-ipc-handlers.js"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.2",
@@ -23,7 +27,7 @@
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-toast": "^1.2.4",
-    "better-sqlite3": "^9.4.3",
+    "better-sqlite3": "^9.6.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",

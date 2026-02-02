@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import * as path from 'path';
+import { MigrationRunner } from './migrationRunner';
 
 let db: Database.Database | null = null;
 
@@ -7,11 +8,24 @@ export function initDatabase(): void {
   const dbPath = path.join(process.cwd(), 'swiss-army-pm.db');
   db = new Database(dbPath);
   createTables();
+  runMigrations();
 }
 
 export function getDatabase(): Database.Database {
   if (!db) throw new Error('Database not initialized');
   return db;
+}
+
+function runMigrations(): void {
+  if (!db) return;
+
+  try {
+    const runner = new MigrationRunner(db);
+    runner.runMigrations();
+  } catch (error) {
+    console.error('Migration failed:', error);
+    throw error;
+  }
 }
 
 function createTables(): void {

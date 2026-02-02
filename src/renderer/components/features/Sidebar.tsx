@@ -3,7 +3,7 @@ import { useUIStore } from '@/stores/useUIStore';
 import { useInboxStore } from '@/stores/useInboxStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Inbox, LayoutDashboard, FolderKanban, Search, Settings } from 'lucide-react';
+import { Inbox, LayoutDashboard, FolderKanban, ListChecks, Search, Settings } from 'lucide-react';
 
 export function Sidebar() {
   const { currentView, setCurrentView } = useUIStore();
@@ -14,6 +14,7 @@ export function Sidebar() {
     { id: 'portfolio', icon: LayoutDashboard, label: 'Portfolio Dashboard' },
     { id: 'inbox', icon: Inbox, label: 'Inbox', badge: unprocessedCount },
     { id: 'projects', icon: FolderKanban, label: 'Projects' },
+    { id: 'my-work', icon: ListChecks, label: 'My Work' },
     { id: 'search', icon: Search, label: 'Search' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ] as const;
