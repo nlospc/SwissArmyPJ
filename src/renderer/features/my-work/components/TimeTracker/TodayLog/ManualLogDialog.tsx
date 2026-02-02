@@ -3,6 +3,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Dialog,
   DialogContent,
@@ -30,7 +31,12 @@ interface ManualLogDialogProps {
 
 export function ManualLogDialog({ open, onOpenChange }: ManualLogDialogProps) {
   const userId = useMyWorkStore((state) => state.userId);
-  const todos = useMyWorkStore((state) => Array.from(state.todos.values()));
+  
+  // Fix: Use shallow comparison to prevent infinite loop caused by creating new array references
+  const todos = useMyWorkStore(
+    useShallow((state) => Array.from(state.todos.values()))
+  );
+  
   const logManualTime = useMyWorkStore((state) => state.logManualTime);
 
   const [workItemId, setWorkItemId] = useState<number>(0);

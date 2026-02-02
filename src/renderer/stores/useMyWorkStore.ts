@@ -1,24 +1,28 @@
-/**
- * My Work Zustand Store
- *
- * Manages state for:
- * - Todo list (with grouping/sorting/filtering)
- * - Time logging (manual, timer, Pomodoro)
- * - Pomodoro timer countdown
- * - User preferences
- * - Quick stats
- *
- * Features:
- * - Optimistic updates (update UI immediately, rollback on error)
- * - Caching with staleness checks
- * - Desktop notification integration
- * - Pomodoro countdown with setInterval
- */
-
-import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
-import { useEffect } from 'react';
-import { ipc } from '@/lib/ipc';
+/**
+ * My Work Zustand Store
+ *
+ * Manages state for:
+ * - Todo list (with grouping/sorting/filtering)
+ * - Time logging (manual, timer, Pomodoro)
+ * - Pomodoro timer countdown
+ * - User preferences
+ * - Quick stats
+ *
+ * Features:
+ * - Optimistic updates (update UI immediately, rollback on error)
+ * - Caching with staleness checks
+ * - Desktop notification integration
+ * - Pomodoro countdown with setInterval
+ */
+
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+import { enableMapSet } from 'immer';
+import { useEffect } from 'react';
+import { ipc } from '@/lib/ipc';
+
+// Enable Immer's MapSet plugin to support Map and Set objects in state
+enableMapSet();
 
 // =============================================================================
 // TYPES

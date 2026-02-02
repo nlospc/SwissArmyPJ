@@ -12,7 +12,7 @@ export function TrackerSidebar() {
   const activePomodoro = useMyWorkStore((state) => state.activePomodoro);
 
   return (
-    <div className="flex flex-col gap-4 h-full overflow-y-auto">
+    <div className="flex flex-col gap-6 h-full overflow-y-auto p-6">
       {/* Pomodoro Timer Section */}
       <div className="space-y-4">
         <TimerWidget />

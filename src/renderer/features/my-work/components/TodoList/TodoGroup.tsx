@@ -37,7 +37,7 @@ export function TodoGroup({ group, defaultExpanded = true }: TodoGroupProps) {
 
       {/* Group Items */}
       {isExpanded && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {group.todos.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-8">
               No tasks in this group

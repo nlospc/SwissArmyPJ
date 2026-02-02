@@ -36,7 +36,7 @@ export function StatsBar() {
   const overdueVariant = stats.overdueTasks > 0 ? 'danger' : 'default';
 
   return (
-    <div className="flex gap-4 mb-6 overflow-x-auto pb-2">
+    <div className="flex gap-4 px-6 py-4 overflow-x-auto">
       <StatCard
         icon={CheckCircle2}
         label="Today's Tasks"

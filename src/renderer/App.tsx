@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Agentation } from 'agentation';
 import { Sidebar } from './components/features/Sidebar';
 import { useUIStore } from './stores/useUIStore';
 import { useWorkspaceStore } from './stores/useWorkspaceStore';
@@ -97,6 +98,7 @@ function App() {
         {currentView === 'search' && <SearchPage />}
         {currentView === 'settings' && <SettingsPage />}
       </main>
+      {process.env.NODE_ENV === 'development' && <Agentation />}
     </div>
   );
 }

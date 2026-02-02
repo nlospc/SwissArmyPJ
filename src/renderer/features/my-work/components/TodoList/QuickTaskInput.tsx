@@ -61,10 +61,10 @@ export function QuickTaskInput({ defaultProjectId, projects }: QuickTaskInputPro
     return (
       <button
         onClick={handleStart}
-        className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-border hover:border-primary hover:bg-accent transition-colors w-full text-left"
+        className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-full shadow-sm font-medium"
       >
-        <Plus className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Add Quick Task</span>
+        <Plus className="h-4 w-4" />
+        <span className="text-sm">Add New Task</span>
       </button>
     );
   }

@@ -24,7 +24,7 @@ export function TodoFilters() {
   const updateFilter = useMyWorkStore((state) => state.updateFilter);
 
   return (
-    <div className="flex items-center gap-3 mb-4 flex-wrap">
+    <div className="flex items-center gap-3 px-6 py-4 border-b bg-white flex-wrap">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <SlidersHorizontal className="h-4 w-4" />
         <span>View:</span>

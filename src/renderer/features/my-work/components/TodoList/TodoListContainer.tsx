@@ -10,12 +10,16 @@ import { useMyWorkStore } from '@/stores/useMyWorkStore';
 import { groupTodos, sortTodos, filterTodos } from '../../utils/groupTodos';
 
 export function TodoListContainer() {
-  const todos = useMyWorkStore((state) => Array.from(state.todos.values()));
+  // Select the Map itself, not a converted array
+  const todosMap = useMyWorkStore((state) => state.todos);
   const groupBy = useMyWorkStore((state) => state.groupBy);
   const sortBy = useMyWorkStore((state) => state.sortBy);
   const filterStatus = useMyWorkStore((state) => state.filterStatus);
   const loading = useMyWorkStore((state) => state.loading);
   const error = useMyWorkStore((state) => state.error);
+
+  // Convert Map to array in useMemo to avoid recreating on every render
+  const todos = useMemo(() => Array.from(todosMap.values()), [todosMap]);
 
   // Extract unique projects for Quick Task input
   const projects = useMemo(() => {
@@ -69,27 +73,26 @@ export function TodoListContainer() {
       {/* Filters */}
       <TodoFilters />
 
+      {/* Quick Add Task - Sticky at Top */}
+      {projects.length > 0 && (
+        <div className="sticky top-0 z-10 bg-white px-6 py-3 border-b shadow-sm">
+          <QuickTaskInput projects={projects} />
+        </div>
+      )}
+
       {/* Todo List */}
-      <div className="flex-1 overflow-y-auto pr-2">
+      <div className="flex-1 overflow-y-auto px-6 py-4">
         {groupedTodos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="text-sm text-muted-foreground mb-4">
               No tasks found. Add your first task to get started!
             </div>
-            <QuickTaskInput projects={projects} />
           </div>
         ) : (
           <>
             {groupedTodos.map((group) => (
               <TodoGroup key={group.key} group={group} />
             ))}
-
-            {/* Quick Add at Bottom */}
-            {projects.length > 0 && (
-              <div className="mt-6">
-                <QuickTaskInput projects={projects} />
-              </div>
-            )}
           </>
         )}
       </div>
