@@ -121,39 +121,42 @@ export function ProjectsPage() {
           />
         </div>
 
-        <div className="space-y-2">
-          {filteredProjects.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No projects found</p>
-          ) : (
-            filteredProjects.map((project) => (
-              <Card
-                key={project.id}
-                className={`cursor-pointer hover:bg-accent ${selectedProjectId === project.id ? 'border-primary' : ''}`}
-                onClick={() => handleSelectProject(project)}
-              >
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold">{project.name}</h3>
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Project</th>
+                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProjects.length === 0 ? (
+                <tr>
+                  <td colSpan={2} className="text-center text-muted-foreground py-8">No projects found</td>
+                </tr>
+              ) : (
+                filteredProjects.map((project) => (
+                  <tr
+                    key={project.id}
+                    className={`border-b last:border-0 cursor-pointer transition-colors ${
+                      selectedProjectId === project.id
+                        ? 'bg-primary/10 border-l-2 border-l-primary'
+                        : 'hover:bg-muted/40'
+                    }`}
+                    onClick={() => handleSelectProject(project)}
+                  >
+                    <td className="px-3 py-2.5">
+                      <span className="font-medium">{project.name}</span>
                       {project.owner && (
-                        <p className="text-sm text-muted-foreground">{project.owner}</p>
+                        <p className="text-xs text-muted-foreground">{project.owner}</p>
                       )}
-                    </div>
-                    {getStatusBadge(project.status)}
-                  </div>
-                  {project.tags && project.tags.length > 0 && (
-                    <div className="flex gap-1 flex-wrap">
-                      {project.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))
-          )}
+                    </td>
+                    <td className="px-3 py-2.5">{getStatusBadge(project.status)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

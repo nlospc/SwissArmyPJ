@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { InboxItem, CreateProjectDTO, CreateWorkItemDTO } from '@/shared/types';
 
@@ -166,40 +166,70 @@ export function InboxPage() {
             <TabsTrigger value="processed">Processed</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="unprocessed" className="space-y-2 mt-4">
-            {unprocessedItems.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No unprocessed items</p>
-            ) : (
-              unprocessedItems.map((item) => (
-                <Card
-                  key={item.id}
-                  className={`cursor-pointer hover:bg-accent ${selectedItem?.id === item.id ? 'border-primary' : ''}`}
-                  onClick={() => handleSelectItem(item)}
-                >
-                  <CardContent className="p-3">
-                    <p className="text-sm line-clamp-3">{item.raw_text}</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+          <TabsContent value="unprocessed" className="mt-3">
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Item</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground w-24">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unprocessedItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="text-center text-muted-foreground py-8">No unprocessed items</td>
+                    </tr>
+                  ) : (
+                    unprocessedItems.map((item) => (
+                      <tr
+                        key={item.id}
+                        className={`border-b last:border-0 cursor-pointer transition-colors ${
+                          selectedItem?.id === item.id
+                            ? 'bg-primary/10 border-l-2 border-l-primary'
+                            : 'hover:bg-muted/40'
+                        }`}
+                        onClick={() => handleSelectItem(item)}
+                      >
+                        <td className="px-3 py-2.5 line-clamp-2">{item.raw_text}</td>
+                        <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </TabsContent>
 
-          <TabsContent value="processed" className="space-y-2 mt-4">
-            {processedItems.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No processed items</p>
-            ) : (
-              processedItems.map((item) => (
-                <Card key={item.id} className="opacity-60">
-                  <CardContent className="p-3">
-                    <p className="text-sm line-clamp-3">{item.raw_text}</p>
-                    <Badge variant="outline" className="mt-2">Processed</Badge>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+          <TabsContent value="processed" className="mt-3">
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Item</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground w-24">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {processedItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="text-center text-muted-foreground py-8">No processed items</td>
+                    </tr>
+                  ) : (
+                    processedItems.map((item) => (
+                      <tr key={item.id} className="border-b last:border-0 opacity-60">
+                        <td className="px-3 py-2.5">{item.raw_text}</td>
+                        <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
@@ -301,52 +331,49 @@ export function InboxPage() {
                     <>
                       <div>
                         <Label htmlFor="type">Type</Label>
-                        <Select value={formData.type} onValueChange={(v) => setFormData({ ...formData, type: v })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="task">Task</SelectItem>
-                            <SelectItem value="issue">Issue</SelectItem>
-                            <SelectItem value="milestone">Milestone</SelectItem>
-                            <SelectItem value="phase">Phase</SelectItem>
-                            <SelectItem value="remark">Remark</SelectItem>
-                            <SelectItem value="clash">Clash</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <NativeSelect
+                          id="type"
+                          value={formData.type || ''}
+                          onChange={(value) => setFormData({ ...formData, type: value })}
+                          placeholder="Select type"
+                          options={[
+                            { value: 'task', label: 'Task' },
+                            { value: 'issue', label: 'Issue' },
+                            { value: 'milestone', label: 'Milestone' },
+                            { value: 'phase', label: 'Phase' },
+                            { value: 'remark', label: 'Remark' },
+                            { value: 'clash', label: 'Clash' },
+                          ]}
+                        />
                       </div>
 
                       <div>
                         <Label htmlFor="project">Project</Label>
-                        <Select value={formData.project_id?.toString()} onValueChange={(v) => setFormData({ ...formData, project_id: parseInt(v) })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select project" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {projects.map((p) => (
-                              <SelectItem key={p.id} value={p.id.toString()}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <NativeSelect
+                          id="project"
+                          value={formData.project_id?.toString() || ''}
+                          onChange={(value) => setFormData({ ...formData, project_id: parseInt(value) })}
+                          placeholder="Select project"
+                          options={projects.map((p) => ({ value: p.id.toString(), label: p.name }))}
+                        />
                       </div>
                     </>
                   )}
 
                   <div>
                     <Label htmlFor="status">Status</Label>
-                    <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="not_started">Not Started</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="done">Done</SelectItem>
-                        <SelectItem value="blocked">Blocked</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <NativeSelect
+                      id="status"
+                      value={formData.status || ''}
+                      onChange={(value) => setFormData({ ...formData, status: value })}
+                      placeholder="Select status"
+                      options={[
+                        { value: 'not_started', label: 'Not Started' },
+                        { value: 'in_progress', label: 'In Progress' },
+                        { value: 'done', label: 'Done' },
+                        { value: 'blocked', label: 'Blocked' },
+                      ]}
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

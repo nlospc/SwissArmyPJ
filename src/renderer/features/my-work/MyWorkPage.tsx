@@ -17,7 +17,7 @@ export function MyWorkPage() {
   useMyWorkInit();
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4">
         <h1 className="text-2xl font-bold text-gray-900">My Work</h1>

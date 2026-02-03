@@ -89,11 +89,26 @@ export function TodoListContainer() {
             </div>
           </div>
         ) : (
-          <>
-            {groupedTodos.map((group) => (
-              <TodoGroup key={group.key} group={group} />
-            ))}
-          </>
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/50 border-b">
+                  <th className="w-8 px-3 py-2" />
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Task</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Project</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Priority</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Due</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Time</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedTodos.map((group, index) => (
+                  <TodoGroup key={group.key} group={group} isFirst={index === 0} />
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

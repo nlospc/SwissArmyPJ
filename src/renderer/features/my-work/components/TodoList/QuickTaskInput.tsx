@@ -5,14 +5,7 @@
 import { useState, useRef } from 'react';
 import { Plus, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useMyWorkStore } from '@/stores/useMyWorkStore';
 import { cn } from '@/components/ui/utils';
 
@@ -73,23 +66,12 @@ export function QuickTaskInput({ defaultProjectId, projects }: QuickTaskInputPro
     <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-primary bg-accent">
       {/* Project Selector */}
       {!defaultProjectId && (
-        <Select
+        <NativeSelect
+          className="w-[140px]"
           value={projectId.toString()}
-          onValueChange={(value) => setProjectId(parseInt(value, 10))}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {projects.map((project) => (
-                <SelectItem key={project.id} value={project.id.toString()}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+          onChange={(value) => setProjectId(parseInt(value, 10))}
+          options={projects.map((p) => ({ value: p.id.toString(), label: p.name }))}
+        />
       )}
 
       {/* Title Input */}

@@ -14,14 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useMyWorkStore } from '@/stores/useMyWorkStore';
 
 interface ManualLogDialogProps {
@@ -114,23 +107,13 @@ export function ManualLogDialog({ open, onOpenChange }: ManualLogDialogProps) {
           {/* Task Selection */}
           <div className="grid gap-2">
             <Label htmlFor="task">Task *</Label>
-            <Select
+            <NativeSelect
+              id="task"
               value={workItemId.toString()}
-              onValueChange={(value) => setWorkItemId(parseInt(value, 10))}
-            >
-              <SelectTrigger id="task">
-                <SelectValue placeholder="Select a task..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {todos.map((todo) => (
-                    <SelectItem key={todo.id} value={todo.id.toString()}>
-                      {todo.name} ({todo.projectName})
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+              onChange={(value) => setWorkItemId(parseInt(value, 10))}
+              placeholder="Select a task..."
+              options={todos.map((todo) => ({ value: todo.id.toString(), label: `${todo.name} (${todo.projectName})` }))}
+            />
           </div>
 
           {/* Start Time */}

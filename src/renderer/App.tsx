@@ -67,7 +67,7 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center">
+      <div className="h-full w-full flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading SwissArmyPM...</p>
@@ -78,7 +78,7 @@ function App() {
 
   if (!isInitialized) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center">
+      <div className="h-full w-full flex items-center justify-center">
         <div className="text-center text-destructive">
           <p className="font-semibold mb-2">Failed to initialize</p>
           <p className="text-sm text-muted-foreground">Please check the console for errors</p>
@@ -88,7 +88,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-full overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-auto">
         {currentView === 'portfolio' && <PortfolioPage />}

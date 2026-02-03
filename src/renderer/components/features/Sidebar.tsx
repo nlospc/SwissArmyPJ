@@ -20,7 +20,7 @@ export function Sidebar() {
   ] as const;
 
   return (
-    <div className="w-64 border-r border-border bg-card h-screen flex flex-col">
+    <div className="w-64 border-r border-border bg-card h-full flex flex-col">
       <div className="p-4 border-b border-border">
         <h1 className="text-xl font-bold">SwissArmyPM</h1>
         <p className="text-sm text-muted-foreground">Project Management</p>
