@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from 'antd';
 import { ChevronDown } from 'lucide-react';
 import { ChangeFeed } from '@/components/dashboard/ChangeFeed';
 import { UpcomingMilestones } from '@/components/dashboard/UpcomingMilestones';
@@ -23,56 +22,52 @@ export function TopWidgetDrawer({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="border-b bg-background">
-        {/* Header/Trigger */}
-        <div className="flex items-center justify-between px-8 py-3">
-          <div className="flex items-center gap-4">
-            <h2 className="text-sm font-semibold text-muted-foreground">
-              Quick Overview
-            </h2>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {upcomingMilestones.length > 0 && (
-                <span className="flex items-center gap-1">
-                  <span className="font-medium">{upcomingMilestones.length}</span> milestones
-                </span>
-              )}
-              {changeFeed.length > 0 && (
-                <>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <span className="font-medium">{changeFeed.length}</span> recent changes
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2">
-              <span className="text-xs">
-                {isOpen ? 'Hide Details' : 'Show Details'}
+    <div className="border-b bg-white">
+      {/* Header/Trigger */}
+      <div className="flex items-center justify-between px-8 py-3">
+        <div className="flex items-center gap-4">
+          <h2 className="text-sm font-semibold text-gray-500">
+            Quick Overview
+          </h2>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            {upcomingMilestones.length > 0 && (
+              <span className="flex items-center gap-1">
+                <span className="font-medium">{upcomingMilestones.length}</span> milestones
               </span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-
-        {/* Collapsible Content */}
-        <CollapsibleContent>
-          <div className="px-8 pb-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Change Feed */}
-              <ChangeFeed events={changeFeed} loading={loading} />
-
-              {/* Upcoming Milestones */}
-              <UpcomingMilestones milestones={upcomingMilestones} loading={loading} />
-
-              {/* Risk Summary */}
-              <RiskSummary summary={riskSummary} loading={loading} />
-            </div>
+            )}
+            {changeFeed.length > 0 && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <span className="font-medium">{changeFeed.length}</span> recent changes
+                </span>
+              </>
+            )}
           </div>
-        </CollapsibleContent>
+        </div>
+        <Button type="text" size="small" onClick={() => setIsOpen(!isOpen)}>
+          <span className="text-xs">
+            {isOpen ? 'Hide Details' : 'Show Details'}
+          </span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} style={{ marginLeft: 8 }} />
+        </Button>
       </div>
-    </Collapsible>
+
+      {/* Collapsible Content */}
+      {isOpen && (
+        <div className="px-8 pb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Change Feed */}
+            <ChangeFeed events={changeFeed} loading={loading} />
+
+            {/* Upcoming Milestones */}
+            <UpcomingMilestones milestones={upcomingMilestones} loading={loading} />
+
+            {/* Risk Summary */}
+            <RiskSummary summary={riskSummary} loading={loading} />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

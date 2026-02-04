@@ -4,10 +4,8 @@
 
 import { useState, useRef } from 'react';
 import { Plus, Check, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
+import { Button, Select } from 'antd';
 import { useMyWorkStore } from '@/stores/useMyWorkStore';
-import { cn } from '@/components/ui/utils';
 
 interface QuickTaskInputProps {
   defaultProjectId?: number;
@@ -52,25 +50,22 @@ export function QuickTaskInput({ defaultProjectId, projects }: QuickTaskInputPro
 
   if (!isAdding) {
     return (
-      <button
-        onClick={handleStart}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-full shadow-sm font-medium"
-      >
-        <Plus className="h-4 w-4" />
-        <span className="text-sm">Add New Task</span>
-      </button>
+      <Button type="primary" className="w-full" onClick={handleStart}>
+        <Plus className="h-4 w-4" style={{ marginRight: 8 }} />
+        Add New Task
+      </Button>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-primary bg-accent">
+    <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-blue-500 bg-blue-50">
       {/* Project Selector */}
       {!defaultProjectId && (
-        <NativeSelect
-          className="w-[140px]"
-          value={projectId.toString()}
-          onChange={(value) => setProjectId(parseInt(value, 10))}
-          options={projects.map((p) => ({ value: p.id.toString(), label: p.name }))}
+        <Select
+          value={projectId}
+          onChange={(value) => setProjectId(value)}
+          style={{ width: 140 }}
+          options={projects.map((p) => ({ value: p.id, label: p.name }))}
         />
       )}
 
@@ -82,26 +77,25 @@ export function QuickTaskInput({ defaultProjectId, projects }: QuickTaskInputPro
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Task title..."
-        className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground"
+        className="flex-1 bg-transparent border-none outline-none text-sm placeholder-gray-400"
         disabled={loading}
       />
 
       {/* Actions */}
       <div className="flex items-center gap-1">
         <Button
-          size="sm"
+          size="small"
+          type="primary"
           onClick={handleSave}
           disabled={!title.trim() || loading}
-          className="h-7 px-2"
         >
           <Check className="h-3 w-3" />
         </Button>
         <Button
-          size="sm"
-          variant="ghost"
+          size="small"
+          type="text"
           onClick={handleCancel}
           disabled={loading}
-          className="h-7 px-2"
         >
           <X className="h-3 w-3" />
         </Button>

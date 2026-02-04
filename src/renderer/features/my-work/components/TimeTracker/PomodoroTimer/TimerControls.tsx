@@ -3,7 +3,7 @@
  */
 
 import { Play, Pause, Square, SkipForward } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from 'antd';
 import { useMyWorkStore } from '@/stores/useMyWorkStore';
 
 export function TimerControls() {
@@ -25,25 +25,25 @@ export function TimerControls() {
     <div className="flex items-center gap-2">
       {/* Pause/Resume */}
       {activePomodoro.isPaused ? (
-        <Button onClick={resumePomodoro} className="flex-1">
-          <Play className="h-4 w-4 mr-2" />
+        <Button type="primary" onClick={resumePomodoro} style={{ flex: 1 }}>
+          <Play className="h-4 w-4" style={{ marginRight: 8 }} />
           Resume
         </Button>
       ) : (
-        <Button onClick={pausePomodoro} variant="outline" className="flex-1">
-          <Pause className="h-4 w-4 mr-2" />
+        <Button onClick={pausePomodoro} style={{ flex: 1 }}>
+          <Pause className="h-4 w-4" style={{ marginRight: 8 }} />
           Pause
         </Button>
       )}
 
       {/* Stop */}
-      <Button onClick={stopPomodoro} variant="outline" size="icon">
+      <Button onClick={stopPomodoro}>
         <Square className="h-4 w-4" />
       </Button>
 
       {/* Skip Break (only show during breaks) */}
       {isBreak && (
-        <Button onClick={skipBreak} variant="outline" size="icon" title="Skip break">
+        <Button onClick={skipBreak} title="Skip break">
           <SkipForward className="h-4 w-4" />
         </Button>
       )}

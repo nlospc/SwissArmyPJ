@@ -3,8 +3,8 @@
  */
 
 import { SlidersHorizontal } from 'lucide-react';
-import { NativeSelect } from '@/components/ui/native-select';
-import { Button } from '@/components/ui/button';
+import { Select, Button } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
 import { useMyWorkStore } from '@/stores/useMyWorkStore';
 import type { GroupByOption, SortByOption, FilterOption } from '@/stores/useMyWorkStore';
 
@@ -18,18 +18,18 @@ export function TodoFilters() {
 
   return (
     <div className="flex items-center gap-3 px-6 py-4 border-b bg-white flex-wrap">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-sm text-gray-500">
         <SlidersHorizontal className="h-4 w-4" />
         <span>View:</span>
       </div>
 
       {/* Group By */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-muted-foreground">Group:</label>
-        <NativeSelect
-          className="w-[140px]"
+        <label className="text-sm text-gray-500">Group:</label>
+        <Select
           value={groupBy}
           onChange={(value) => updateGrouping(value as GroupByOption)}
+          style={{ width: 140 }}
           options={[
             { value: 'project', label: 'By Project' },
             { value: 'due_date', label: 'By Due Date' },
@@ -41,11 +41,11 @@ export function TodoFilters() {
 
       {/* Sort By */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-muted-foreground">Sort:</label>
-        <NativeSelect
-          className="w-[140px]"
+        <label className="text-sm text-gray-500">Sort:</label>
+        <Select
           value={sortBy}
           onChange={(value) => updateSorting(value as SortByOption)}
+          style={{ width: 140 }}
           options={[
             { value: 'due_date', label: 'Due Date' },
             { value: 'priority', label: 'Priority' },
@@ -57,11 +57,11 @@ export function TodoFilters() {
 
       {/* Filter */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-muted-foreground">Filter:</label>
-        <NativeSelect
-          className="w-[120px]"
+        <label className="text-sm text-gray-500">Filter:</label>
+        <Select
           value={filterStatus}
           onChange={(value) => updateFilter(value as FilterOption)}
+          style={{ width: 120 }}
           options={[
             { value: 'all', label: 'All Tasks' },
             { value: 'active', label: 'Active Only' },
@@ -73,10 +73,10 @@ export function TodoFilters() {
 
       {/* Refresh Button */}
       <Button
-        variant="outline"
-        size="sm"
-        onClick={() => useMyWorkStore.getState().fetchTodos(true)}
+        size="small"
+        icon={<ReloadOutlined />}
         className="ml-auto"
+        onClick={() => useMyWorkStore.getState().fetchTodos(true)}
       >
         Refresh
       </Button>

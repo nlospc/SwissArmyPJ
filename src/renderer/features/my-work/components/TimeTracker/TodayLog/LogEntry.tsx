@@ -4,11 +4,10 @@
 
 import { useState } from 'react';
 import { Clock, Edit, Timer, Hand } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from 'antd';
 import type { TimeLog } from '@/stores/useMyWorkStore';
 import { formatTimeRange, formatDuration } from '../../../utils/timeFormatters';
 import { EditTimeLogDialog } from './EditTimeLogDialog';
-import { cn } from '@/components/ui/utils';
 
 interface LogEntryProps {
   log: TimeLog;
@@ -29,10 +28,10 @@ export function LogEntry({ log }: LogEntryProps) {
 
   return (
     <>
-      <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent transition-colors group">
+      <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group">
         {/* Icon */}
-        <div className="p-2 rounded-md bg-background">
-          <LogIcon className="h-4 w-4 text-muted-foreground" />
+        <div className="p-2 rounded-md bg-white">
+          <LogIcon className="h-4 w-4 text-gray-500" />
         </div>
 
         {/* Content */}
@@ -43,12 +42,12 @@ export function LogEntry({ log }: LogEntryProps) {
           </div>
 
           {/* Project Name */}
-          <div className="text-xs text-muted-foreground truncate" title={log.projectName}>
+          <div className="text-xs text-gray-500 truncate" title={log.projectName}>
             {log.projectName}
           </div>
 
           {/* Time Range */}
-          <div className="text-xs text-muted-foreground mt-1">
+          <div className="text-xs text-gray-500 mt-1">
             {formatTimeRange(log.startTime, log.endTime)}
           </div>
 
@@ -59,14 +58,14 @@ export function LogEntry({ log }: LogEntryProps) {
 
           {/* Notes */}
           {log.notes && (
-            <div className="text-xs text-muted-foreground mt-1 italic line-clamp-2">
+            <div className="text-xs text-gray-500 mt-1 italic line-clamp-2">
               "{log.notes}"
             </div>
           )}
 
           {/* Pomodoro Count */}
           {log.pomodoroCount > 0 && (
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-xs text-gray-500 mt-1">
               🍅 {log.pomodoroCount} pomodoro{log.pomodoroCount > 1 ? 's' : ''}
             </div>
           )}
@@ -81,13 +80,10 @@ export function LogEntry({ log }: LogEntryProps) {
 
         {/* Edit Button */}
         <Button
-          size="sm"
-          variant="ghost"
+          size="small"
+          type="text"
           onClick={() => setIsEditDialogOpen(true)}
-          className={cn(
-            'opacity-0 group-hover:opacity-100 transition-opacity',
-            wasEdited && 'text-amber-600'
-          )}
+          className={`opacity-0 group-hover:opacity-100 transition-opacity${wasEdited ? ' text-amber-600' : ''}`}
         >
           <Edit className="h-3 w-3" />
         </Button>

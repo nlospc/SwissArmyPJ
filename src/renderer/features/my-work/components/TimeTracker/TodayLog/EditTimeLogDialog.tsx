@@ -3,16 +3,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Modal, Button, Input } from 'antd';
 import { useMyWorkStore, type TimeLog } from '@/stores/useMyWorkStore';
 
 interface EditTimeLogDialogProps {
@@ -73,101 +64,90 @@ export function EditTimeLogDialog({ log, open, onOpenChange }: EditTimeLogDialog
   const hasDurationChange = newDurationMinutes !== null && newDurationMinutes !== originalDuration;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Edit Time Log</DialogTitle>
-          <DialogDescription>
-            Modify the time entry. All changes are tracked in the audit log.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          {/* Task Info (read-only) */}
-          <div className="grid gap-2">
-            <Label>Task</Label>
-            <div className="text-sm font-medium">{log.itemName}</div>
-            <div className="text-xs text-muted-foreground">{log.projectName}</div>
-          </div>
-
-          {/* Log Type */}
-          <div className="grid gap-2">
-            <Label>Log Type</Label>
-            <div className="text-sm capitalize">{log.logType}</div>
-          </div>
-
-          {/* Start Time */}
-          <div className="grid gap-2">
-            <Label htmlFor="edit-start-time">Start Time *</Label>
-            <input
-              id="edit-start-time"
-              type="datetime-local"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
-
-          {/* End Time */}
-          {log.endTime && (
-            <div className="grid gap-2">
-              <Label htmlFor="edit-end-time">End Time *</Label>
-              <input
-                id="edit-end-time"
-                type="datetime-local"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          )}
-
-          {/* Duration Change Indicator */}
-          {hasDurationChange && (
-            <div className="text-sm">
-              <span className="text-muted-foreground">Duration: </span>
-              <span className="line-through text-muted-foreground">
-                {Math.floor(originalDuration / 60)}h {originalDuration % 60}m
-              </span>
-              {' → '}
-              <span className="font-medium text-amber-600">
-                {Math.floor(newDurationMinutes! / 60)}h {newDurationMinutes! % 60}m
-              </span>
-            </div>
-          )}
-
-          {/* Notes */}
-          <div className="grid gap-2">
-            <Label htmlFor="edit-notes">Notes</Label>
-            <textarea
-              id="edit-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add notes about what you worked on..."
-              rows={3}
-              className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
-
-          {/* Edit History */}
-          {log.editCount > 0 && (
-            <div className="text-xs text-amber-600 bg-amber-500/10 p-2 rounded">
-              This entry has been edited {log.editCount} time{log.editCount > 1 ? 's' : ''}.
-              Last edited: {log.editedAt ? new Date(log.editedAt).toLocaleString() : 'Unknown'}
-            </div>
-          )}
+    <Modal
+      open={open}
+      onCancel={() => onOpenChange(false)}
+      title="Edit Time Log"
+      width={500}
+      footer={[
+        <Button key="cancel" onClick={() => onOpenChange(false)}>
+          Cancel
+        </Button>,
+        <Button key="save" type="primary" disabled={!startTime || isSubmitting} onClick={handleSubmit}>
+          {isSubmitting ? 'Saving...' : 'Save Changes'}
+        </Button>,
+      ]}
+    >
+      <div className="space-y-4">
+        {/* Task Info (read-only) */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Task</label>
+          <div className="text-sm font-medium">{log.itemName}</div>
+          <div className="text-xs text-gray-500">{log.projectName}</div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={!startTime || isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {/* Log Type */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Log Type</label>
+          <div className="text-sm capitalize">{log.logType}</div>
+        </div>
+
+        {/* Start Time */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Start Time *</label>
+          <Input
+            type="datetime-local"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+          />
+        </div>
+
+        {/* End Time */}
+        {log.endTime && (
+          <div>
+            <label className="block text-sm font-medium mb-1">End Time *</label>
+            <Input
+              type="datetime-local"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+            />
+          </div>
+        )}
+
+        {/* Duration Change Indicator */}
+        {hasDurationChange && (
+          <div className="text-sm">
+            <span className="text-gray-500">Duration: </span>
+            <span className="line-through text-gray-500">
+              {Math.floor(originalDuration / 60)}h {originalDuration % 60}m
+            </span>
+            {' → '}
+            <span className="font-medium text-amber-600">
+              {Math.floor(newDurationMinutes! / 60)}h {newDurationMinutes! % 60}m
+            </span>
+          </div>
+        )}
+
+        {/* Notes */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Notes</label>
+          <Input.TextArea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add notes about what you worked on..."
+            rows={3}
+          />
+        </div>
+
+        {/* Edit History */}
+        {log.editCount > 0 && (
+          <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+            This entry has been edited {log.editCount} time{log.editCount > 1 ? 's' : ''}.
+            Last edited: {log.editedAt ? new Date(log.editedAt).toLocaleString() : 'Unknown'}
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
 

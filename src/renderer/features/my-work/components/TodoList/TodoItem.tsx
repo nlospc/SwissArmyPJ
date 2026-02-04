@@ -16,34 +16,7 @@ import {
   Edit,
   Trash2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
-import { cn } from '@/components/ui/utils';
+import { Button, Dropdown, Modal, Select, Input, Tag } from 'antd';
 import { useMyWorkStore, type TodoItem as TodoItemType } from '@/stores/useMyWorkStore';
 import { formatDuration } from '../../utils/timeFormatters';
 import { formatDueDate } from '../../utils/dateHelpers';
@@ -53,11 +26,11 @@ interface TodoItemProps {
   isCompleted?: boolean;
 }
 
-const priorityStyles = {
-  critical: 'bg-red-500/10 text-red-600 border-red-500/20',
-  high: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
-  medium: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  low: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+const priorityTagColors: Record<string, string> = {
+  critical: 'red',
+  high: 'orange',
+  medium: 'blue',
+  low: 'default',
 };
 
 export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
@@ -120,17 +93,38 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
     }
   };
 
+  const menuItems = [
+    {
+      key: 'edit',
+      label: 'Edit Task',
+      icon: <Edit className="h-4 w-4" />,
+      onClick: () => {
+        setEditData({ title: todo.name, status: todo.status, end_date: todo.dueDate || '' });
+        setIsEditOpen(true);
+      },
+    },
+    {
+      key: 'delete',
+      label: 'Delete Task',
+      icon: <Trash2 className="h-4 w-4" />,
+      danger: true,
+      onClick: () => setIsDeleteOpen(true),
+    },
+  ];
+
   return (
-    <tr className={cn(
-      'border-b last:border-0 transition-colors hover:bg-muted/40',
-      isCompleted && 'opacity-60',
-      dueDateInfo.isOverdue && !isCompleted && 'bg-red-50/50'
-    )}>
+    <tr
+      className={[
+        'border-b last:border-0 transition-colors hover:bg-gray-50',
+        isCompleted ? 'opacity-60' : '',
+        dueDateInfo.isOverdue && !isCompleted ? 'bg-red-50' : '',
+      ].filter(Boolean).join(' ')}
+    >
       {/* Checkbox */}
       <td className="w-8 px-3 py-2.5">
         <button
           onClick={() => markDone(todo.id)}
-          className="text-muted-foreground hover:text-primary transition-colors"
+          className="text-gray-400 hover:text-blue-600 transition-colors"
           disabled={isCompleted}
         >
           {isCompleted ? (
@@ -143,49 +137,42 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
 
       {/* Task */}
       <td className="px-3 py-2.5">
-        <span className={cn('font-medium text-sm', isCompleted && 'line-through text-muted-foreground')}>
+        <span className={`font-medium text-sm${isCompleted ? ' line-through text-gray-400' : ''}`}>
           {todo.name}
         </span>
       </td>
 
       {/* Project */}
-      <td className="px-3 py-2.5 text-sm text-muted-foreground">
+      <td className="px-3 py-2.5 text-sm text-gray-500">
         {todo.projectName}
       </td>
 
       {/* Priority */}
       <td className="px-3 py-2.5">
         {todo.priority && todo.priority !== 'none' ? (
-          <span className={cn(
-            'px-2 py-0.5 rounded-full text-[10px] font-medium border',
-            priorityStyles[todo.priority as keyof typeof priorityStyles]
-          )}>
+          <Tag color={priorityTagColors[todo.priority] || 'default'} style={{ fontSize: 10 }}>
             {todo.priority.toUpperCase()}
-          </span>
+          </Tag>
         ) : (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-xs text-gray-400">—</span>
         )}
       </td>
 
       {/* Due */}
       <td className="px-3 py-2.5">
         {todo.dueDate ? (
-          <span className={cn(
-            'text-sm flex items-center gap-1',
-            dueDateInfo.isOverdue && 'text-red-600 font-medium',
-            dueDateInfo.isToday && 'text-amber-600 font-medium'
-          )}>
+          <span className={`text-sm flex items-center gap-1${dueDateInfo.isOverdue ? ' text-red-600 font-medium' : dueDateInfo.isToday ? ' text-amber-600 font-medium' : ''}`}>
             <Calendar className="h-3 w-3" />
             {dueDateInfo.text}
             {dueDateInfo.isOverdue && <AlertCircle className="h-3 w-3" />}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-xs text-gray-400">—</span>
         )}
       </td>
 
       {/* Time */}
-      <td className="px-3 py-2.5 text-sm text-muted-foreground">
+      <td className="px-3 py-2.5 text-sm text-gray-500">
         {todo.estimatedMinutes || todo.loggedMinutes > 0 ? (
           <div className="flex flex-col gap-0.5">
             {todo.estimatedMinutes ? (
@@ -213,28 +200,27 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
             <>
               {hasActiveTimer ? (
                 <>
-                  <div className="flex items-center gap-1 px-2 py-0.5 bg-green-500/10 text-green-600 rounded text-xs font-medium">
+                  <div className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-600 rounded text-xs font-medium">
                     <Clock className="h-3 w-3 animate-pulse" />
                     Running
                   </div>
                   <Button
-                    size="sm"
-                    variant="outline"
+                    size="small"
                     onClick={() => activeTimerLog && stopTimer(activeTimerLog.id)}
-                    className="h-7 w-7 p-0"
                     title="Stop timer"
+                    style={{ height: 28, width: 28, padding: 0 }}
                   >
                     <Square className="h-3 w-3" />
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button size="sm" variant="outline" onClick={() => startTimer(todo.id, false)} className="h-7 text-xs px-2">
-                    <Play className="h-3 w-3 mr-1" />
+                  <Button size="small" onClick={() => startTimer(todo.id, false)} style={{ height: 28 }}>
+                    <Play className="h-3 w-3" style={{ marginRight: 4 }} />
                     Start
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => startPomodoro(todo.id)} className="h-7 text-xs px-2">
-                    <Timer className="h-3 w-3 mr-1" />
+                  <Button size="small" onClick={() => startPomodoro(todo.id)} style={{ height: 28 }}>
+                    <Timer className="h-3 w-3" style={{ marginRight: 4 }} />
                     Pomo
                   </Button>
                 </>
@@ -242,98 +228,79 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
             </>
           )}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                <MoreVertical className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Task
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsDeleteOpen(true)} className="text-red-600">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Task
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Dropdown menu={{ items: menuItems }} placement="bottomRight" trigger={['click']}>
+            <Button type="text" size="small" style={{ height: 28, width: 28, padding: 0 }}>
+              <MoreVertical className="h-3.5 w-3.5" />
+            </Button>
+          </Dropdown>
         </div>
 
-        {/* Dialogs render via portal — safe inside <td> */}
-        <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Task</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete "{todo.name}"? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
-                {isDeleting ? 'Deleting...' : 'Delete'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Delete Confirmation Modal */}
+        <Modal
+          open={isDeleteOpen}
+          onCancel={() => setIsDeleteOpen(false)}
+          title="Delete Task"
+          width={400}
+          footer={[
+            <Button key="cancel" disabled={isDeleting} onClick={() => setIsDeleteOpen(false)}>
+              Cancel
+            </Button>,
+            <Button key="delete" danger type="primary" disabled={isDeleting} onClick={handleDelete}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>,
+          ]}
+        >
+          <p>Are you sure you want to delete "{todo.name}"? This action cannot be undone.</p>
+        </Modal>
 
-        <Dialog open={isEditOpen} onOpenChange={(open) => {
-          if (open) {
-            setEditData({ title: todo.name, status: todo.status, end_date: todo.dueDate || '' });
-          }
-          setIsEditOpen(open);
-        }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Task</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="task-name">Task Name</Label>
-                <Input
-                  id="task-name"
-                  value={editData.title}
-                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                  placeholder="Enter task name..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="task-status">Status</Label>
-                <NativeSelect
-                  id="task-status"
-                  value={editData.status}
-                  onChange={(value) => setEditData({ ...editData, status: value })}
-                  options={[
-                    { value: 'not_started', label: 'Not Started' },
-                    { value: 'in_progress', label: 'In Progress' },
-                    { value: 'blocked', label: 'Blocked' },
-                    { value: 'done', label: 'Done' },
-                  ]}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="task-due">Due Date</Label>
-                <input
-                  id="task-due"
-                  type="date"
-                  value={editData.end_date}
-                  onChange={(e) => setEditData({ ...editData, end_date: e.target.value })}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
+        {/* Edit Modal */}
+        <Modal
+          open={isEditOpen}
+          onCancel={() => setIsEditOpen(false)}
+          title="Edit Task"
+          width={500}
+          footer={[
+            <Button key="cancel" disabled={isSaving} onClick={() => setIsEditOpen(false)}>
+              Cancel
+            </Button>,
+            <Button key="save" type="primary" disabled={!editData.title.trim() || isSaving} onClick={handleSaveEdit}>
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </Button>,
+          ]}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Task Name</label>
+              <Input
+                value={editData.title}
+                onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                placeholder="Enter task name..."
+              />
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSaving}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveEdit} disabled={!editData.title.trim() || isSaving}>
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            <div>
+              <label className="block text-sm font-medium mb-1">Status</label>
+              <Select
+                value={editData.status}
+                onChange={(value) => setEditData({ ...editData, status: value })}
+                style={{ width: '100%' }}
+                options={[
+                  { value: 'not_started', label: 'Not Started' },
+                  { value: 'in_progress', label: 'In Progress' },
+                  { value: 'blocked', label: 'Blocked' },
+                  { value: 'done', label: 'Done' },
+                ]}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Due Date</label>
+              <Input
+                type="date"
+                value={editData.end_date}
+                onChange={(e) => setEditData({ ...editData, end_date: e.target.value })}
+              />
+            </div>
+          </div>
+        </Modal>
       </td>
     </tr>
   );

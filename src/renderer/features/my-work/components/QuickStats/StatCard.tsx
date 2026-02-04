@@ -3,8 +3,7 @@
  */
 
 import { type LucideIcon } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/components/ui/utils';
+import { Card } from 'antd';
 
 interface StatCardProps {
   icon: LucideIcon;
@@ -15,6 +14,13 @@ interface StatCardProps {
   className?: string;
 }
 
+const variantStyles = {
+  default: { borderColor: undefined, background: undefined, iconColor: '#6b7280' },
+  success: { borderColor: '#86efac', background: '#f0fdf4', iconColor: '#16a34a' },
+  warning: { borderColor: '#fcd34d', background: '#fffbeb', iconColor: '#d97706' },
+  danger: { borderColor: '#fca5a5', background: '#fef2f2', iconColor: '#dc2626' },
+};
+
 export function StatCard({
   icon: Icon,
   label,
@@ -23,35 +29,27 @@ export function StatCard({
   variant = 'default',
   className,
 }: StatCardProps) {
-  const variantStyles = {
-    default: 'border-border',
-    success: 'border-green-500/30 bg-green-500/5',
-    warning: 'border-amber-500/30 bg-amber-500/5',
-    danger: 'border-red-500/30 bg-red-500/5',
-  };
-
-  const iconStyles = {
-    default: 'text-muted-foreground',
-    success: 'text-green-600',
-    warning: 'text-amber-600',
-    danger: 'text-red-600',
-  };
+  const styles = variantStyles[variant];
 
   return (
-    <Card className={cn('flex-1 min-w-[140px]', variantStyles[variant], className)}>
-      <CardContent className="flex items-center gap-3 p-4">
-        <div className={cn('p-2 rounded-lg bg-background', iconStyles[variant])}>
+    <Card
+      className={`flex-1 min-w-[140px] ${className || ''}`}
+      styles={{ body: { padding: 16 } }}
+      style={{ borderColor: styles.borderColor, backgroundColor: styles.background }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-white" style={{ color: styles.iconColor }}>
           <Icon className="h-5 w-5" />
         </div>
 
         <div className="flex flex-col gap-0.5">
           <span className="text-2xl font-semibold">{value}</span>
-          <span className="text-xs text-muted-foreground">{label}</span>
+          <span className="text-xs text-gray-500">{label}</span>
           {subtext && (
-            <span className="text-[10px] text-muted-foreground/70">{subtext}</span>
+            <span className="text-[10px] text-gray-400">{subtext}</span>
           )}
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

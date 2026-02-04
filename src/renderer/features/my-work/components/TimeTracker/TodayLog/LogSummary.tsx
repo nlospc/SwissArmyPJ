@@ -4,8 +4,7 @@
 
 import { useState } from 'react';
 import { Plus, Clock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, Button } from 'antd';
 import { useMyWorkStore } from '@/stores/useMyWorkStore';
 import { LogEntry } from './LogEntry';
 import { ManualLogDialog } from './ManualLogDialog';
@@ -22,45 +21,42 @@ export function LogSummary() {
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
+      <Card
+        title={
+          <span className="text-sm flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Today's Time Log
-          </CardTitle>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsManualLogOpen(true)}
-          >
-            <Plus className="h-3 w-3 mr-1" />
+          </span>
+        }
+        extra={
+          <Button size="small" onClick={() => setIsManualLogOpen(true)}>
+            <Plus className="h-3 w-3" style={{ marginRight: 4 }} />
             Manual Entry
           </Button>
-        </CardHeader>
-        <CardContent>
-          {/* Total Time */}
-          {totalMinutes > 0 && (
-            <div className="mb-4 p-3 bg-primary/5 rounded-lg">
-              <div className="text-xs text-muted-foreground mb-1">Total Today</div>
-              <div className="text-2xl font-bold">{formatDuration(totalMinutes)}</div>
-            </div>
-          )}
+        }
+      >
+        {/* Total Time */}
+        {totalMinutes > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+            <div className="text-xs text-gray-500 mb-1">Total Today</div>
+            <div className="text-2xl font-bold">{formatDuration(totalMinutes)}</div>
+          </div>
+        )}
 
-          {/* Log Entries */}
-          {todayLogs.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-sm text-muted-foreground">
-                No time logged today. Start a timer or add a manual entry.
-              </div>
+        {/* Log Entries */}
+        {todayLogs.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-sm text-gray-500">
+              No time logged today. Start a timer or add a manual entry.
             </div>
-          ) : (
-            <div className="space-y-2">
-              {todayLogs.map((log) => (
-                <LogEntry key={log.uuid} log={log} />
-              ))}
-            </div>
-          )}
-        </CardContent>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {todayLogs.map((log) => (
+              <LogEntry key={log.uuid} log={log} />
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* Manual Log Dialog */}
