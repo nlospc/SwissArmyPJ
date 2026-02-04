@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 
-export type ViewType = 'inbox' | 'portfolio' | 'projects' | 'my-work' | 'search' | 'settings';
+
+
+export type ViewType = 'dashboard' | 'inbox' | 'portfolio' | 'projects' | 'my-work' | 'search' | 'settings';
 
 interface UIState {
   currentView: ViewType;
@@ -15,14 +17,14 @@ interface UIState {
   setTheme: (theme: 'light' | 'dark') => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
-  currentView: 'portfolio',
-  selectedProjectId: null,
-  sidebarCollapsed: false,
-  theme: 'light',
-
-  setCurrentView: (view) => set({ currentView: view }),
-  setSelectedProjectId: (id) => set({ selectedProjectId: id }),
-  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
-  setTheme: (theme) => set({ theme }),
+export const useUIStore = create<UIState>((set) => ({
+  currentView: 'dashboard',
+  selectedProjectId: null,
+  sidebarCollapsed: false,
+  theme: 'light',
+
+  setCurrentView: (view) => set({ currentView: view }),
+  setSelectedProjectId: (id) => set({ selectedProjectId: id }),
+  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  setTheme: (theme) => set({ theme }),
 }));

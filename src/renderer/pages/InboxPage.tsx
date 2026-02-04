@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
 import { useInboxStore } from '@/stores/useInboxStore';
 import { useProjectStore } from '@/stores/useProjectStore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Card,
+  Button,
+  Input,
+  Tabs,
+  Badge,
+  Empty,
+  Typography,
+  Space,
+  Table,
+  Steps,
+  Select,
+  Radio,
+  Tag,
+  Divider,
+  Alert,
+} from 'antd';
 import type { InboxItem, CreateProjectDTO, CreateWorkItemDTO } from '@/shared/types';
+
+const { Title, Text, TextArea } = Typography;
 
 type Step = 'classify' | 'extract' | 'review';
 type EntityType = 'project' | 'work_item';
@@ -23,19 +34,20 @@ export function InboxPage() {
   const [entityType, setEntityType] = useState<EntityType>('work_item');
   const [formData, setFormData] = useState<any>({});
   const [newItemText, setNewItemText] = useState('');
+  const [activeTab, setActiveTab] = useState('unprocessed');
 
-  const unprocessedItems = inboxItems.filter(item => item.processed === 0);
-  const processedItems = inboxItems.filter(item => item.processed === 1);
+  const unprocessedItems = inboxItems.filter((item) => item.processed === 0);
+  const processedItems = inboxItems.filter((item) => item.processed === 1);
 
   const handleSelectItem = (item: InboxItem) => {
     setSelectedItem(item);
     setCurrentStep('classify');
+    setEntityType('work_item');
     setFormData({});
   };
 
   const handleClassify = (type: EntityType) => {
     setEntityType(type);
-    // Auto-extract fields
     const extracted = autoExtract(selectedItem!.raw_text, type);
     setFormData(extracted);
     setCurrentStep('extract');
@@ -76,9 +88,7 @@ export function InboxPage() {
       }
 
       // Try to match project
-      const projectMatch = projects.find(p =>
-        text.toLowerCase().includes(p.name.toLowerCase())
-      );
+      const projectMatch = projects.find((p) => text.toLowerCase().includes(p.name.toLowerCase()));
       if (projectMatch) {
         data.project_id = projectMatch.id;
       }
@@ -134,310 +144,375 @@ export function InboxPage() {
     setNewItemText('');
   };
 
+  // Table columns for inbox items
+  const columns = [
+    {
+      title: 'Item',
+      dataIndex: 'raw_text',
+      key: 'raw_text',
+      render: (text: string, record: InboxItem) => (
+        <div
+          className={`cursor-pointer p-2 rounded transition-colors ${
+            selectedItem?.id === record.id
+              ? 'bg-blue-50 dark:bg-blue-900/20'
+              : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+          }`}
+          onClick={() => handleSelectItem(record)}
+        >
+          <div className="line-clamp-2">{text}</div>
+        </div>
+      ),
+    },
+    {
+      title: 'Date',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 100,
+      render: (date: string) => (
+        <Text type="secondary" className="text-xs">
+          {new Date(date).toLocaleDateString()}
+        </Text>
+      ),
+    },
+  ];
+
+  const getStepNumber = (step: Step) => {
+    const steps: Record<Step, number> = { classify: 0, extract: 1, review: 2 };
+    return steps[step];
+  };
+
+  const workItemTypes = [
+    { value: 'task', label: 'Task' },
+    { value: 'issue', label: 'Issue' },
+    { value: 'milestone', label: 'Milestone' },
+    { value: 'phase', label: 'Phase' },
+    { value: 'remark', label: 'Remark' },
+    { value: 'clash', label: 'Clash' },
+  ];
+
+  const statusOptions = [
+    { value: 'not_started', label: 'Not Started' },
+    { value: 'in_progress', label: 'In Progress' },
+    { value: 'done', label: 'Done' },
+    { value: 'blocked', label: 'Blocked' },
+  ];
+
+  const tabItems = [
+    {
+      key: 'unprocessed',
+      label: (
+        <span>
+          Unprocessed
+          {unprocessedItems.length > 0 && (
+            <Badge count={unprocessedItems.length} className="ml-2" />
+          )}
+        </span>
+      ),
+      children: unprocessedItems.length === 0 ? (
+        <Empty description="No unprocessed items" />
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={unprocessedItems}
+          rowKey="id"
+          pagination={false}
+          size="small"
+          showHeader={false}
+        />
+      ),
+    },
+    {
+      key: 'processed',
+      label: 'Processed',
+      children: processedItems.length === 0 ? (
+        <Empty description="No processed items" />
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={processedItems}
+          rowKey="id"
+          pagination={false}
+          size="small"
+          showHeader={false}
+        />
+      ),
+    },
+  ];
+
   return (
     <div className="flex h-full">
       {/* Left Panel - Inbox List */}
-      <div className="w-96 border-r border-border p-4 space-y-4 overflow-auto">
+      <div className="w-96 border-r border-gray-200 p-4 space-y-4 overflow-auto dark:border-gray-700">
         <div>
-          <h2 className="text-xl font-bold mb-2">Inbox</h2>
-          <div className="space-y-2">
-            <Textarea
+          <Title level={4}>Inbox</Title>
+          <Space direction="vertical" className="w-full" size="middle">
+            <TextArea
               placeholder="Add new inbox item..."
               value={newItemText}
               onChange={(e) => setNewItemText(e.target.value)}
               rows={3}
             />
-            <Button onClick={handleAddInboxItem} className="w-full">
+            <Button type="primary" onClick={handleAddInboxItem} block>
               Add to Inbox
             </Button>
-          </div>
+          </Space>
         </div>
 
-        <Tabs defaultValue="unprocessed">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="unprocessed">
-              Unprocessed
-              {unprocessedItems.length > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  {unprocessedItems.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="processed">Processed</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="unprocessed" className="mt-3">
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Item</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground w-24">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {unprocessedItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={2} className="text-center text-muted-foreground py-8">No unprocessed items</td>
-                    </tr>
-                  ) : (
-                    unprocessedItems.map((item) => (
-                      <tr
-                        key={item.id}
-                        className={`border-b last:border-0 cursor-pointer transition-colors ${
-                          selectedItem?.id === item.id
-                            ? 'bg-primary/10 border-l-2 border-l-primary'
-                            : 'hover:bg-muted/40'
-                        }`}
-                        onClick={() => handleSelectItem(item)}
-                      >
-                        <td className="px-3 py-2.5 line-clamp-2">{item.raw_text}</td>
-                        <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="processed" className="mt-3">
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Item</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground w-24">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {processedItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={2} className="text-center text-muted-foreground py-8">No processed items</td>
-                    </tr>
-                  ) : (
-                    processedItems.map((item) => (
-                      <tr key={item.id} className="border-b last:border-0 opacity-60">
-                        <td className="px-3 py-2.5">{item.raw_text}</td>
-                        <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </TabsContent>
-        </Tabs>
+        <Tabs activeKey={activeTab} onChange={setActiveTab} type="card" items={tabItems} />
       </div>
 
       {/* Right Panel - Processing Workflow */}
       <div className="flex-1 p-8 overflow-auto">
         {!selectedItem ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-muted-foreground">
-              <p className="text-lg font-medium">Select an inbox item to process</p>
-              <p className="text-sm mt-2">Choose an item from the left panel</p>
-            </div>
+            <Empty
+              description={
+                <Space direction="vertical">
+                  <Text>Select an inbox item to process</Text>
+                  <Text type="secondary">Choose an item from the left panel</Text>
+                </Space>
+              }
+            />
           </div>
         ) : (
           <div className="max-w-3xl mx-auto space-y-6">
             {/* Progress Steps */}
-            <div className="flex items-center justify-center gap-4 mb-8">
-              <div className={`flex items-center gap-2 ${currentStep === 'classify' ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'classify' ? 'border-primary bg-primary text-white' : 'border-muted'}`}>
-                  1
-                </div>
-                <span>Classify</span>
-              </div>
-              <div className="w-12 h-0.5 bg-border" />
-              <div className={`flex items-center gap-2 ${currentStep === 'extract' ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'extract' ? 'border-primary bg-primary text-white' : 'border-muted'}`}>
-                  2
-                </div>
-                <span>Extract</span>
-              </div>
-              <div className="w-12 h-0.5 bg-border" />
-              <div className={`flex items-center gap-2 ${currentStep === 'review' ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'review' ? 'border-primary bg-primary text-white' : 'border-muted'}`}>
-                  3
-                </div>
-                <span>Review</span>
-              </div>
-            </div>
+            <Steps current={getStepNumber(currentStep)} items={[{ title: 'Classify' }, { title: 'Extract' }, { title: 'Review' }]} />
 
-            {/* Original Text */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Original Inbox Item</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm bg-muted p-3 rounded">{selectedItem.raw_text}</p>
-              </CardContent>
+            <Divider />
+
+            {/* Original Text Display */}
+            <Card size="small">
+              <Space direction="vertical" className="w-full">
+                <Text strong type="secondary">
+                  Original Inbox Item
+                </Text>
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                  <Text>{selectedItem.raw_text}</Text>
+                </div>
+              </Space>
             </Card>
 
             {/* Step 1: Classify */}
             {currentStep === 'classify' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Step 1: Classify Entity Type</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    What type of entity should this create?
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button
-                      variant="outline"
-                      className="h-24 flex flex-col gap-2"
-                      onClick={() => handleClassify('project')}
-                    >
-                      <span className="text-lg font-semibold">Project</span>
-                      <span className="text-xs text-muted-foreground">A new project container</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-24 flex flex-col gap-2"
-                      onClick={() => handleClassify('work_item')}
-                    >
-                      <span className="text-lg font-semibold">Work Item</span>
-                      <span className="text-xs text-muted-foreground">Task, issue, milestone, etc.</span>
-                    </Button>
-                  </div>
-                </CardContent>
+              <Card title="Step 1: Classify Entity Type">
+                <Space direction="vertical" size="large" className="w-full">
+                  <Text type="secondary">What type of entity should this create?</Text>
+
+                  <Radio.Group
+                    value={entityType}
+                    onChange={(e) => setEntityType(e.target.value)}
+                    className="w-full"
+                  >
+                    <Space direction="vertical" className="w-full">
+                      <Radio value="project" className="w-full p-4 border rounded hover:bg-gray-50">
+                        <Space direction="vertical" size={0}>
+                          <Text strong>Project</Text>
+                          <Text type="secondary" className="text-xs">
+                            A new project container
+                          </Text>
+                        </Space>
+                      </Radio>
+                      <Radio value="work_item" className="w-full p-4 border rounded hover:bg-gray-50">
+                        <Space direction="vertical" size={0}>
+                          <Text strong>Work Item</Text>
+                          <Text type="secondary" className="text-xs">
+                            Task, issue, milestone, phase, remark, or clash
+                          </Text>
+                        </Space>
+                      </Radio>
+                    </Space>
+                  </Radio.Group>
+
+                  <Button type="primary" size="large" onClick={() => handleClassify(entityType)} block>
+                    Next: Extract Fields
+                  </Button>
+                </Space>
               </Card>
             )}
 
             {/* Step 2: Extract */}
             {currentStep === 'extract' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Step 2: Extract Fields</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Title / Name</Label>
+              <Card title="Step 2: Review Extracted Fields">
+                <Space direction="vertical" size="middle" className="w-full">
+                  <Alert
+                    message="Auto-extracted from text"
+                    description="Review the auto-extracted information below and edit if needed."
+                    type="info"
+                    showIcon
+                  />
+
+                  <Space direction="vertical" className="w-full">
+                    <Text strong>{entityType === 'project' ? 'Project Name' : 'Title'}</Text>
                     <Input
-                      id="title"
                       value={formData.title || formData.name || ''}
-                      onChange={(e) => setFormData({ ...formData, [entityType === 'project' ? 'name' : 'title']: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          [entityType === 'project' ? 'name' : 'title']: e.target.value,
+                        })
+                      }
+                      placeholder={`Enter ${entityType === 'project' ? 'project name' : 'title'}`}
                     />
-                  </div>
+                  </Space>
 
                   {entityType === 'work_item' && (
                     <>
-                      <div>
-                        <Label htmlFor="type">Type</Label>
-                        <NativeSelect
-                          id="type"
-                          value={formData.type || ''}
+                      <Space direction="vertical" className="w-full">
+                        <Text strong>Type</Text>
+                        <Select
+                          value={formData.type}
                           onChange={(value) => setFormData({ ...formData, type: value })}
-                          placeholder="Select type"
-                          options={[
-                            { value: 'task', label: 'Task' },
-                            { value: 'issue', label: 'Issue' },
-                            { value: 'milestone', label: 'Milestone' },
-                            { value: 'phase', label: 'Phase' },
-                            { value: 'remark', label: 'Remark' },
-                            { value: 'clash', label: 'Clash' },
-                          ]}
+                          options={workItemTypes}
+                          placeholder="Select work item type"
+                          className="w-full"
                         />
-                      </div>
+                      </Space>
 
-                      <div>
-                        <Label htmlFor="project">Project</Label>
-                        <NativeSelect
-                          id="project"
-                          value={formData.project_id?.toString() || ''}
-                          onChange={(value) => setFormData({ ...formData, project_id: parseInt(value) })}
+                      <Space direction="vertical" className="w-full">
+                        <Text strong>Project</Text>
+                        <Select
+                          value={formData.project_id}
+                          onChange={(value) => setFormData({ ...formData, project_id: value })}
+                          options={projects.map((p) => ({ value: p.id, label: p.name }))}
                           placeholder="Select project"
-                          options={projects.map((p) => ({ value: p.id.toString(), label: p.name }))}
+                          className="w-full"
+                          showSearch
+                          filterOption={(input, option) =>
+                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                          }
                         />
-                      </div>
+                      </Space>
                     </>
                   )}
 
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <NativeSelect
-                      id="status"
-                      value={formData.status || ''}
+                  <Space direction="vertical" className="w-full">
+                    <Text strong>Status</Text>
+                    <Select
+                      value={formData.status}
                       onChange={(value) => setFormData({ ...formData, status: value })}
+                      options={statusOptions}
                       placeholder="Select status"
-                      options={[
-                        { value: 'not_started', label: 'Not Started' },
-                        { value: 'in_progress', label: 'In Progress' },
-                        { value: 'done', label: 'Done' },
-                        { value: 'blocked', label: 'Blocked' },
-                      ]}
+                      className="w-full"
                     />
-                  </div>
+                  </Space>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="start_date">Start Date</Label>
+                  <Space direction="horizontal" className="w-full">
+                    <Space direction="vertical" className="flex-1">
+                      <Text strong>Start Date</Text>
                       <Input
-                        id="start_date"
                         type="date"
                         value={formData.start_date || ''}
                         onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="end_date">End Date</Label>
+                    </Space>
+                    <Space direction="vertical" className="flex-1">
+                      <Text strong>End Date</Text>
                       <Input
-                        id="end_date"
                         type="date"
                         value={formData.end_date || ''}
                         onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                       />
-                    </div>
-                  </div>
+                    </Space>
+                  </Space>
 
                   <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setCurrentStep('classify')}>
-                      Back
-                    </Button>
-                    <Button onClick={() => setCurrentStep('review')}>
+                    <Button onClick={() => setCurrentStep('classify')}>Back</Button>
+                    <Button type="primary" onClick={() => setCurrentStep('review')}>
                       Next: Review
                     </Button>
                   </div>
-                </CardContent>
+                </Space>
               </Card>
             )}
 
             {/* Step 3: Review */}
             {currentStep === 'review' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Step 3: Review & Commit</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-muted p-4 rounded space-y-2">
-                    <p className="font-semibold">
-                      Creating {entityType === 'project' ? 'Project' : 'Work Item'}
-                    </p>
-                    <div className="text-sm space-y-1">
-                      <p><span className="font-medium">Title:</span> {formData.title || formData.name}</p>
-                      {formData.type && <p><span className="font-medium">Type:</span> {formData.type}</p>}
-                      {formData.status && <p><span className="font-medium">Status:</span> {formData.status}</p>}
-                      {formData.start_date && <p><span className="font-medium">Start:</span> {formData.start_date}</p>}
-                      {formData.end_date && <p><span className="font-medium">End:</span> {formData.end_date}</p>}
-                    </div>
-                  </div>
+              <Card title="Step 3: Review and Create">
+                <Space direction="vertical" size="large" className="w-full">
+                  <Alert
+                    message="Ready to create"
+                    description="Review the final entity details before creating."
+                    type="success"
+                    showIcon
+                  />
+
+                  <Card type="inner" size="small">
+                    <Space direction="vertical" className="w-full" size="small">
+                      <div>
+                        <Text type="secondary">Entity Type:</Text>
+                        <Tag color={entityType === 'project' ? 'blue' : 'green'} className="ml-2">
+                          {entityType === 'project' ? 'Project' : 'Work Item'}
+                        </Tag>
+                      </div>
+
+                      <div>
+                        <Text type="secondary">{entityType === 'project' ? 'Name' : 'Title'}:</Text>
+                        <div>
+                          <Text strong>{formData.title || formData.name}</Text>
+                        </div>
+                      </div>
+
+                      {formData.type && (
+                        <div>
+                          <Text type="secondary">Type:</Text>
+                          <div>
+                            <Tag>{formData.type}</Tag>
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.status && (
+                        <div>
+                          <Text type="secondary">Status:</Text>
+                          <div>
+                            <Tag
+                              color={
+                                formData.status === 'done'
+                                  ? 'success'
+                                  : formData.status === 'blocked'
+                                    ? 'error'
+                                    : formData.status === 'in_progress'
+                                      ? 'processing'
+                                      : 'default'
+                              }
+                            >
+                              {statusOptions.find((s) => s.value === formData.status)?.label ||
+                                formData.status}
+                            </Tag>
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.project_id && (
+                        <div>
+                          <Text type="secondary">Project:</Text>
+                          <div>
+                            <Text>{projects.find((p) => p.id === formData.project_id)?.name}</Text>
+                          </div>
+                        </div>
+                      )}
+
+                      {(formData.start_date || formData.end_date) && (
+                        <div>
+                          <Text type="secondary">Dates:</Text>
+                          <div>
+                            <Text>
+                              {formData.start_date || '—'} → {formData.end_date || '—'}
+                            </Text>
+                          </div>
+                        </div>
+                      )}
+                    </Space>
+                  </Card>
 
                   <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setCurrentStep('extract')}>
-                      Back
-                    </Button>
-                    <Button onClick={handleSubmit}>
-                      Commit & Mark Processed
+                    <Button onClick={() => setCurrentStep('extract')}>Back</Button>
+                    <Button type="primary" onClick={handleSubmit} size="large">
+                      Create Entity & Mark Processed
                     </Button>
                   </div>
-                </CardContent>
+                </Space>
               </Card>
             )}
           </div>

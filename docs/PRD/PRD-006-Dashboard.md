@@ -44,47 +44,43 @@ The Portfolio Dashboard enables 30–60 second context recovery by displaying ag
 │  │  [████████████████████░░░░░░░░]  68% On Track  │  ⚠ 2 At Risk  │ 🚫 1   │   │
 │  └─────────────────────────────────────────────────────────────────────────┘   │
 │                                                                                 │
-│  ┌─────────────────────────────────┐  ┌─────────────────────────────────────┐  │
-│  │  PROJECT HEALTH CARDS          │  │  CHANGE FEED                        │  │
-│  │  ───────────────────────────── │  │  ─────────────────────────────────  │  │
-│  │                                │  │                                     │  │
-│  │  ┌───────────────────────────┐ │  │  🟢 Task "API Design" → Done       │  │
-│  │  │ 🟢 Project Alpha     78% │ │  │     Project Alpha • 5 min ago      │  │
-│  │  │    12/15 tasks done      │ │  │                                     │  │
-│  │  │    ◆ MS1 in 3 days       │ │  │  🟡 "Sprint 3" dates changed       │  │
-│  │  │    0 blockers            │ │  │     Project Beta • 23 min ago      │  │
-│  │  └───────────────────────────┘ │  │                                     │  │
-│  │                                │  │  ⚠️ Conflict detected: "QA Plan"   │  │
-│  │  ┌───────────────────────────┐ │  │     Project Beta • 1 hour ago      │  │
-│  │  │ 🟡 Project Beta      54% │ │  │                                     │  │
-│  │  │    7/13 tasks done       │ │  │  🟢 New: "Security Audit" issue    │  │
-│  │  │    ⚠ MS2 overdue 2 days  │ │  │     Project Alpha • 2 hours ago    │  │
-│  │  │    1 blocker             │ │  │                                     │  │
-│  │  └───────────────────────────┘ │  │  📁 File sync: project-alpha.xml   │  │
-│  │                                │  │     15 items updated • 3 hours ago │  │
-│  │  ┌───────────────────────────┐ │  │                                     │  │
-│  │  │ 🔴 Project Gamma     23% │ │  │  [View All Changes]                │  │
-│  │  │    3/13 tasks done       │ │  │                                     │  │
-│  │  │    🚫 Blocked            │ │  └─────────────────────────────────────┘  │
-│  │  │    2 critical risks      │ │                                           │
-│  │  └───────────────────────────┘ │                                           │
-│  │                                │                                           │
-│  │  [+ New Project]              │                                           │
-│  └────────────────────────────────┘                                           │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐│
+│  │  PROJECT HEALTH TABLE                                       [+ New Project] ││
+│  │  ─────────────────────────────────────────────────────────────────────────── ││
+│  │  Filters: [Search...] [Status ▼] [Portfolio ▼] [Owner ▼] [Progress] [Date] ││
+│  │  ┌──────────┬──────────────┬────────┬──────────┬────────┬────────────┬──────┐ ││
+│  │  │ Status   │ Project      │ Owner  │ Progress │ Tasks  │ Milestone  │ More │ ││
+│  │  ├──────────┼──────────────┼────────┼──────────┼────────┼────────────┼──────┤ ││
+│  │  │ 🟢       │ Project Alpha │ Alice  │ ██████░░ │ 12/15  │ MS1 (3d)   │ ⋯    │ ││
+│  │  │          │              │        │ 78%      │        │ 🟢 On Track│      │ ││
+│  │  ├──────────┼──────────────┼────────┼──────────┼────────┼────────────┼──────┤ ││
+│  │  │ 🟡       │ Project Beta  │ Bob    │ ████░░░░ │ 7/13   │ MS2 (-2d)  │ ⋯    │ ││
+│  │  │          │              │        │ 54%      │        │ 🔴 Overdue │      │ ││
+│  │  ├──────────┼──────────────┼────────┼──────────┼────────┼────────────┼──────┤ ││
+│  │  │ 🚫       │ Project Gamma │ Carol  │ ██░░░░░░ │ 3/13   │ MS3 (5d)   │ ⋯    │ ││
+│  │  │          │              │        │ 23%      │        │ 🟡 At Risk │      │ ││
+│  │  └──────────┴──────────────┴────────┴──────────┴────────┴────────────┴──────┘ ││
+│  │  Showing 3 of 5 projects                                                    ││
+│  └─────────────────────────────────────────────────────────────────────────────┘│
 │                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  UPCOMING MILESTONES                                          [View All] │   │
-│  │  ─────────────────────────────────────────────────────────────────────  │   │
-│  │  ◆ MS1: Design Complete     │ Project Alpha │ Jan 30 │ 🟢 On Track     │   │
-│  │  ◆ MS2: Beta Release        │ Project Beta  │ Jan 28 │ 🔴 Overdue      │   │
-│  │  ◆ MS3: Security Sign-off   │ Project Alpha │ Feb 05 │ 🟡 At Risk      │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │  RISK SUMMARY                                               [View All]  │   │
-│  │  ─────────────────────────────────────────────────────────────────────  │   │
-│  │  🔴 Critical: 2  │  🟠 High: 5  │  🟡 Medium: 12  │  🟢 Low: 8         │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────┐  ┌─────────────────────────────────────────┐   │
+│  │  CHANGE FEED                │  │  UPCOMING MILESTONES       [View All]  │   │
+│  │  ─────────────────────────── │  │  ─────────────────────────────────────  │   │
+│  │  🟢 Task "API Design" → Done │  │  ◆ MS1: Design Complete  │ 3 days     │   │
+│  │     Project Alpha • 5 min    │  │     Project Alpha       │ 🟢 On Track │   │
+│  │                             │  │                                    │   │
+│  │  🟡 "Sprint 3" dates changed │  │  ◆ MS2: Beta Release     │ Overdue   │   │
+│  │     Project Beta • 23 min   │  │     Project Beta         │ 🔴 Blocked │   │
+│  │                             │  │                                    │   │
+│  │  ⚠️ Conflict: "QA Plan"      │  │  ◆ MS3: Security Sign-off │ 5 days    │   │
+│  │     Project Beta • 1 hr     │  │     Project Alpha       │ 🟡 At Risk │   │
+│  │                             │  └─────────────────────────────────────────┘   │
+│  │  [View All Changes]         │                                             │
+│  └─────────────────────────────┘  ┌─────────────────────────────────────────┐   │
+│                                    │  RISK SUMMARY                [View All]│   │
+│                                    │  ─────────────────────────────────────  │   │
+│                                    │  🔴 Critical: 2 │ 🟠 High: 5 │ 🟡 Med: 12│   │
+│                                    └─────────────────────────────────────────┘   │
 │                                                                                 │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -105,18 +101,35 @@ The Portfolio Dashboard enables 30–60 second context recovery by displaying ag
 | At Risk | Projects with overdue milestones or high-risk issues | Badge |
 | Blocked | Projects with blocked status | Badge |
 
-### 4.2 Project Health Card
+### 4.2 Project Health Table
 
-| Element | Source | Logic |
-|---------|--------|-------|
-| Status Indicator | Derived | 🟢 On Track / 🟡 At Risk / 🔴 Critical / 🚫 Blocked |
-| Progress % | Calculated | Done tasks / Total tasks |
-| Next Milestone | Query | First milestone by date |
-| Milestone Status | Derived | Days until/since due date |
-| Blocker Count | Query | Items with status = 'Blocked' |
-| Risk Count | Query | Issues with risk_level = 'Critical' or 'High' |
+**Multi-Filter Capabilities:**
 
-**Health Status Logic**:
+| Filter | Type | Options |
+|--------|------|---------|
+| Search | Text | Filter by project name |
+| Status | Multi-select | On Track, At Risk, Critical, Blocked |
+| Portfolio | Dropdown | All portfolios |
+| Progress Range | Slider | 0-100% |
+| Owner | Multi-select | All project owners |
+| Date Range | Date picker | Start/End dates |
+
+**Table Columns:**
+
+| Column | Width | Description |
+|--------|-------|-------------|
+| Status | 80px | 🟢 On Track / 🟡 At Risk / 🔴 Critical / 🚫 Blocked |
+| Project | 200px | Project name (clickable) |
+| Owner | 120px | Project owner |
+| Progress | 120px | Visual progress bar + percentage |
+| Tasks | 100px | Done/Total tasks |
+| Next Milestone | 180px | Milestone name + due date |
+| Blockers | 80px | Count of blocked items |
+| Risks | 80px | Count of high/critical issues |
+| Portfolio | 150px | Portfolio name |
+| Actions | 80px | View, Edit, Delete buttons |
+
+**Health Status Logic:**
 
 ```typescript
 function calculateProjectHealth(project: ProjectMetrics): HealthStatus {
@@ -128,6 +141,12 @@ function calculateProjectHealth(project: ProjectMetrics): HealthStatus {
   return 'on_track';
 }
 ```
+
+**Sorting:**
+- Click column headers to sort
+- Status: Custom order (Blocked → Critical → At Risk → On Track)
+- Progress: Numeric sort
+- Dates: Chronological sort
 
 ### 4.3 Change Feed
 
@@ -259,10 +278,13 @@ Dashboard/
 ├── PortfolioSummary/
 │   ├── SummaryBar.tsx          # Top metrics bar
 │   └── ProgressIndicator.tsx   # On-track percentage
-├── ProjectCards/
-│   ├── CardGrid.tsx            # Card layout
-│   ├── ProjectCard.tsx         # Individual card
-│   └── HealthIndicator.tsx     # Status badge
+├── ProjectTable/
+│   ├── TableContainer.tsx      # Table with filters and sorting
+│   ├── TableHeader.tsx         # Sortable column headers
+│   ├── TableRow.tsx            # Individual project row
+│   ├── TableFilters.tsx        # Multi-filter sidebar/popup
+│   ├── HealthBadge.tsx         # Status badge component
+│   └── ProgressBar.tsx         # Visual progress bar
 ├── ChangeFeed/
 │   ├── FeedContainer.tsx       # Feed list
 │   ├── FeedItem.tsx            # Individual event

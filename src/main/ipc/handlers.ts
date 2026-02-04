@@ -1,6 +1,11 @@
 import { ipcMain } from 'electron';
+
 import { getDatabase } from '../database/schema';
+
 import { registerMyWorkHandlers } from './myWorkHandlers';
+
+import { registerDashboardHandlers } from './dashboardHandlers';
+
 import type {
   IPCResponse,
   Workspace,
@@ -22,9 +27,11 @@ import type {
   SearchResult,
 } from '../../shared/types';
 
-export function registerIPCHandlers(): void {
-  // Register My Work handlers
-  registerMyWorkHandlers();
+export function registerIPCHandlers(): void {
+  // Register My Work handlers
+  registerMyWorkHandlers();
+  // Register Dashboard handlers
+  registerDashboardHandlers();
   // ============================================================================
   // Workspace
   // ============================================================================

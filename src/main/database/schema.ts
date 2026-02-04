@@ -113,23 +113,41 @@ function createTables(): void {
       value TEXT
     );
 
-    -- Todos (for calendar feature)
-    CREATE TABLE IF NOT EXISTS todos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      uuid TEXT UNIQUE NOT NULL,
-      text TEXT NOT NULL,
-      done INTEGER DEFAULT 0,
-      due_date TEXT,
-      priority TEXT CHECK(priority IN ('low','medium','high')),
-      created_at TEXT NOT NULL
-    );
-
-    -- Indexes
-    CREATE INDEX IF NOT EXISTS idx_work_items_project ON work_items(project_id);
-    CREATE INDEX IF NOT EXISTS idx_work_items_parent ON work_items(parent_id);
-    CREATE INDEX IF NOT EXISTS idx_projects_portfolio ON projects(portfolio_id);
-    CREATE INDEX IF NOT EXISTS idx_inbox_processed ON inbox_items(processed);
-    CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
+    -- Todos (for calendar feature)
+    CREATE TABLE IF NOT EXISTS todos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT UNIQUE NOT NULL,
+      text TEXT NOT NULL,
+      done INTEGER DEFAULT 0,
+      due_date TEXT,
+      priority TEXT CHECK(priority IN ('low','medium','high')),
+      created_at TEXT NOT NULL
+    );
+
+    -- Audit Log (for change feed and governance)
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action TEXT NOT NULL CHECK(action IN ('created','updated','deleted','completed','conflict','sync')),
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('Project','WorkItem','Portfolio','InboxItem')),
+      entity_id INTEGER NOT NULL,
+      entity_name TEXT,
+      old_values TEXT,
+      new_values TEXT,
+      user_id TEXT,
+      timestamp TEXT NOT NULL,
+      project_id INTEGER,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
+    );
+
+    -- Indexes
+    CREATE INDEX IF NOT EXISTS idx_work_items_project ON work_items(project_id);
+    CREATE INDEX IF NOT EXISTS idx_work_items_parent ON work_items(parent_id);
+    CREATE INDEX IF NOT EXISTS idx_projects_portfolio ON projects(portfolio_id);
+    CREATE INDEX IF NOT EXISTS idx_inbox_processed ON inbox_items(processed);
+    CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp ON audit_log(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_project ON audit_log(project_id);
   `);
 
   // Initialize workspace if not exists

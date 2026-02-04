@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useProjectStore } from '@/stores/useProjectStore';
 import { useWorkItemStore } from '@/stores/useWorkItemStore';
 import { useUIStore } from '@/stores/useUIStore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { Card, Input, Badge, Button, Table, Tag, Typography, Empty, Space } from 'antd';
+import { CaretRightOutlined, CaretDownOutlined } from '@ant-design/icons';
+import type { ColumnsType } from 'antd';
 import type { Project, WorkItem } from '@/shared/types';
+
+const { Title, Text } = Typography;
 
 export function ProjectsPage() {
   const { projects } = useProjectStore();
@@ -39,135 +39,141 @@ export function ProjectsPage() {
     setExpandedItems(newExpanded);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'done': return <Badge className="bg-green-600">Done</Badge>;
-      case 'in_progress': return <Badge className="bg-blue-600">In Progress</Badge>;
-      case 'blocked': return <Badge variant="destructive">Blocked</Badge>;
-      case 'not_started': return <Badge variant="secondary">Not Started</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const getTypeBadge = (type: string) => {
-    const colors: Record<string, string> = {
-      task: 'bg-blue-100 text-blue-800',
-      issue: 'bg-red-100 text-red-800',
-      milestone: 'bg-purple-100 text-purple-800',
-      phase: 'bg-green-100 text-green-800',
-      remark: 'bg-yellow-100 text-yellow-800',
-      clash: 'bg-orange-100 text-orange-800',
+  const getStatusTag = (status: string) => {
+    const statusMap: Record<string, { color: string; text: string }> = {
+      done: { color: 'success', text: 'Done' },
+      in_progress: { color: 'processing', text: 'In Progress' },
+      blocked: { color: 'error', text: 'Blocked' },
+      not_started: { color: 'default', text: 'Not Started' },
     };
-    return <Badge className={colors[type] || ''}>{type}</Badge>;
+    const config = statusMap[status] || { color: 'default', text: status };
+    return <Tag color={config.color}>{config.text}</Tag>;
   };
 
-  const renderWorkItem = (item: WorkItem, depth: number = 0) => {
-    const hasChildren = item.children && item.children.length > 0;
-    const isExpanded = expandedItems.has(item.id);
+  const getTypeTag = (type: string) => {
+    const typeMap: Record<string, string> = {
+      task: 'blue',
+      issue: 'red',
+      milestone: 'purple',
+      phase: 'green',
+      remark: 'orange',
+      clash: 'orange',
+    };
+    return <Tag color={typeMap[type] || 'default'}>{type}</Tag>;
+  };
 
-    return (
-      <div key={item.id}>
-        <div
-          className={`flex items-center gap-2 p-2 hover:bg-accent rounded ${depth > 0 ? 'ml-8' : ''}`}
-        >
-          {hasChildren && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
-              onClick={() => toggleExpand(item.id)}
-            >
-              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </Button>
+  const projectColumns: ColumnsType<Project> = [
+    {
+      title: 'Project',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text: string, record: Project) => (
+        <div>
+          <div className="font-medium">{text}</div>
+          {record.owner && (
+            <div className="text-xs text-gray-500">{record.owner}</div>
           )}
-          {!hasChildren && <div className="w-6" />}
-
-          <div className="flex-1 flex items-center gap-2">
-            {getTypeBadge(item.type)}
-            <span className="font-medium">{item.title}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {item.start_date && item.end_date && (
-              <span className="text-xs text-muted-foreground">
-                {item.start_date} → {item.end_date}
-              </span>
-            )}
-            {getStatusBadge(item.status)}
-          </div>
         </div>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => getStatusTag(status),
+    },
+  ];
 
-        {hasChildren && isExpanded && (
-          <div>
-            {item.children!.map(child => renderWorkItem(child, depth + 1))}
-          </div>
-        )}
-      </div>
-    );
-  };
+  // Work Items Table with expandable rows
+  const getWorkItemColumns = (): ColumnsType<WorkItem> => [
+    {
+      title: 'Title',
+      dataIndex: 'title',
+      key: 'title',
+      render: (text: string, record: WorkItem) => (
+        <Space>
+          {getTypeTag(record.type)}
+          <span className="font-medium">{text}</span>
+        </Space>
+      ),
+    },
+    {
+      title: 'Dates',
+      key: 'dates',
+      render: (_, record: WorkItem) =>
+        record.start_date && record.end_date ? (
+          <Text type="secondary" className="text-xs">
+            {record.start_date} → {record.end_date}
+          </Text>
+        ) : '-',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => getStatusTag(status),
+    },
+    {
+      title: 'Notes',
+      dataIndex: 'notes',
+      key: 'notes',
+      ellipsis: true,
+      render: (notes: string) => notes || '-',
+    },
+  ];
 
   const workItems = selectedProjectId ? workItemsByProject.get(selectedProjectId) || [] : [];
+
+  // Convert work items tree to flat list with parent keys for Table
+  const flattenWorkItems = (items: WorkItem[], parentKey: string | null = null): Array<WorkItem & { key: string; parent: string | null }> => {
+    const result: Array<WorkItem & { key: string; parent: string | null }> = [];
+    items.forEach(item => {
+      const key = `${parentKey ? parentKey + '-' : ''}${item.id}`;
+      result.push({ ...item, key, parent: parentKey });
+      if (item.children && item.children.length > 0) {
+        result.push(...flattenWorkItems(item.children, key));
+      }
+    });
+    return result;
+  };
+
+  const flatWorkItems = flattenWorkItems(workItems);
 
   return (
     <div className="flex h-full">
       {/* Left Panel - Project List */}
-      <div className="w-96 border-r border-border p-4 space-y-4 overflow-auto">
+      <div className="w-96 border-r border-gray-200 p-4 space-y-4 overflow-auto dark:border-gray-700">
         <div>
-          <h2 className="text-xl font-bold mb-4">Projects</h2>
+          <Title level={4}>Projects</Title>
           <Input
             placeholder="Search projects..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            allowClear
           />
         </div>
 
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Project</th>
-                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProjects.length === 0 ? (
-                <tr>
-                  <td colSpan={2} className="text-center text-muted-foreground py-8">No projects found</td>
-                </tr>
-              ) : (
-                filteredProjects.map((project) => (
-                  <tr
-                    key={project.id}
-                    className={`border-b last:border-0 cursor-pointer transition-colors ${
-                      selectedProjectId === project.id
-                        ? 'bg-primary/10 border-l-2 border-l-primary'
-                        : 'hover:bg-muted/40'
-                    }`}
-                    onClick={() => handleSelectProject(project)}
-                  >
-                    <td className="px-3 py-2.5">
-                      <span className="font-medium">{project.name}</span>
-                      {project.owner && (
-                        <p className="text-xs text-muted-foreground">{project.owner}</p>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5">{getStatusBadge(project.status)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          columns={projectColumns}
+          dataSource={filteredProjects}
+          rowKey="id"
+          pagination={false}
+          size="small"
+          onRow={(record) => ({
+            onClick: () => handleSelectProject(record),
+            style: {
+              cursor: 'pointer',
+              backgroundColor: selectedProjectId === record.id ? '#e6f7ff' : undefined,
+            },
+          })}
+        />
       </div>
 
       {/* Right Panel - Project Details & Work Items */}
       <div className="flex-1 p-8 overflow-auto">
         {!selectedProject ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-muted-foreground">
-              <p className="text-lg font-medium">Select a project</p>
-              <p className="text-sm mt-2">Choose a project from the left panel to view details</p>
-            </div>
+            <Empty description="Select a project to view details" />
           </div>
         ) : (
           <div className="max-w-5xl mx-auto space-y-6">
@@ -175,58 +181,57 @@ export function ProjectsPage() {
             <div>
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold">{selectedProject.name}</h1>
+                  <Title level={2}>{selectedProject.name}</Title>
                   {selectedProject.owner && (
-                    <p className="text-muted-foreground mt-1">Owner: {selectedProject.owner}</p>
+                    <Text type="secondary">Owner: {selectedProject.owner}</Text>
                   )}
                 </div>
-                {getStatusBadge(selectedProject.status)}
+                {getStatusTag(selectedProject.status)}
               </div>
 
               {selectedProject.description && (
-                <p className="text-muted-foreground mb-4">{selectedProject.description}</p>
+                <Text type="secondary">{selectedProject.description}</Text>
               )}
 
-              <div className="flex gap-4 text-sm">
+              <Space className="mt-4">
                 {selectedProject.start_date && (
-                  <div>
+                  <Text>
                     <span className="font-medium">Start:</span> {selectedProject.start_date}
-                  </div>
+                  </Text>
                 )}
                 {selectedProject.end_date && (
-                  <div>
+                  <Text>
                     <span className="font-medium">End:</span> {selectedProject.end_date}
-                  </div>
+                  </Text>
                 )}
-              </div>
-
-              {selectedProject.tags && selectedProject.tags.length > 0 && (
-                <div className="flex gap-2 mt-4">
-                  {selectedProject.tags.map((tag) => (
-                    <Badge key={tag} variant="outline">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+              </Space>
             </div>
 
             {/* Work Items */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Work Items</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {workItems.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No work items found for this project
-                  </p>
-                ) : (
-                  <div className="space-y-1">
-                    {workItems.map(item => renderWorkItem(item))}
-                  </div>
-                )}
-              </CardContent>
+            <Card
+              title={<Title level={4} className="mb-0">Work Items</Title>}
+            >
+              {flatWorkItems.length === 0 ? (
+                <Empty description="No work items for this project" />
+              ) : (
+                <Table
+                  columns={getWorkItemColumns()}
+                  dataSource={flatWorkItems}
+                  pagination={false}
+                  size="small"
+                  expandable={{
+                    defaultExpandAllRows: false,
+                    expandIcon: ({ expanded, onExpand, record }) =>
+                      record.children && record.children.length > 0 ? (
+                        expanded ? (
+                          <CaretDownOutlined onClick={(e) => onExpand(record, e)} />
+                        ) : (
+                          <CaretRightOutlined onClick={(e) => onExpand(record, e)} />
+                        )
+                      ) : null,
+                  }}
+                />
+              )}
             </Card>
           </div>
         )}
