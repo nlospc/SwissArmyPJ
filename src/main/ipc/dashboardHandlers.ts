@@ -188,11 +188,11 @@ export function registerDashboardHandlers() {
 
     let dateFilter = '';
     if (filters.dateRange === 'day') {
-      dateFilter = "AND al.timestamp > datetime('now', '-1 day')";
+      dateFilter = "AND al.created_at > datetime('now', '-1 day')";
     } else if (filters.dateRange === 'week') {
-      dateFilter = "AND al.timestamp > datetime('now', '-7 days')";
+      dateFilter = "AND al.created_at > datetime('now', '-7 days')";
     } else if (filters.dateRange === 'month') {
-      dateFilter = "AND al.timestamp > datetime('now', '-30 days')";
+      dateFilter = "AND al.created_at > datetime('now', '-30 days')";
     }
 
     const typeFilter = filters.eventTypes.length > 0
@@ -205,15 +205,11 @@ export function registerDashboardHandlers() {
         al.action,
         al.entity_type,
         al.entity_id,
-        al.entity_name,
-        al.timestamp,
-        al.old_values,
-        al.new_values,
-        p.name as project_name
+        al.created_at,
+        al.source
       FROM audit_log al
-      LEFT JOIN projects p ON al.project_id = p.id
       WHERE 1=1 ${dateFilter} ${typeFilter}
-      ORDER BY al.timestamp DESC
+      ORDER BY al.created_at DESC
       LIMIT 50
     `).all() as any[];
 
@@ -222,22 +218,22 @@ export function registerDashboardHandlers() {
 
       switch (event.action) {
         case 'created':
-          details = `New ${event.entity_type.toLowerCase()}: "${event.entity_name}"`;
+          details = `New ${event.entity_type.toLowerCase()}: "${event.entity_type}"`;
           break;
         case 'updated':
-          details = `${event.entity_type} "${event.entity_name}" was updated`;
+          details = `${event.entity_type} "${event.entity_type}" was updated`;
           break;
         case 'deleted':
-          details = `Deleted ${event.entity_type.toLowerCase()}: "${event.entity_name}"`;
+          details = `Deleted ${event.entity_type.toLowerCase()}: "${event.entity_type}"`;
           break;
         case 'completed':
-          details = `${event.entity_type} "${event.entity_name}" completed`;
+          details = `${event.entity_type} "${event.entity_type}" completed`;
           break;
         case 'conflict':
-          details = `Conflict detected: "${event.entity_name}"`;
+          details = `Conflict detected: "${event.entity_type}"`;
           break;
         case 'sync':
-          details = `File sync: ${event.entity_name}`;
+          details = `File sync: ${event.entity_type}`;
           break;
       }
 
@@ -246,9 +242,7 @@ export function registerDashboardHandlers() {
         action: event.action,
         entityType: event.entity_type,
         entityId: event.entity_id,
-        entityName: event.entity_name,
-        projectName: event.project_name,
-        timestamp: event.timestamp,
+        timestamp: event.created_at,
         details,
       };
     });
