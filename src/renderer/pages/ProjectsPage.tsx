@@ -6,12 +6,14 @@ import { useUIStore } from '@/stores/useUIStore';
 import {
   Card, Input, Button, Table, Tag, Typography, Empty, Space,
   Tabs, Progress, Statistic, Row, Col, Divider, Select,
+  Modal, Form, Dropdown,
 } from 'antd';
 import {
   CaretRightOutlined, CaretDownOutlined, SearchOutlined,
   UserOutlined, CalendarOutlined, FlagOutlined,
   ExclamationCircleOutlined, CheckCircleOutlined,
   ClockCircleOutlined, StopOutlined, PlusOutlined, MoreOutlined,
+  EditOutlined, DeleteOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd';
 import type { Project, WorkItem } from '@/shared/types';
@@ -169,8 +171,8 @@ function budgetBreakdown(planned: number, spent: number) {
 // ============================================================================
 
 export function ProjectsPage() {
-  const { projects } = useProjectStore();
-  const { workItemsByProject, loadWorkItemsByProject } = useWorkItemStore();
+  const { projects, createProject, updateProject, deleteProject } = useProjectStore();
+  const { workItemsByProject, loadWorkItemsByProject, createWorkItem, updateWorkItem, deleteWorkItem } = useWorkItemStore();
   const { portfolios, getPortfolioById } = usePortfolioStore();
   const { selectedProjectId, setSelectedProjectId } = useUIStore();
 
@@ -179,6 +181,13 @@ export function ProjectsPage() {
   const [groupBy, setGroupBy] = useState<'none' | 'portfolio' | 'status'>('portfolio');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Modal state
+  const [projectModalMode, setProjectModalMode] = useState<'add' | 'edit' | null>(null);
+  const [workItemModalMode, setWorkItemModalMode] = useState<'add' | 'edit' | null>(null);
+  const [editingWorkItem, setEditingWorkItem] = useState<WorkItem | null>(null);
+  const [projectForm] = Form.useForm();
+  const [workItemForm] = Form.useForm();
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups((prev) => {
@@ -261,6 +270,141 @@ export function ProjectsPage() {
   }, [workItems]);
 
   // --------------------------------------------------------
+  // CRUD handlers
+  // --------------------------------------------------------
+
+  const openAddProject = () => {
+    projectForm.resetFields();
+    setProjectModalMode('add');
+  };
+
+  const openEditProject = () => {
+    if (!selectedProject) return;
+    projectForm.setFieldsValue({
+      name: selectedProject.name,
+      owner: selectedProject.owner || '',
+      status: selectedProject.status,
+      start_date: selectedProject.start_date || undefined,
+      end_date: selectedProject.end_date || undefined,
+      portfolio_id: selectedProject.portfolio_id || undefined,
+      tags: selectedProject.tags?.join(', ') || '',
+      description: selectedProject.description || '',
+    });
+    setProjectModalMode('edit');
+  };
+
+  const closeProjectModal = () => {
+    projectForm.resetFields();
+    setProjectModalMode(null);
+  };
+
+  const handleProjectSubmit = async () => {
+    try {
+      await projectForm.validateFields();
+      const values = projectForm.getFieldsValue();
+      const dto = {
+        name: values.name,
+        owner: values.owner || undefined,
+        status: values.status || 'not_started',
+        start_date: values.start_date || undefined,
+        end_date: values.end_date || undefined,
+        portfolio_id: values.portfolio_id || undefined,
+        tags: values.tags ? values.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : undefined,
+        description: values.description || undefined,
+      };
+      if (projectModalMode === 'add') {
+        await createProject(dto);
+      } else if (projectModalMode === 'edit' && selectedProject) {
+        await updateProject(selectedProject.id, dto);
+      }
+      closeProjectModal();
+    } catch (_e) { /* validation failed */ }
+  };
+
+  const handleDeleteProject = () => {
+    if (!selectedProject) return;
+    Modal.confirm({
+      title: 'Delete Project',
+      content: `Are you sure you want to delete "${selectedProject.name}"? All associated work items will also be removed.`,
+      okText: 'Delete',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        await deleteProject(selectedProject.id);
+        setSelectedProjectId(null);
+      },
+    });
+  };
+
+  const openAddWorkItem = (presetType: string = 'task') => {
+    workItemForm.resetFields();
+    workItemForm.setFieldsValue({ type: presetType, status: 'not_started' });
+    setWorkItemModalMode('add');
+    setEditingWorkItem(null);
+  };
+
+  const openEditWorkItem = (item: WorkItem) => {
+    workItemForm.setFieldsValue({
+      title: item.title,
+      type: item.type,
+      status: item.status,
+      start_date: item.start_date || undefined,
+      end_date: item.end_date || undefined,
+      notes: item.notes || undefined,
+    });
+    setEditingWorkItem(item);
+    setWorkItemModalMode('edit');
+  };
+
+  const closeWorkItemModal = () => {
+    workItemForm.resetFields();
+    setWorkItemModalMode(null);
+    setEditingWorkItem(null);
+  };
+
+  const handleWorkItemSubmit = async () => {
+    try {
+      await workItemForm.validateFields();
+      const values = workItemForm.getFieldsValue();
+      if (workItemModalMode === 'add' && selectedProjectId) {
+        await createWorkItem({
+          project_id: selectedProjectId,
+          parent_id: values.parent_id || undefined,
+          type: values.type,
+          title: values.title,
+          status: values.status || 'not_started',
+          start_date: values.start_date || undefined,
+          end_date: values.end_date || undefined,
+          notes: values.notes || undefined,
+        });
+      } else if (workItemModalMode === 'edit' && editingWorkItem) {
+        await updateWorkItem(editingWorkItem.id, {
+          title: values.title,
+          type: values.type,
+          status: values.status,
+          start_date: values.start_date || undefined,
+          end_date: values.end_date || undefined,
+          notes: values.notes || undefined,
+        });
+      }
+      closeWorkItemModal();
+    } catch (_e) { /* validation failed */ }
+  };
+
+  const handleDeleteWorkItem = (id: number) => {
+    const item = flatWorkItems.find((wi) => wi.id === id);
+    Modal.confirm({
+      title: 'Delete Work Item',
+      content: `Are you sure you want to delete "${item?.title || 'this item'}"?`,
+      okText: 'Delete',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        await deleteWorkItem(id);
+        if (selectedProjectId) await loadWorkItemsByProject(selectedProjectId);
+      },
+    });
+  };
+
+  // --------------------------------------------------------
   // Derived metrics
   // --------------------------------------------------------
 
@@ -333,6 +477,17 @@ export function ProjectsPage() {
       key: 'notes',
       ellipsis: true,
       render: (n: string | null) => <span className="text-xs text-gray-500">{n || '—'}</span>,
+    },
+    {
+      title: '',
+      key: 'actions',
+      width: 72,
+      render: (_: any, record: WorkItem) => (
+        <Space size="small">
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEditWorkItem(record)} style={{ padding: 0 }} />
+          <Button type="link" size="small" icon={<DeleteOutlined />} danger onClick={() => handleDeleteWorkItem(record.id)} style={{ padding: 0 }} />
+        </Space>
+      ),
     },
   ];
 
@@ -417,7 +572,10 @@ export function ProjectsPage() {
         <div className="p-4 space-y-2 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <Title level={4} className="mb-0">Projects</Title>
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{filteredProjects.length} total</span>
+            <Space size="small" align="center">
+              <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openAddProject}>New</Button>
+              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{filteredProjects.length} total</span>
+            </Space>
           </div>
           <Input
             placeholder="Search…"
@@ -551,8 +709,19 @@ export function ProjectsPage() {
                   </div>
                 </div>
                 <Space>
-                  <Button size="small" icon={<PlusOutlined />}>Add Item</Button>
-                  <Button size="small" icon={<MoreOutlined />} />
+                  <Button size="small" icon={<PlusOutlined />} onClick={() => openAddWorkItem()}>Add Item</Button>
+                  <Dropdown
+                    menu={{
+                      items: [
+                        { key: 'edit', icon: <EditOutlined />, label: 'Edit Project', onClick: openEditProject },
+                        { type: 'divider' },
+                        { key: 'delete', icon: <DeleteOutlined />, label: 'Delete Project', danger: true, onClick: handleDeleteProject },
+                      ],
+                    }}
+                    trigger={['click']}
+                  >
+                    <Button size="small" icon={<MoreOutlined />} />
+                  </Dropdown>
                 </Space>
               </div>
             </div>
@@ -685,7 +854,7 @@ export function ProjectsPage() {
                     label: `Work Items (${flatWorkItems.length})`,
                     children: (
                       <div className="pb-6">
-                        <Card extra={<Button size="small" icon={<PlusOutlined />}>Add</Button>}>
+                        <Card extra={<Button size="small" icon={<PlusOutlined />} onClick={() => openAddWorkItem()}>Add</Button>}>
                           {flatWorkItems.length === 0 ? (
                             <Empty description="No work items for this project" />
                           ) : (
@@ -761,7 +930,7 @@ export function ProjectsPage() {
                         </Row>
 
                         {/* Risk register table */}
-                        <Card extra={<Button size="small" icon={<PlusOutlined />}>Log Risk</Button>}>
+                        <Card extra={<Button size="small" icon={<PlusOutlined />} onClick={() => openAddWorkItem('issue')}>Log Risk</Button>}>
                           {risks.length === 0 ? (
                             <Empty description="No risks identified — issues, clashes or blocked items will appear here" />
                           ) : (
@@ -848,6 +1017,110 @@ export function ProjectsPage() {
           </div>
         )}
       </div>
+
+      {/* ================================================== Project Modal (Add / Edit) */}
+      <Modal
+        open={projectModalMode !== null}
+        onCancel={closeProjectModal}
+        title={projectModalMode === 'add' ? 'Add Project' : `Edit — ${selectedProject?.name}`}
+        footer={[
+          <Button key="cancel" onClick={closeProjectModal}>Cancel</Button>,
+          <Button key="submit" type="primary" onClick={handleProjectSubmit}>
+            {projectModalMode === 'add' ? 'Add' : 'Save'}
+          </Button>,
+        ]}
+        forceRender
+      >
+        <Form form={projectForm} layout="vertical" size="small">
+          <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Project name is required' }]}>
+            <Input placeholder="Project name" />
+          </Form.Item>
+          <Form.Item name="status" label="Status" initialValue="not_started">
+            <Select options={[
+              { value: 'not_started', label: 'Not Started' },
+              { value: 'in_progress', label: 'In Progress' },
+              { value: 'blocked',     label: 'Blocked' },
+              { value: 'done',        label: 'Done' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="owner" label="Owner">
+            <Input placeholder="Project owner" />
+          </Form.Item>
+          <Form.Item name="portfolio_id" label="Portfolio">
+            <Select placeholder="Select portfolio" allowClear options={portfolios.map((p) => ({ value: p.id, label: p.name }))} />
+          </Form.Item>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Form.Item name="start_date" label="Start Date" style={{ flex: 1 }}>
+              <Input type="date" />
+            </Form.Item>
+            <Form.Item name="end_date" label="End Date" style={{ flex: 1 }}>
+              <Input type="date" />
+            </Form.Item>
+          </div>
+          <Form.Item name="tags" label="Tags">
+            <Input placeholder="tag1, tag2, tag3" />
+          </Form.Item>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={3} placeholder="Project description" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* ================================================== Work Item Modal (Add / Edit) */}
+      <Modal
+        open={workItemModalMode !== null}
+        onCancel={closeWorkItemModal}
+        title={workItemModalMode === 'add' ? 'Add Work Item' : `Edit — ${editingWorkItem?.title}`}
+        footer={[
+          <Button key="cancel" onClick={closeWorkItemModal}>Cancel</Button>,
+          <Button key="submit" type="primary" onClick={handleWorkItemSubmit}>
+            {workItemModalMode === 'add' ? 'Add' : 'Save'}
+          </Button>,
+        ]}
+        forceRender
+      >
+        <Form form={workItemForm} layout="vertical" size="small">
+          <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required' }]}>
+            <Input placeholder="Work item title" />
+          </Form.Item>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Form.Item name="type" label="Type" style={{ flex: 1 }} rules={[{ required: true }]}>
+              <Select options={[
+                { value: 'task',      label: 'Task' },
+                { value: 'issue',     label: 'Issue' },
+                { value: 'milestone', label: 'Milestone' },
+                { value: 'phase',     label: 'Phase' },
+                { value: 'remark',    label: 'Remark' },
+                { value: 'clash',     label: 'Clash' },
+              ]} />
+            </Form.Item>
+            <Form.Item name="status" label="Status" style={{ flex: 1 }}>
+              <Select options={[
+                { value: 'not_started', label: 'Not Started' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'blocked',     label: 'Blocked' },
+                { value: 'done',        label: 'Done' },
+              ]} />
+            </Form.Item>
+          </div>
+          {workItemModalMode === 'add' && (
+            <Form.Item name="parent_id" label="Parent Item">
+              <Select placeholder="Top-level parent (optional)" allowClear options={workItems.map((wi) => ({ value: wi.id, label: `${wi.type}: ${wi.title}` }))} />
+            </Form.Item>
+          )}
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Form.Item name="start_date" label="Start" style={{ flex: 1 }}>
+              <Input type="date" />
+            </Form.Item>
+            <Form.Item name="end_date" label="End" style={{ flex: 1 }}>
+              <Input type="date" />
+            </Form.Item>
+          </div>
+          <Form.Item name="notes" label="Notes">
+            <Input.TextArea rows={3} placeholder="Additional notes" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
