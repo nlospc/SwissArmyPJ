@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useProjectStore } from '@/stores/useProjectStore';
 import { useWorkItemStore } from '@/stores/useWorkItemStore';
 import { usePortfolioStore } from '@/stores/usePortfolioStore';
@@ -13,12 +13,32 @@ import {
   UserOutlined, CalendarOutlined, FlagOutlined,
   ExclamationCircleOutlined, CheckCircleOutlined,
   ClockCircleOutlined, StopOutlined, PlusOutlined, MoreOutlined,
-  EditOutlined, DeleteOutlined,
+  EditOutlined, DeleteOutlined, CloseOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd';
 import type { Project, WorkItem } from '@/shared/types';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph } = Typography;
+
+// ============================================================================
+// Shared option sets
+// ============================================================================
+
+const STATUS_OPTIONS = [
+  { value: 'not_started', label: 'Not Started' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'blocked',     label: 'Blocked' },
+  { value: 'done',        label: 'Done' },
+];
+
+const TYPE_OPTIONS = [
+  { value: 'task',      label: 'Task' },
+  { value: 'issue',     label: 'Issue' },
+  { value: 'milestone', label: 'Milestone' },
+  { value: 'phase',     label: 'Phase' },
+  { value: 'remark',    label: 'Remark' },
+  { value: 'clash',     label: 'Clash' },
+];
 
 // ============================================================================
 // Sponsor mapping (placeholder until sponsor field is added to DB)
@@ -37,12 +57,11 @@ function getSponsor(name: string): string {
 
 // ============================================================================
 // Budget helpers (placeholder until budget fields are added to DB)
-// Deterministic per project so values are stable across renders.
 // ============================================================================
 
 function getBudget(project: Project) {
   const hash = project.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  const planned = Math.round((hash % 80 + 20) * 10000); // $200 k – $1 M
+  const planned = Math.round((hash % 80 + 20) * 10000);
   const progressPct =
     project.status === 'done' ? 88 : project.status === 'blocked' ? 32 : 56;
   const spent = Math.round((planned * (progressPct + (hash % 12))) / 100);
@@ -167,6 +186,99 @@ function budgetBreakdown(planned: number, spent: number) {
 }
 
 // ============================================================================
+// InlineEdit – click text to edit in place
+// ============================================================================
+
+function InlineEdit({
+  value,
+  onSave,
+  type = 'text',
+  placeholder = '—',
+  options,
+  multiline = false,
+  renderDisplay,
+}: {
+  value: string | number | null | undefined;
+  onSave: (v: any) => void;
+  type?: 'text' | 'date' | 'select';
+  placeholder?: string;
+  options?: { value: any; label: string }[];
+  multiline?: boolean;
+  renderDisplay?: () => React.ReactNode;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState<any>('');
+  const cancelled = useRef(false);
+
+  if (!editing) {
+    let display: React.ReactNode;
+    if (renderDisplay) {
+      display = renderDisplay();
+    } else if (type === 'select' && options) {
+      display = options.find((o) => o.value === value)?.label || placeholder;
+    } else {
+      display = value != null && value !== '' ? String(value) : placeholder;
+    }
+    return (
+      <span
+        className="cursor-pointer hover:text-blue-500 transition-colors"
+        onClick={() => { setVal(value ?? ''); cancelled.current = false; setEditing(true); }}
+      >
+        {display}
+      </span>
+    );
+  }
+
+  const done = (v?: any) => { onSave(v ?? val); setEditing(false); };
+  const cancel = () => { cancelled.current = true; setEditing(false); };
+
+  if (type === 'select' && options) {
+    return (
+      <Select
+        value={val === '' || val == null ? undefined : val}
+        size="small"
+        options={options}
+        allowClear
+        defaultOpen
+        onChange={(v) => done(v)}
+        onDropdownVisibleChange={(visible) => { if (!visible) cancel(); }}
+        style={{ width: '100%' }}
+        getPopupContainer={(trigger) => trigger.parentElement!}
+      />
+    );
+  }
+
+  if (multiline) {
+    return (
+      <Input.TextArea
+        value={val}
+        autoFocus
+        rows={2}
+        size="small"
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={() => { if (!cancelled.current) done(); }}
+        onKeyDown={(e) => { if (e.key === 'Escape') cancel(); }}
+      />
+    );
+  }
+
+  return (
+    <Input
+      value={val}
+      autoFocus
+      size="small"
+      type={type}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={() => { if (!cancelled.current) done(); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+        if (e.key === 'Escape') cancel();
+      }}
+    />
+  );
+}
+
+// ============================================================================
 // ProjectsPage
 // ============================================================================
 
@@ -182,12 +294,15 @@ export function ProjectsPage() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Modal state
-  const [projectModalMode, setProjectModalMode] = useState<'add' | 'edit' | null>(null);
-  const [workItemModalMode, setWorkItemModalMode] = useState<'add' | 'edit' | null>(null);
-  const [editingWorkItem, setEditingWorkItem] = useState<WorkItem | null>(null);
+  // Add modals
+  const [addProjectOpen, setAddProjectOpen] = useState(false);
+  const [addWorkItemOpen, setAddWorkItemOpen] = useState(false);
   const [projectForm] = Form.useForm();
   const [workItemForm] = Form.useForm();
+
+  // Inline row editing (work items table)
+  const [editingRowKey, setEditingRowKey] = useState<string | null>(null);
+  const [rowValues, setRowValues] = useState<Record<string, any>>({});
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups((prev) => {
@@ -211,7 +326,6 @@ export function ProjectsPage() {
     [projects, searchQuery, statusFilter]
   );
 
-  // Group filtered projects into ordered sections
   const groupedProjects = useMemo(() => {
     if (groupBy === 'none') {
       return [{ key: 'all', label: 'All Projects', projects: filteredProjects }];
@@ -225,10 +339,8 @@ export function ProjectsPage() {
         .map((s) => ({ key: s, label: labels[s], projects: filteredProjects.filter((p) => p.status === s) }))
         .filter((g) => g.projects.length > 0);
     }
-    // group by portfolio
     const portfolioOrder: { key: string; label: string; projects: Project[] }[] = [];
     const seen = new Set<number | null>();
-    // first pass: maintain insertion order from portfolios list
     portfolios.forEach((port) => {
       const group = filteredProjects.filter((p) => p.portfolio_id === port.id);
       if (group.length > 0) {
@@ -236,7 +348,6 @@ export function ProjectsPage() {
         seen.add(port.id);
       }
     });
-    // projects with no portfolio
     const ungrouped = filteredProjects.filter((p) => !seen.has(p.portfolio_id));
     if (ungrouped.length > 0) {
       portfolioOrder.push({ key: 'unassigned', label: 'Unassigned', projects: ungrouped });
@@ -247,6 +358,7 @@ export function ProjectsPage() {
   const handleSelect = async (project: Project) => {
     setSelectedProjectId(project.id);
     setActiveTab('overview');
+    setEditingRowKey(null);
     await loadWorkItemsByProject(project.id);
   };
 
@@ -273,36 +385,12 @@ export function ProjectsPage() {
   // CRUD handlers
   // --------------------------------------------------------
 
-  const openAddProject = () => {
-    projectForm.resetFields();
-    setProjectModalMode('add');
-  };
-
-  const openEditProject = () => {
-    if (!selectedProject) return;
-    projectForm.setFieldsValue({
-      name: selectedProject.name,
-      owner: selectedProject.owner || '',
-      status: selectedProject.status,
-      start_date: selectedProject.start_date || undefined,
-      end_date: selectedProject.end_date || undefined,
-      portfolio_id: selectedProject.portfolio_id || undefined,
-      tags: selectedProject.tags?.join(', ') || '',
-      description: selectedProject.description || '',
-    });
-    setProjectModalMode('edit');
-  };
-
-  const closeProjectModal = () => {
-    projectForm.resetFields();
-    setProjectModalMode(null);
-  };
-
-  const handleProjectSubmit = async () => {
+  // --- Project: Add ---
+  const handleAddProject = async () => {
     try {
       await projectForm.validateFields();
       const values = projectForm.getFieldsValue();
-      const dto = {
+      await createProject({
         name: values.name,
         owner: values.owner || undefined,
         status: values.status || 'not_started',
@@ -311,16 +399,13 @@ export function ProjectsPage() {
         portfolio_id: values.portfolio_id || undefined,
         tags: values.tags ? values.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : undefined,
         description: values.description || undefined,
-      };
-      if (projectModalMode === 'add') {
-        await createProject(dto);
-      } else if (projectModalMode === 'edit' && selectedProject) {
-        await updateProject(selectedProject.id, dto);
-      }
-      closeProjectModal();
-    } catch (_e) { /* validation failed */ }
+      });
+      projectForm.resetFields();
+      setAddProjectOpen(false);
+    } catch (_e) { /* validation */ }
   };
 
+  // --- Project: Delete ---
   const handleDeleteProject = () => {
     if (!selectedProject) return;
     Modal.confirm({
@@ -335,61 +420,40 @@ export function ProjectsPage() {
     });
   };
 
+  // --- Project: Inline field save ---
+  const saveProjectField = (updates: Record<string, any>) => {
+    if (!selectedProject) return;
+    updateProject(selectedProject.id, updates);
+  };
+
+  // --- Work Item: Add ---
   const openAddWorkItem = (presetType: string = 'task') => {
     workItemForm.resetFields();
     workItemForm.setFieldsValue({ type: presetType, status: 'not_started' });
-    setWorkItemModalMode('add');
-    setEditingWorkItem(null);
+    setAddWorkItemOpen(true);
   };
 
-  const openEditWorkItem = (item: WorkItem) => {
-    workItemForm.setFieldsValue({
-      title: item.title,
-      type: item.type,
-      status: item.status,
-      start_date: item.start_date || undefined,
-      end_date: item.end_date || undefined,
-      notes: item.notes || undefined,
-    });
-    setEditingWorkItem(item);
-    setWorkItemModalMode('edit');
-  };
-
-  const closeWorkItemModal = () => {
-    workItemForm.resetFields();
-    setWorkItemModalMode(null);
-    setEditingWorkItem(null);
-  };
-
-  const handleWorkItemSubmit = async () => {
+  const handleAddWorkItem = async () => {
+    if (!selectedProjectId) return;
     try {
       await workItemForm.validateFields();
       const values = workItemForm.getFieldsValue();
-      if (workItemModalMode === 'add' && selectedProjectId) {
-        await createWorkItem({
-          project_id: selectedProjectId,
-          parent_id: values.parent_id || undefined,
-          type: values.type,
-          title: values.title,
-          status: values.status || 'not_started',
-          start_date: values.start_date || undefined,
-          end_date: values.end_date || undefined,
-          notes: values.notes || undefined,
-        });
-      } else if (workItemModalMode === 'edit' && editingWorkItem) {
-        await updateWorkItem(editingWorkItem.id, {
-          title: values.title,
-          type: values.type,
-          status: values.status,
-          start_date: values.start_date || undefined,
-          end_date: values.end_date || undefined,
-          notes: values.notes || undefined,
-        });
-      }
-      closeWorkItemModal();
-    } catch (_e) { /* validation failed */ }
+      await createWorkItem({
+        project_id: selectedProjectId,
+        parent_id: values.parent_id || undefined,
+        type: values.type,
+        title: values.title,
+        status: values.status || 'not_started',
+        start_date: values.start_date || undefined,
+        end_date: values.end_date || undefined,
+        notes: values.notes || undefined,
+      });
+      workItemForm.resetFields();
+      setAddWorkItemOpen(false);
+    } catch (_e) { /* validation */ }
   };
 
+  // --- Work Item: Delete ---
   const handleDeleteWorkItem = (id: number) => {
     const item = flatWorkItems.find((wi) => wi.id === id);
     Modal.confirm({
@@ -403,6 +467,34 @@ export function ProjectsPage() {
       },
     });
   };
+
+  // --- Work Item: Inline row edit ---
+  const startEditRow = (record: WorkItem & { key: string }) => {
+    setEditingRowKey(record.key);
+    setRowValues({
+      title: record.title,
+      type: record.type,
+      status: record.status,
+      start_date: record.start_date || '',
+      end_date: record.end_date || '',
+      notes: record.notes || '',
+    });
+  };
+
+  const saveEditRow = async (record: WorkItem) => {
+    if (!rowValues.title) return;
+    await updateWorkItem(record.id, {
+      title: rowValues.title,
+      type: rowValues.type,
+      status: rowValues.status,
+      start_date: rowValues.start_date || undefined,
+      end_date: rowValues.end_date || undefined,
+      notes: rowValues.notes || undefined,
+    });
+    setEditingRowKey(null);
+  };
+
+  const cancelEditRow = () => setEditingRowKey(null);
 
   // --------------------------------------------------------
   // Derived metrics
@@ -439,55 +531,113 @@ export function ProjectsPage() {
       title: 'Title',
       dataIndex: 'title',
       key: 'title',
-      render: (text: string, record: WorkItem) => (
-        <Space>
-          <Tag color={TYPE_COLORS[record.type] || 'default'} style={{ margin: 0, fontSize: 11 }}>
-            {record.type}
-          </Tag>
-          <span className={record.level === 2 ? 'text-sm text-gray-600 ml-2' : 'text-sm font-medium'}>
-            {text}
-          </span>
-        </Space>
-      ),
+      render: (text: string, record: any) => {
+        if (record.key === editingRowKey) {
+          return (
+            <Space style={{ width: '100%' }}>
+              <Select
+                value={rowValues.type}
+                size="small"
+                options={TYPE_OPTIONS}
+                onChange={(v) => setRowValues((prev) => ({ ...prev, type: v }))}
+                style={{ width: 100 }}
+              />
+              <Input
+                value={rowValues.title}
+                size="small"
+                onChange={(e) => setRowValues((prev) => ({ ...prev, title: e.target.value }))}
+                style={{ flex: 1 }}
+              />
+            </Space>
+          );
+        }
+        return (
+          <Space>
+            <Tag color={TYPE_COLORS[record.type] || 'default'} style={{ margin: 0, fontSize: 11 }}>
+              {record.type}
+            </Tag>
+            <span className={record.level === 2 ? 'text-sm text-gray-600 ml-2' : 'text-sm font-medium'}>
+              {text}
+            </span>
+          </Space>
+        );
+      },
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 120,
-      render: (s: string) => <StatusTag status={s} />,
+      width: 130,
+      render: (s: string, record: any) => {
+        if (record.key === editingRowKey) {
+          return (
+            <Select
+              value={rowValues.status}
+              size="small"
+              options={STATUS_OPTIONS}
+              onChange={(v) => setRowValues((prev) => ({ ...prev, status: v }))}
+            />
+          );
+        }
+        return <StatusTag status={s} />;
+      },
     },
     {
       title: 'Start',
       dataIndex: 'start_date',
       key: 'start_date',
-      width: 100,
-      render: (d: string | null) => <span className="text-xs text-gray-500">{d || '—'}</span>,
+      width: 110,
+      render: (d: string | null, record: any) => {
+        if (record.key === editingRowKey) {
+          return <Input type="date" value={rowValues.start_date} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, start_date: e.target.value }))} />;
+        }
+        return <span className="text-xs text-gray-500">{d || '—'}</span>;
+      },
     },
     {
       title: 'End',
       dataIndex: 'end_date',
       key: 'end_date',
-      width: 100,
-      render: (d: string | null) => <span className="text-xs text-gray-500">{d || '—'}</span>,
+      width: 110,
+      render: (d: string | null, record: any) => {
+        if (record.key === editingRowKey) {
+          return <Input type="date" value={rowValues.end_date} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, end_date: e.target.value }))} />;
+        }
+        return <span className="text-xs text-gray-500">{d || '—'}</span>;
+      },
     },
     {
       title: 'Notes',
       dataIndex: 'notes',
       key: 'notes',
       ellipsis: true,
-      render: (n: string | null) => <span className="text-xs text-gray-500">{n || '—'}</span>,
+      render: (n: string | null, record: any) => {
+        if (record.key === editingRowKey) {
+          return <Input value={rowValues.notes} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, notes: e.target.value }))} />;
+        }
+        return <span className="text-xs text-gray-500">{n || '—'}</span>;
+      },
     },
     {
       title: '',
       key: 'actions',
-      width: 72,
-      render: (_: any, record: WorkItem) => (
-        <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEditWorkItem(record)} style={{ padding: 0 }} />
-          <Button type="link" size="small" icon={<DeleteOutlined />} danger onClick={() => handleDeleteWorkItem(record.id)} style={{ padding: 0 }} />
-        </Space>
-      ),
+      width: 80,
+      render: (_: any, record: any) => {
+        if (record.key === editingRowKey) {
+          return (
+            <Space size="small">
+              <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => saveEditRow(record)} style={{ padding: 0, color: '#52c41a' }} />
+              <Button type="link" size="small" icon={<CloseOutlined />} onClick={cancelEditRow} style={{ padding: 0, color: '#ff4d4f' }} />
+            </Space>
+          );
+        }
+        return (
+          <Space size="small">
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => startEditRow(record)} style={{ padding: 0 }} />
+            <Button type="link" size="small" icon={<DeleteOutlined />} danger onClick={() => handleDeleteWorkItem(record.id)} style={{ padding: 0 }} />
+          </Space>
+        );
+      },
     },
   ];
 
@@ -573,7 +723,7 @@ export function ProjectsPage() {
           <div className="flex items-center justify-between">
             <Title level={4} className="mb-0">Projects</Title>
             <Space size="small" align="center">
-              <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openAddProject}>New</Button>
+              <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => { projectForm.resetFields(); setAddProjectOpen(true); }}>New</Button>
               <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{filteredProjects.length} total</span>
             </Space>
           </div>
@@ -624,7 +774,6 @@ export function ProjectsPage() {
               const isCollapsed = collapsedGroups.has(group.key);
               return (
                 <div key={group.key}>
-                  {/* Group header (hidden when groupBy is none) */}
                   {groupBy !== 'none' && (
                     <div
                       className="flex items-center justify-between px-3 py-1.5 bg-gray-100 border-b border-gray-200 cursor-pointer select-none"
@@ -638,7 +787,6 @@ export function ProjectsPage() {
                     </div>
                   )}
 
-                  {/* Project cards */}
                   {!isCollapsed && group.projects.map((project) => (
                     <div
                       key={project.id}
@@ -692,7 +840,13 @@ export function ProjectsPage() {
                 <div>
                   <div className="flex items-center gap-3 flex-wrap">
                     <Title level={3} className="mb-0">{selectedProject.name}</Title>
-                    <StatusTag status={selectedProject.status} />
+                    <InlineEdit
+                      value={selectedProject.status}
+                      type="select"
+                      options={STATUS_OPTIONS}
+                      onSave={(v) => saveProjectField({ status: v })}
+                      renderDisplay={() => <StatusTag status={selectedProject.status} />}
+                    />
                   </div>
                   <div className="flex items-center gap-4 mt-1.5 text-sm text-gray-500 flex-wrap">
                     {selectedProject.owner && (
@@ -713,8 +867,6 @@ export function ProjectsPage() {
                   <Dropdown
                     menu={{
                       items: [
-                        { key: 'edit', icon: <EditOutlined />, label: 'Edit Project', onClick: openEditProject },
-                        { type: 'divider' },
                         { key: 'delete', icon: <DeleteOutlined />, label: 'Delete Project', danger: true, onClick: handleDeleteProject },
                       ],
                     }}
@@ -777,14 +929,17 @@ export function ProjectsPage() {
                           </div>
                         </Card>
 
-                        {/* Details grid */}
+                        {/* Details grid – all editable fields use InlineEdit */}
                         <Card title="Project Details">
                           <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
                             <div>
                               <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Project Lead</div>
                               <div className="mt-0.5 flex items-center gap-1">
                                 <UserOutlined className="text-gray-400" />
-                                {selectedProject.owner || '—'}
+                                <InlineEdit
+                                  value={selectedProject.owner}
+                                  onSave={(v) => saveProjectField({ owner: v || undefined })}
+                                />
                               </div>
                             </div>
                             <div>
@@ -793,15 +948,35 @@ export function ProjectsPage() {
                             </div>
                             <div>
                               <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Start Date</div>
-                              <div className="mt-0.5">{selectedProject.start_date || '—'}</div>
+                              <div className="mt-0.5">
+                                <InlineEdit
+                                  value={selectedProject.start_date}
+                                  type="date"
+                                  onSave={(v) => saveProjectField({ start_date: v || undefined })}
+                                />
+                              </div>
                             </div>
                             <div>
                               <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Target End</div>
-                              <div className="mt-0.5">{selectedProject.end_date || '—'}</div>
+                              <div className="mt-0.5">
+                                <InlineEdit
+                                  value={selectedProject.end_date}
+                                  type="date"
+                                  onSave={(v) => saveProjectField({ end_date: v || undefined })}
+                                />
+                              </div>
                             </div>
                             <div>
                               <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Portfolio</div>
-                              <div className="mt-0.5">{portfolioName || '—'}</div>
+                              <div className="mt-0.5">
+                                <InlineEdit
+                                  value={selectedProject.portfolio_id}
+                                  type="select"
+                                  options={portfolios.map((p) => ({ value: p.id, label: p.name }))}
+                                  onSave={(v) => saveProjectField({ portfolio_id: v || undefined })}
+                                  renderDisplay={() => <>{portfolioName || '—'}</>}
+                                />
+                              </div>
                             </div>
                             <div>
                               <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Open Risks</div>
@@ -822,27 +997,32 @@ export function ProjectsPage() {
                             </div>
                           </div>
 
-                          {selectedProject.description && (
-                            <>
-                              <Divider />
-                              <div>
-                                <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Description</div>
-                                <Paragraph className="text-sm text-gray-700 mb-0">{selectedProject.description}</Paragraph>
-                              </div>
-                            </>
-                          )}
+                          <Divider />
+                          <div>
+                            <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Description</div>
+                            <InlineEdit
+                              value={selectedProject.description}
+                              multiline
+                              onSave={(v) => saveProjectField({ description: v || undefined })}
+                            />
+                          </div>
 
-                          {selectedProject.tags && selectedProject.tags.length > 0 && (
-                            <>
-                              <Divider />
-                              <div>
-                                <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1.5">Tags</div>
-                                <div className="flex gap-1.5 flex-wrap">
-                                  {selectedProject.tags.map((t) => <Tag key={t}>{t}</Tag>)}
-                                </div>
-                              </div>
-                            </>
-                          )}
+                          <Divider />
+                          <div>
+                            <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Tags</div>
+                            <InlineEdit
+                              value={selectedProject.tags?.join(', ') || ''}
+                              placeholder="tag1, tag2"
+                              onSave={(v) => saveProjectField({ tags: v ? v.split(',').map((t: string) => t.trim()).filter(Boolean) : [] })}
+                              renderDisplay={() => (
+                                selectedProject.tags?.length ? (
+                                  <div className="flex gap-1.5 flex-wrap">
+                                    {selectedProject.tags.map((t) => <Tag key={t} style={{ margin: 0 }}>{t}</Tag>)}
+                                  </div>
+                                ) : <span className="text-gray-400">tag1, tag2</span>
+                              )}
+                            />
+                          </div>
                         </Card>
                       </div>
                     ),
@@ -885,62 +1065,34 @@ export function ProjectsPage() {
                     label: `Risks (${risks.length})`,
                     children: (
                       <div className="pb-6 space-y-4">
-                        {/* Risk KPIs */}
                         <Row gutter={[16, 16]}>
                           <Col span={6}>
                             <Card styles={{ body: { padding: 16 }, header: { borderBottom: '2px solid #ff4d4f' } }}>
-                              <Statistic
-                                title="High Impact"
-                                value={risks.filter((r) => r.impact === 'High').length}
-                                valueStyle={{ color: '#ff4d4f' }}
-                                prefix={<ExclamationCircleOutlined />}
-                              />
+                              <Statistic title="High Impact" value={risks.filter((r) => r.impact === 'High').length} valueStyle={{ color: '#ff4d4f' }} prefix={<ExclamationCircleOutlined />} />
                             </Card>
                           </Col>
                           <Col span={6}>
                             <Card styles={{ body: { padding: 16 }, header: { borderBottom: '2px solid #faad14' } }}>
-                              <Statistic
-                                title="Medium Impact"
-                                value={risks.filter((r) => r.impact === 'Medium').length}
-                                valueStyle={{ color: '#faad14' }}
-                                prefix={<ExclamationCircleOutlined />}
-                              />
+                              <Statistic title="Medium Impact" value={risks.filter((r) => r.impact === 'Medium').length} valueStyle={{ color: '#faad14' }} prefix={<ExclamationCircleOutlined />} />
                             </Card>
                           </Col>
                           <Col span={6}>
                             <Card styles={{ body: { padding: 16 }, header: { borderBottom: '2px solid #52c41a' } }}>
-                              <Statistic
-                                title="Low Impact"
-                                value={risks.filter((r) => r.impact === 'Low').length}
-                                valueStyle={{ color: '#52c41a' }}
-                                prefix={<ExclamationCircleOutlined />}
-                              />
+                              <Statistic title="Low Impact" value={risks.filter((r) => r.impact === 'Low').length} valueStyle={{ color: '#52c41a' }} prefix={<ExclamationCircleOutlined />} />
                             </Card>
                           </Col>
                           <Col span={6}>
                             <Card styles={{ body: { padding: 16 }, header: { borderBottom: '2px solid #52c41a' } }}>
-                              <Statistic
-                                title="Resolved"
-                                value={risks.filter((r) => r.status === 'Resolved').length}
-                                valueStyle={{ color: '#52c41a' }}
-                                prefix={<CheckCircleOutlined />}
-                              />
+                              <Statistic title="Resolved" value={risks.filter((r) => r.status === 'Resolved').length} valueStyle={{ color: '#52c41a' }} prefix={<CheckCircleOutlined />} />
                             </Card>
                           </Col>
                         </Row>
 
-                        {/* Risk register table */}
                         <Card extra={<Button size="small" icon={<PlusOutlined />} onClick={() => openAddWorkItem('issue')}>Log Risk</Button>}>
                           {risks.length === 0 ? (
                             <Empty description="No risks identified — issues, clashes or blocked items will appear here" />
                           ) : (
-                            <Table
-                              columns={riskColumns}
-                              dataSource={risks}
-                              rowKey="id"
-                              pagination={false}
-                              size="small"
-                            />
+                            <Table columns={riskColumns} dataSource={risks} rowKey="id" pagination={false} size="small" />
                           )}
                         </Card>
                       </div>
@@ -953,38 +1105,24 @@ export function ProjectsPage() {
                     label: 'Budget',
                     children: (
                       <div className="pb-6 space-y-4">
-                        {/* Budget KPIs */}
                         <Row gutter={[16, 16]}>
                           <Col span={8}>
                             <Card styles={{ body: { padding: 16 }, header: { borderBottom: '2px solid #1677ff' } }}>
-                              <Statistic
-                                title="Planned Budget"
-                                value={`$${budget.planned.toLocaleString()}`}
-                                valueStyle={{ color: '#1677ff' }}
-                              />
+                              <Statistic title="Planned Budget" value={`$${budget.planned.toLocaleString()}`} valueStyle={{ color: '#1677ff' }} />
                             </Card>
                           </Col>
                           <Col span={8}>
                             <Card styles={{ body: { padding: 16 }, header: { borderBottom: '2px solid #faad14' } }}>
-                              <Statistic
-                                title="Spent"
-                                value={`$${budget.spent.toLocaleString()}`}
-                                valueStyle={{ color: '#faad14' }}
-                              />
+                              <Statistic title="Spent" value={`$${budget.spent.toLocaleString()}`} valueStyle={{ color: '#faad14' }} />
                             </Card>
                           </Col>
                           <Col span={8}>
                             <Card styles={{ body: { padding: 16 }, header: { borderBottom: budget.remaining >= 0 ? '2px solid #52c41a' : '2px solid #ff4d4f' } }}>
-                              <Statistic
-                                title="Remaining"
-                                value={`$${budget.remaining.toLocaleString()}`}
-                                valueStyle={{ color: budget.remaining >= 0 ? '#52c41a' : '#ff4d4f' }}
-                              />
+                              <Statistic title="Remaining" value={`$${budget.remaining.toLocaleString()}`} valueStyle={{ color: budget.remaining >= 0 ? '#52c41a' : '#ff4d4f' }} />
                             </Card>
                           </Col>
                         </Row>
 
-                        {/* Utilization bar + breakdown */}
                         <Card title="Budget Utilization">
                           <Progress
                             percent={budget.planned > 0 ? Math.round((budget.spent / budget.planned) * 100) : 0}
@@ -1018,16 +1156,14 @@ export function ProjectsPage() {
         )}
       </div>
 
-      {/* ================================================== Project Modal (Add / Edit) */}
+      {/* ================================================== Add Project Modal */}
       <Modal
-        open={projectModalMode !== null}
-        onCancel={closeProjectModal}
-        title={projectModalMode === 'add' ? 'Add Project' : `Edit — ${selectedProject?.name}`}
+        open={addProjectOpen}
+        onCancel={() => { projectForm.resetFields(); setAddProjectOpen(false); }}
+        title="Add Project"
         footer={[
-          <Button key="cancel" onClick={closeProjectModal}>Cancel</Button>,
-          <Button key="submit" type="primary" onClick={handleProjectSubmit}>
-            {projectModalMode === 'add' ? 'Add' : 'Save'}
-          </Button>,
+          <Button key="cancel" onClick={() => { projectForm.resetFields(); setAddProjectOpen(false); }}>Cancel</Button>,
+          <Button key="submit" type="primary" onClick={handleAddProject}>Add</Button>,
         ]}
         forceRender
       >
@@ -1036,12 +1172,7 @@ export function ProjectsPage() {
             <Input placeholder="Project name" />
           </Form.Item>
           <Form.Item name="status" label="Status" initialValue="not_started">
-            <Select options={[
-              { value: 'not_started', label: 'Not Started' },
-              { value: 'in_progress', label: 'In Progress' },
-              { value: 'blocked',     label: 'Blocked' },
-              { value: 'done',        label: 'Done' },
-            ]} />
+            <Select options={STATUS_OPTIONS} />
           </Form.Item>
           <Form.Item name="owner" label="Owner">
             <Input placeholder="Project owner" />
@@ -1066,16 +1197,14 @@ export function ProjectsPage() {
         </Form>
       </Modal>
 
-      {/* ================================================== Work Item Modal (Add / Edit) */}
+      {/* ================================================== Add Work Item Modal */}
       <Modal
-        open={workItemModalMode !== null}
-        onCancel={closeWorkItemModal}
-        title={workItemModalMode === 'add' ? 'Add Work Item' : `Edit — ${editingWorkItem?.title}`}
+        open={addWorkItemOpen}
+        onCancel={() => { workItemForm.resetFields(); setAddWorkItemOpen(false); }}
+        title="Add Work Item"
         footer={[
-          <Button key="cancel" onClick={closeWorkItemModal}>Cancel</Button>,
-          <Button key="submit" type="primary" onClick={handleWorkItemSubmit}>
-            {workItemModalMode === 'add' ? 'Add' : 'Save'}
-          </Button>,
+          <Button key="cancel" onClick={() => { workItemForm.resetFields(); setAddWorkItemOpen(false); }}>Cancel</Button>,
+          <Button key="submit" type="primary" onClick={handleAddWorkItem}>Add</Button>,
         ]}
         forceRender
       >
@@ -1085,29 +1214,15 @@ export function ProjectsPage() {
           </Form.Item>
           <div style={{ display: 'flex', gap: 12 }}>
             <Form.Item name="type" label="Type" style={{ flex: 1 }} rules={[{ required: true }]}>
-              <Select options={[
-                { value: 'task',      label: 'Task' },
-                { value: 'issue',     label: 'Issue' },
-                { value: 'milestone', label: 'Milestone' },
-                { value: 'phase',     label: 'Phase' },
-                { value: 'remark',    label: 'Remark' },
-                { value: 'clash',     label: 'Clash' },
-              ]} />
+              <Select options={TYPE_OPTIONS} />
             </Form.Item>
             <Form.Item name="status" label="Status" style={{ flex: 1 }}>
-              <Select options={[
-                { value: 'not_started', label: 'Not Started' },
-                { value: 'in_progress', label: 'In Progress' },
-                { value: 'blocked',     label: 'Blocked' },
-                { value: 'done',        label: 'Done' },
-              ]} />
+              <Select options={STATUS_OPTIONS} />
             </Form.Item>
           </div>
-          {workItemModalMode === 'add' && (
-            <Form.Item name="parent_id" label="Parent Item">
-              <Select placeholder="Top-level parent (optional)" allowClear options={workItems.map((wi) => ({ value: wi.id, label: `${wi.type}: ${wi.title}` }))} />
-            </Form.Item>
-          )}
+          <Form.Item name="parent_id" label="Parent Item">
+            <Select placeholder="Top-level parent (optional)" allowClear options={workItems.map((wi) => ({ value: wi.id, label: `${wi.type}: ${wi.title}` }))} />
+          </Form.Item>
           <div style={{ display: 'flex', gap: 12 }}>
             <Form.Item name="start_date" label="Start" style={{ flex: 1 }}>
               <Input type="date" />
