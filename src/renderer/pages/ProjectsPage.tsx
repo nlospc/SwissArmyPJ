@@ -171,12 +171,22 @@ function budgetBreakdown(planned: number, spent: number) {
 export function ProjectsPage() {
   const { projects } = useProjectStore();
   const { workItemsByProject, loadWorkItemsByProject } = useWorkItemStore();
-  const { getPortfolioById } = usePortfolioStore();
+  const { portfolios, getPortfolioById } = usePortfolioStore();
   const { selectedProjectId, setSelectedProjectId } = useUIStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [groupBy, setGroupBy] = useState<'none' | 'portfolio' | 'status'>('portfolio');
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState('overview');
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
 
   // --------------------------------------------------------
   const selectedProject = projects.find((p) => p.id === selectedProjectId);
@@ -191,6 +201,39 @@ export function ProjectsPage() {
     }),
     [projects, searchQuery, statusFilter]
   );
+
+  // Group filtered projects into ordered sections
+  const groupedProjects = useMemo(() => {
+    if (groupBy === 'none') {
+      return [{ key: 'all', label: 'All Projects', projects: filteredProjects }];
+    }
+    if (groupBy === 'status') {
+      const order = ['blocked', 'in_progress', 'not_started', 'done'] as const;
+      const labels: Record<string, string> = {
+        blocked: 'Blocked', in_progress: 'In Progress', not_started: 'Not Started', done: 'Done',
+      };
+      return order
+        .map((s) => ({ key: s, label: labels[s], projects: filteredProjects.filter((p) => p.status === s) }))
+        .filter((g) => g.projects.length > 0);
+    }
+    // group by portfolio
+    const portfolioOrder: { key: string; label: string; projects: Project[] }[] = [];
+    const seen = new Set<number | null>();
+    // first pass: maintain insertion order from portfolios list
+    portfolios.forEach((port) => {
+      const group = filteredProjects.filter((p) => p.portfolio_id === port.id);
+      if (group.length > 0) {
+        portfolioOrder.push({ key: `port-${port.id}`, label: port.name, projects: group });
+        seen.add(port.id);
+      }
+    });
+    // projects with no portfolio
+    const ungrouped = filteredProjects.filter((p) => !seen.has(p.portfolio_id));
+    if (ungrouped.length > 0) {
+      portfolioOrder.push({ key: 'unassigned', label: 'Unassigned', projects: ungrouped });
+    }
+    return portfolioOrder;
+  }, [filteredProjects, groupBy, portfolios]);
 
   const handleSelect = async (project: Project) => {
     setSelectedProjectId(project.id);
@@ -384,58 +427,95 @@ export function ProjectsPage() {
             allowClear
             size="small"
           />
-          <Select
-            size="small"
-            value={statusFilter}
-            onChange={setStatusFilter}
-            style={{ width: '100%' }}
-            options={[
-              { value: 'all',         label: 'All Statuses' },
-              { value: 'in_progress', label: 'In Progress' },
-              { value: 'blocked',     label: 'Blocked' },
-              { value: 'not_started', label: 'Not Started' },
-              { value: 'done',        label: 'Done' },
-            ]}
-          />
+          <div className="flex gap-2">
+            <Select
+              size="small"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ flex: 1 }}
+              placeholder="Filter"
+              options={[
+                { value: 'all',         label: 'All Statuses' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'blocked',     label: 'Blocked' },
+                { value: 'not_started', label: 'Not Started' },
+                { value: 'done',        label: 'Done' },
+              ]}
+            />
+            <Select
+              size="small"
+              value={groupBy}
+              onChange={setGroupBy}
+              style={{ flex: 1 }}
+              placeholder="Group"
+              options={[
+                { value: 'none',      label: 'No Grouping' },
+                { value: 'portfolio', label: 'By Portfolio' },
+                { value: 'status',    label: 'By Status' },
+              ]}
+            />
+          </div>
         </div>
 
-        {/* Project cards */}
+        {/* Grouped project cards */}
         <div className="flex-1 overflow-y-auto">
           {filteredProjects.length === 0 ? (
             <Empty description="No projects" className="my-12" image={Empty.PRESENTED_IMAGE_SIMPLE} />
           ) : (
-            filteredProjects.map((project) => (
-              <div
-                key={project.id}
-                onClick={() => handleSelect(project)}
-                className={[
-                  'px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors',
-                  selectedProjectId === project.id
-                    ? 'bg-blue-50 border-l-[3px] border-l-blue-600'
-                    : 'border-l-[3px] border-l-transparent hover:bg-gray-50',
-                ].join(' ')}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: STATUS_DOT[project.status] }} />
-                    <span className="text-sm font-medium truncate">{project.name}</span>
-                  </div>
-                  <StatusTag status={project.status} />
+            groupedProjects.map((group) => {
+              const isCollapsed = collapsedGroups.has(group.key);
+              return (
+                <div key={group.key}>
+                  {/* Group header (hidden when groupBy is none) */}
+                  {groupBy !== 'none' && (
+                    <div
+                      className="flex items-center justify-between px-3 py-1.5 bg-gray-100 border-b border-gray-200 cursor-pointer select-none"
+                      onClick={() => toggleGroup(group.key)}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        {isCollapsed ? <CaretRightOutlined className="text-gray-500" /> : <CaretDownOutlined className="text-gray-500" />}
+                        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{group.label}</span>
+                      </div>
+                      <span className="text-xs text-gray-400 bg-white border border-gray-200 rounded-full px-1.5 py-0.5">{group.projects.length}</span>
+                    </div>
+                  )}
+
+                  {/* Project cards */}
+                  {!isCollapsed && group.projects.map((project) => (
+                    <div
+                      key={project.id}
+                      onClick={() => handleSelect(project)}
+                      className={[
+                        'px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors',
+                        selectedProjectId === project.id
+                          ? 'bg-blue-50 border-l-[3px] border-l-blue-600'
+                          : 'border-l-[3px] border-l-transparent hover:bg-gray-50',
+                      ].join(' ')}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: STATUS_DOT[project.status] }} />
+                          <span className="text-sm font-medium truncate">{project.name}</span>
+                        </div>
+                        <StatusTag status={project.status} />
+                      </div>
+                      {project.owner && (
+                        <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                          <UserOutlined /> {project.owner}
+                        </div>
+                      )}
+                      {project.tags && project.tags.length > 0 && (
+                        <div className="flex gap-1 mt-1.5 flex-wrap">
+                          {project.tags.slice(0, 3).map((t) => (
+                            <Tag key={t} style={{ fontSize: 10, padding: '0 5px', margin: 0, lineHeight: '16px' }}>{t}</Tag>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                {project.owner && (
-                  <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                    <UserOutlined /> {project.owner}
-                  </div>
-                )}
-                {project.tags && project.tags.length > 0 && (
-                  <div className="flex gap-1 mt-1.5 flex-wrap">
-                    {project.tags.slice(0, 3).map((t) => (
-                      <Tag key={t} style={{ fontSize: 10, padding: '0 5px', margin: 0, lineHeight: '16px' }}>{t}</Tag>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
