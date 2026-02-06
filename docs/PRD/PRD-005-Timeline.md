@@ -277,58 +277,159 @@ Export timeline view as PNG:
 
 ## 12. Technical Implementation
 
-### 12.1 Component Structure
+### 12.1 Library Choice: vis-timeline
+
+**Implementation Approach**: Use [vis-timeline](https://visjs.github.io/vis-timeline/) for the Gantt chart rendering.
+
+**Rationale**:
+- ✅ Proven performance with large datasets (1000+ items)
+- ✅ Built-in zoom, pan, and drag-and-drop functionality
+- ✅ Rich API for customization (item styling, grouping, time scales)
+- ✅ MIT license, actively maintained
+- ✅ Comprehensive documentation and examples
+
+**Installation**:
+```bash
+npm install vis-timeline vis-data
+npm install @types/vis-timeline --save-dev
+```
+
+### 12.2 Component Structure
 
 ```
 TimelineView/
-├── TimelineContainer.tsx    # Main layout, state management
+├── TimelineContainer.tsx       # Main layout, wraps vis-timeline
+├── VisTimelineWrapper.tsx      # React wrapper for vis-timeline
 ├── TablePanel/
-│   ├── TableHeader.tsx      # Column headers, sorting
-│   ├── TableRow.tsx         # Single row with cells
-│   └── CellEditor.tsx       # Inline edit components
-├── GanttPanel/
-│   ├── GanttHeader.tsx      # Time scale header
-│   ├── GanttGrid.tsx        # Background grid lines
-│   ├── GanttBar.tsx         # Individual bar/milestone
-│   └── DependencyLines.tsx  # Connector lines (optional)
-├── TimelineFilters.tsx      # Filter controls
-└── TimelineToolbar.tsx      # Zoom, export, settings
+│   ├── TableHeader.tsx         # Column headers, sorting
+│   ├── TableRow.tsx            # Single row with cells
+│   └── CellEditor.tsx          # Inline edit components
+├── TimelineFilters.tsx         # Filter controls
+├── TimelineToolbar.tsx         # Zoom, export, settings
+└── timeline-adapter.ts         # Convert DB items to vis-timeline format
 ```
 
-### 12.2 State Management
+**Integration Pattern**:
+```typescript
+import { Timeline } from 'vis-timeline/standalone';
+import { DataSet } from 'vis-data';
+
+interface VisTimelineWrapperProps {
+  items: TimelineItem[];
+  onItemUpdate: (id: string, updates: Partial<TimelineItem>) => void;
+}
+
+function VisTimelineWrapper({ items, onItemUpdate }: VisTimelineWrapperProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<Timeline | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Convert items to vis-timeline format
+    const visItems = new DataSet(
+      items.map(item => ({
+        id: item.id,
+        content: item.name,
+        start: item.start_date,
+        end: item.end_date || item.start_date,
+        type: item.type === 'Milestone' ? 'point' : 'range',
+        className: `status-${item.status} type-${item.type}`,
+        group: item.parent_id || 'root',
+      }))
+    );
+
+    // Initialize timeline
+    const timeline = new Timeline(containerRef.current, visItems, {
+      editable: {
+        updateTime: true,
+        updateGroup: false,
+      },
+      onMove: (item, callback) => {
+        onItemUpdate(item.id, {
+          start_date: item.start,
+          end_date: item.end
+        });
+        callback(item);
+      },
+      orientation: 'top',
+      stack: false,
+      zoomMin: 86400000, // 1 day
+      zoomMax: 31536000000, // 1 year
+    });
+
+    timelineRef.current = timeline;
+
+    return () => timeline.destroy();
+  }, [items, onItemUpdate]);
+
+  return <div ref={containerRef} className="vis-timeline-container" />;
+}
+```
+
+### 12.3 State Management
 
 ```typescript
 interface TimelineState {
   // Data
   items: TimelineItem[];
   dependencies: Dependency[];
-  
-  // View settings
-  scale: 'day' | 'week' | 'month' | 'quarter';
-  viewStart: Date;
-  viewEnd: Date;
-  
+
+  // View settings (delegated to vis-timeline)
+  timelineOptions: Timeline.TimelineOptions;
+
   // Filters
   statusFilter: string[];
   typeFilter: string[];
   ownerFilter: string[];
-  
+
   // Selection
   selectedItemId: string | null;
   editingCellId: string | null;
-  
-  // Columns
+
+  // Columns (left panel only)
   visibleColumns: string[];
   columnWidths: Record<string, number>;
 }
 ```
 
-### 12.3 Rendering Optimization
+### 12.4 Data Transformation
 
-- Virtual scrolling for rows (react-window or similar)
-- Canvas rendering for timeline bars (if > 500 items)
-- Debounced re-render on filter changes
-- Memoized bar position calculations
+**Adapter Function**: Convert database items to vis-timeline format
+
+```typescript
+function toVisTimelineItems(items: WorkItem[]): VisTimelineItem[] {
+  return items.map(item => ({
+    id: item.id.toString(),
+    content: item.title,
+    start: item.start_date ? new Date(item.start_date) : new Date(),
+    end: item.end_date ? new Date(item.end_date) : undefined,
+    type: item.type === 'milestone' ? 'point' : 'range',
+    className: `timeline-${item.type} status-${item.status}`,
+    group: item.parent_id?.toString() || 'root',
+    title: `${item.type}: ${item.title} (${item.status})`, // Tooltip
+    editable: {
+      updateTime: true,
+      updateGroup: false,
+      remove: false,
+    },
+  }));
+}
+```
+
+### 12.5 Rendering Optimization
+
+**Built-in vis-timeline optimizations**:
+- Canvas-based rendering (handles 5000+ items smoothly)
+- Automatic viewport culling (only renders visible items)
+- Efficient event handling with debounced updates
+- Hardware-accelerated CSS transforms for smooth pan/zoom
+
+**Custom optimizations**:
+- Debounced filter updates (300ms delay)
+- Memoized data transformations with `useMemo`
+- Lazy loading for dependency lines (render on demand)
+- Virtualized left panel table (react-window for 500+ rows)
 
 ---
 

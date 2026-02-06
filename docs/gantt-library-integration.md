@@ -1,51 +1,31 @@
-# Third-Party Timeline/Gantt Library Integration Guide
+# vis-timeline Integration Guide for SwissArmyPM
 
-本文档介绍如何在 SwissArmyPM 中集成第三方时间轴/Gantt 图库。
+本文档介绍如何在 SwissArmyPM 中集成 vis-timeline 库实现 Timeline/Gantt 功能。
 
----
-
-## 📚 推荐库对比
-
-### 1. React Calendar Timeline
-
-**网址**: https://github.com/namespace-ee/react-calendar-timeline
-
-**优点**:
-- ✅ 纯 React 实现，易于集成
-- ✅ 响应式设计
-- ✅ 支持拖拽和调整大小
-- ✅ 可自定义渲染器
-- ✅ MIT 开源协议
-
-**缺点**:
-- ❌ 维护较慢（最后更新 2023）
-- ❌ 文档较少
-
-**适用场景**: 需要高度自定义的 WorkItem 级别时间轴
-
-**安装**:
-```bash
-npm install react-calendar-timeline
-npm install dayjs  # 已有依赖
-```
+**Decision**: ✅ **vis-timeline** selected as the primary Gantt chart library
 
 ---
 
-### 2. Vis-Timeline
+## 🎯 Why vis-timeline?
+
+| Feature | vis-timeline | React Calendar Timeline | DHTMLX | Custom |
+|---------|-------------|------------------------|---------|--------|
+| Performance (1000+ items) | ✅ Excellent | ⚠️ Moderate | ✅ Excellent | ❌ Poor |
+| Drag & Drop | ✅ Built-in | ✅ Built-in | ✅ Built-in | ⚠️ Manual |
+| Documentation | ✅ Comprehensive | ⚠️ Limited | ✅ Good | ➖ N/A |
+| License | ✅ MIT | ✅ MIT | ❌ Commercial | ✅ N/A |
+| React Integration | ⚠️ Wrapper needed | ✅ Native | ⚠️ Wrapper | ✅ Native |
+| Maintenance | ✅ Active | ⚠️ Slow | ✅ Active | ⚠️ High cost |
+
+**Winner**: vis-timeline offers the best balance of performance, features, and cost.
+
+---
+
+## 📦 Installation
+
+### 1. Install Dependencies
 
 **网址**: https://visjs.github.io/vis-timeline/
-
-**优点**:
-- ✅ 功能丰富（事件、分组、缩放）
-- ✅ 性能优秀（支持大量数据）
-- ✅ 文档完善
-- ✅ MIT 开源协议
-
-**缺点**:
-- ❌ 不是纯 React 组件
-- ❌ 样式定制较复杂
-
-**适用场景**: 需要展示大量项目的时间轴
 
 **安装**:
 ```bash

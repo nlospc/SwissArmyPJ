@@ -2,6 +2,8 @@
 
 本文档总结 SwissArmyPM 中 Timeline/Gantt Chart 的完整架构设计。
 
+**Implementation**: Using **vis-timeline** library for Gantt chart rendering
+
 ---
 
 ## 📐 架构概览
@@ -10,16 +12,14 @@
 PortfolioPage (src/renderer/pages/PortfolioPage.tsx)
     │
     ├─► ProjectGanttChart (Project 维度)
-    │       ├─ TimelineProvider (Context)
-    │       ├─ Project List Panel (左侧表格)
-    │       ├─ Timeline Panel (右侧时间轴)
-    │       └─ GanttBar (单个时间条)
+    │       ├─ VisTimelineWrapper (vis-timeline integration)
+    │       ├─ Project List Panel (左侧表格 - custom React)
+    │       └─ Timeline Panel (右侧时间轴 - vis-timeline canvas)
     │
     └─► WorkItemGanttChart (WorkItem 维度)
-            ├─ TimelineProvider (Context)
-            ├─ WorkItem List Panel (左侧表格)
-            ├─ Timeline Panel (右侧时间轴)
-            └─ GanttBar (单个时间条)
+            ├─ VisTimelineWrapper (vis-timeline integration)
+            ├─ WorkItem List Panel (左侧表格 - custom React)
+            └─ Timeline Panel (右侧时间轴 - vis-timeline canvas)
 ```
 
 ---
@@ -30,55 +30,70 @@ PortfolioPage (src/renderer/pages/PortfolioPage.tsx)
 src/renderer/
 ├── components/gantt/
 │   ├── index.ts                      # 导出所有组件
-│   ├── TimelineProvider.tsx          # Timeline Context Provider
-│   ├── timeline-utils.ts             # 工具函数（日期转换、网格生成等）
-│   ├── GanttBar.tsx                  # 单个时间条组件
+│   ├── VisTimelineWrapper.tsx        # vis-timeline React wrapper
+│   ├── timeline-adapter.ts           # DB → vis-timeline 数据转换
+│   ├── timeline-utils.ts             # 工具函数（日期转换等）
 │   ├── ProjectGanttChart.tsx         # Project 级别 Gantt Chart
 │   ├── WorkItemGanttChart.tsx        # WorkItem 级别 Gantt Chart
-│   └── TimelineGanttChart.tsx        # 第三方库集成（未来）
+│   └── TablePanel/                   # 左侧表格面板 (custom)
+│       ├── TableHeader.tsx
+│       ├── TableRow.tsx
+│       └── CellEditor.tsx
 ├── pages/
-│   └── PortfolioPage.tsx             # Portfolio 页面（已更新）
+│   └── PortfolioPage.tsx             # Portfolio 页面
 └── stores/
     ├── useProjectStore.ts            # Project 状态管理
     └── useWorkItemStore.ts           # WorkItem 状态管理
 
 docs/
 ├── PRD/
-│   └── PRD-005-Timeline.md           # Timeline/Gantt PRD
-└── gantt-library-integration.md      # 第三方库集成指南
+│   └── PRD-005-Timeline.md           # Timeline/Gantt PRD (updated for vis-timeline)
+└── gantt-library-integration.md      # vis-timeline 集成指南
 ```
 
 ---
 
 ## 🎨 核心组件说明
 
-### 1. TimelineProvider (Context)
+### 1. VisTimelineWrapper
 
-**文件**: `src/renderer/components/gantt/TimelineProvider.tsx`
+**文件**: `src/renderer/components/gantt/VisTimelineWrapper.tsx`
 
 **功能**:
-- 管理全局时间轴状态
-- 提供缩放、平移、跳转等操作
-- 与 Ant Design v5 集成
+- React wrapper for vis-timeline library
+- 处理 vis-timeline 实例生命周期
+- 双向数据绑定（React state ↔ vis-timeline DataSet）
+- 事件处理（拖拽、点击、缩放）
 
 **使用示例**:
 ```typescript
-import { TimelineProvider, useTimeline } from '@/components/gantt';
+import { VisTimelineWrapper } from '@/components/gantt';
 
-function MyComponent() {
-  const { viewStart, viewEnd, scale, zoomIn, zoomOut } = useTimeline();
+function MyGanttChart() {
+  const [items, setItems] = useState<TimelineItem[]>([]);
+
+  const handleItemUpdate = (id: string, updates: Partial<TimelineItem>) => {
+    // 更新数据库
+    updateWorkItem(id, updates);
+  };
 
   return (
-    <TimelineProvider initialScale="month">
-      {/* Timeline 组件 */}
-    </TimelineProvider>
+    <VisTimelineWrapper
+      items={items}
+      options={{
+        editable: { updateTime: true },
+        zoomMin: 86400000, // 1 day
+        zoomMax: 31536000000, // 1 year
+      }}
+      onItemUpdate={handleItemUpdate}
+    />
   );
 }
 ```
 
 ---
 
-### 2. Timeline Utils
+### 2. Timeline Adapter
 
 **文件**: `src/renderer/components/gantt/timeline-utils.ts`
 
@@ -410,20 +425,27 @@ function ProjectHealthCard({ project }) {
 
 ## 📝 实现清单
 
-- [x] PortfolioPage 重构为 Timeline 视图
-- [x] TimelineProvider Context 实现
-- [x] 时间轴工具函数
-- [x] GanttBar 组件
-- [x] ProjectGanttChart 组件
-- [x] WorkItemGanttChart 组件
-- [x] 与 Ant Design v5 集成
-- [x] 拖拽调整日期（基础实现）
-- [ ] 第三方库集成（React Calendar Timeline）
-- [ ] 依赖线显示
-- [ ] 内联编辑功能
+**Phase 1: vis-timeline Migration**
+- [ ] 安装 vis-timeline 和 vis-data 依赖
+- [ ] 实现 VisTimelineWrapper React 组件
+- [ ] 实现 timeline-adapter.ts 数据转换
+- [ ] 重构 ProjectGanttChart 使用 vis-timeline
+- [ ] 重构 WorkItemGanttChart 使用 vis-timeline
+- [ ] 自定义 vis-timeline CSS 样式（Ant Design 主题）
+- [ ] 实现拖拽回调和数据库更新
+- [ ] 测试缩放、平移、编辑功能
+
+**Phase 2: Enhanced Features**
+- [ ] 依赖线显示（vis-timeline 原生支持）
+- [ ] 左侧表格内联编辑功能
 - [ ] CSV 导出
 - [ ] 键盘快捷键
 - [ ] 性能测试（>1000 items）
+
+**Deprecated (custom implementation)**
+- [x] ~~TimelineProvider Context~~ → replaced by vis-timeline API
+- [x] ~~GanttBar 组件~~ → replaced by vis-timeline items
+- [x] ~~手动网格和条形渲染~~ → replaced by vis-timeline canvas
 
 ---
 
