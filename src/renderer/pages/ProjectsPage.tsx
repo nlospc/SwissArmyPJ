@@ -285,7 +285,7 @@ function InlineEdit({
 export function ProjectsPage() {
   const { projects, createProject, updateProject, deleteProject } = useProjectStore();
   const { workItemsByProject, loadWorkItemsByProject, createWorkItem, updateWorkItem, deleteWorkItem } = useWorkItemStore();
-  const { portfolios, getPortfolioById } = usePortfolioStore();
+  const { portfolios, getPortfolioById, createPortfolio, updatePortfolio, deletePortfolio } = usePortfolioStore();
   const { selectedProjectId, setSelectedProjectId } = useUIStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -303,6 +303,10 @@ export function ProjectsPage() {
   // Inline row editing (work items table)
   const [editingRowKey, setEditingRowKey] = useState<string | null>(null);
   const [rowValues, setRowValues] = useState<Record<string, any>>({});
+
+  // Category (portfolio) add
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups((prev) => {
@@ -424,6 +428,27 @@ export function ProjectsPage() {
   const saveProjectField = (updates: Record<string, any>) => {
     if (!selectedProject) return;
     updateProject(selectedProject.id, updates);
+  };
+
+  // --- Portfolio (Category): Delete ---
+  const handleDeletePortfolio = (id: number, name: string) => {
+    Modal.confirm({
+      title: 'Delete Category',
+      content: `Delete "${name}"? Projects in this category will become unassigned.`,
+      okText: 'Delete',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        await deletePortfolio(id);
+      },
+    });
+  };
+
+  // --- Portfolio (Category): Add ---
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    await createPortfolio({ name: newCategoryName.trim() });
+    setNewCategoryName('');
+    setAddingCategory(false);
   };
 
   // --- Work Item: Add ---
@@ -772,18 +797,36 @@ export function ProjectsPage() {
           ) : (
             groupedProjects.map((group) => {
               const isCollapsed = collapsedGroups.has(group.key);
+              const portfolioId = group.key.startsWith('port-') ? Number(group.key.split('-')[1]) : null;
               return (
                 <div key={group.key}>
                   {groupBy !== 'none' && (
                     <div
-                      className="flex items-center justify-between px-3 py-1.5 bg-gray-100 border-b border-gray-200 cursor-pointer select-none"
+                      className="group flex items-center justify-between px-3 py-1.5 bg-gray-100 border-b border-gray-200 cursor-pointer select-none"
                       onClick={() => toggleGroup(group.key)}
                     >
                       <div className="flex items-center gap-1.5">
                         {isCollapsed ? <CaretRightOutlined className="text-gray-500" /> : <CaretDownOutlined className="text-gray-500" />}
-                        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{group.label}</span>
+                        {portfolioId != null ? (
+                          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide" onClick={(e) => e.stopPropagation()}>
+                            <InlineEdit
+                              value={group.label}
+                              onSave={(v) => { if (v?.trim()) updatePortfolio(portfolioId, { name: v.trim() }); }}
+                            />
+                          </span>
+                        ) : (
+                          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{group.label}</span>
+                        )}
                       </div>
-                      <span className="text-xs text-gray-400 bg-white border border-gray-200 rounded-full px-1.5 py-0.5">{group.projects.length}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-gray-400 bg-white border border-gray-200 rounded-full px-1.5 py-0.5">{group.projects.length}</span>
+                        {portfolioId != null && (
+                          <DeleteOutlined
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 cursor-pointer"
+                            onClick={(e) => { e.stopPropagation(); handleDeletePortfolio(portfolioId, group.label); }}
+                          />
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -822,6 +865,32 @@ export function ProjectsPage() {
                 </div>
               );
             })
+          )}
+          {groupBy === 'portfolio' && (
+            <div className="p-2">
+              {addingCategory ? (
+                <Input
+                  autoFocus
+                  size="small"
+                  placeholder="Category name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onPressEnter={handleAddCategory}
+                  onKeyDown={(e) => { if (e.key === 'Escape') { setAddingCategory(false); setNewCategoryName(''); } }}
+                  onBlur={() => { setAddingCategory(false); setNewCategoryName(''); }}
+                />
+              ) : (
+                <Button
+                  type="dashed"
+                  size="small"
+                  icon={<PlusOutlined />}
+                  onClick={() => setAddingCategory(true)}
+                  style={{ width: '100%' }}
+                >
+                  Add Category
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
