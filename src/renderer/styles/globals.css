@@ -1,9 +1,9 @@
+/* vis-timeline custom styles - must be imported first */
+@import './vis-timeline-custom.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* vis-timeline custom styles */
-@import './vis-timeline-custom.css';
 
 @layer base {
   :root {
