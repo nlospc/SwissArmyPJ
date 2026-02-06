@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* vis-timeline custom styles */
+@import './vis-timeline-custom.css';
+
 @layer base {
   :root {
     --background: 0 0% 100%;

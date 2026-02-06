@@ -3,6 +3,22 @@
  * Interactive timeline visualization for projects and work items
  */
 
+// vis-timeline integration (new implementation)
+export { VisTimelineWrapper } from './VisTimelineWrapper';
+export type { VisTimelineItem, VisTimelineWrapperProps } from './VisTimelineWrapper';
+export {
+  workItemsToTimelineItems,
+  projectsToTimelineItems,
+  workItemsToGroups,
+  portfoliosToGroups,
+  timelineItemToWorkItemUpdate,
+  timelineItemToProjectUpdate,
+  calculateDateRange,
+  getStatusColor as getStatusColorAdapter,
+  getTypeColor,
+} from './timeline-adapter';
+
+// Legacy custom implementation (will be deprecated)
 export { TimelineProvider, useTimeline } from './TimelineProvider';
 export type { TimeScale, TimelineViewConfig, TimelineState } from './TimelineProvider';
 export { ProjectGanttChart } from './ProjectGanttChart';
