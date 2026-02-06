@@ -1,426 +1,386 @@
 /**
  * WorkItemGanttChart - Displays work items for a specific project
- * Second level view: Shows all work items within a project
+ * Refactored to use vis-timeline library for improved performance
  */
 
-import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { Button, Space, Typography, Breadcrumb, Tag, Select, Input, Progress } from 'antd';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Card, Button, Space, Typography, Breadcrumb, Tag, Select, Progress, message } from 'antd';
 import {
   HomeOutlined,
   ProjectOutlined,
-  ZoomInOutlined,
-  ZoomOutOutlined,
-  LeftOutlined,
-  RightOutlined,
   CalendarOutlined,
   FilterOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
-import { TimelineProvider, useTimeline, type TimeScale } from './TimelineProvider';
-import { generateHeaderColumns, generateGridLines, getTimelineWidth } from './timeline-utils';
-import { GanttBar, type GanttBarItem } from './GanttBar';
+import { VisTimelineWrapper, type VisTimelineItem } from './VisTimelineWrapper';
+import {
+  workItemsToTimelineItems,
+  workItemsToGroups,
+  timelineItemToWorkItemUpdate,
+  calculateDateRange,
+} from './timeline-adapter';
+import type { TimelineOptions } from 'vis-timeline/types';
 import type { Project, WorkItem } from '@/shared/types';
-import dayjs from 'dayjs';
 
 const { Text, Title } = Typography;
 
 interface WorkItemGanttChartProps {
   project: Project;
   workItems: WorkItem[];
-  viewMode?: TimeScale;
   loading?: boolean;
   onBack: () => void;
   onWorkItemClick?: (workItem: WorkItem) => void;
+  onWorkItemUpdate?: (workItemId: number, updates: Partial<WorkItem>) => void;
+  onExport?: () => void;
 }
 
 export function WorkItemGanttChart({
   project,
   workItems,
-  viewMode = 'month',
-  loading,
+  loading = false,
   onBack,
   onWorkItemClick,
+  onWorkItemUpdate,
+  onExport,
 }: WorkItemGanttChartProps) {
-  // Convert work items to Gantt bar items
-  const ganttItems = useMemo(() => {
-    return workItems
-      .filter((w) => w.project_id === project.id)
-      .map((item) => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        status: item.status,
-        startDate: item.start_date ? dayjs(item.start_date) : null,
-        endDate: item.end_date ? dayjs(item.end_date) : null,
-        assignee: item.owner,
-        progress: item.progress,
-        isMilestone: item.type === 'Milestone',
-      } as GanttBarItem))
-      .sort((a, b) => {
-        // Sort by start date, then by type (Milestones first)
-        if (!a.startDate) return 1;
-        if (!b.startDate) return -1;
-        const dateDiff = a.startDate.diff(b.startDate);
-        if (dateDiff !== 0) return dateDiff;
-        return a.isMilestone ? -1 : b.isMilestone ? 1 : 0;
-      });
-  }, [workItems, project.id]);
-
-  // Group work items by type for statistics
-  const stats = useMemo(() => {
-    const byType: Record<string, number> = {};
-    const byStatus: Record<string, number> = {};
-
-    workItems.forEach((item) => {
-      byType[item.type] = (byType[item.type] || 0) + 1;
-      byStatus[item.status] = (byStatus[item.status] || 0) + 1;
-    });
-
-    return { byType, byStatus, total: workItems.length };
-  }, [workItems]);
-
-  return (
-    <TimelineProvider initialScale={viewMode}>
-      <WorkItemGanttChartContent
-        project={project}
-        ganttItems={ganttItems}
-        workItems={workItems}
-        stats={stats}
-        loading={loading}
-        onBack={onBack}
-        onWorkItemClick={onWorkItemClick}
-      />
-    </TimelineProvider>
-  );
-}
-
-interface WorkItemGanttChartContentProps {
-  project: Project;
-  ganttItems: GanttBarItem[];
-  workItems: WorkItem[];
-  stats: { byType: Record<string, number>; byStatus: Record<string, number>; total: number };
-  loading?: boolean;
-  onBack: () => void;
-  onWorkItemClick?: (workItem: WorkItem) => void;
-}
-
-const WorkItemGanttChartContent: React.FC<WorkItemGanttChartContentProps> = ({
-  project,
-  ganttItems,
-  workItems,
-  stats,
-  loading,
-  onBack,
-  onWorkItemClick,
-}) => {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
+  const [showHierarchy, setShowHierarchy] = useState(true);
 
-  const {
-    viewStart,
-    viewEnd,
-    columnWidth,
-    scale,
-    setScale,
-    zoomIn,
-    zoomOut,
-    panLeft,
-    panRight,
-    goToday,
-  } = useTimeline();
+  // Filter work items by project
+  const projectWorkItems = useMemo(() => {
+    return workItems.filter(w => w.project_id === project.id);
+  }, [workItems, project.id]);
 
-  // Apply filters
-  const filteredItems = useMemo(() => {
-    return ganttItems.filter((item) => {
+  // Apply status and type filters
+  const filteredWorkItems = useMemo(() => {
+    return projectWorkItems.filter(item => {
       if (filterStatus !== 'all' && item.status !== filterStatus) return false;
       if (filterType !== 'all' && item.type !== filterType) return false;
       return true;
     });
-  }, [ganttItems, filterStatus, filterType]);
+  }, [projectWorkItems, filterStatus, filterType]);
 
-  const headerColumns = useMemo(
-    () => generateHeaderColumns(viewStart, viewEnd, scale),
-    [viewStart, viewEnd, scale]
-  );
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const byType: Record<string, number> = {};
+    const byStatus: Record<string, number> = {};
 
-  const gridLines = useMemo(
-    () => generateGridLines(viewStart, viewEnd, scale, columnWidth),
-    [viewStart, viewEnd, scale, columnWidth]
-  );
+    projectWorkItems.forEach(item => {
+      byType[item.type] = (byType[item.type] || 0) + 1;
+      byStatus[item.status] = (byStatus[item.status] || 0) + 1;
+    });
 
-  const totalTimelineWidth = useMemo(
-    () => getTimelineWidth(viewStart, viewEnd, columnWidth, scale),
-    [viewStart, viewEnd, columnWidth, scale]
-  );
+    return {
+      total: projectWorkItems.length,
+      done: byStatus.done || 0,
+      in_progress: byStatus.in_progress || 0,
+      blocked: byStatus.blocked || 0,
+      byType,
+      byStatus,
+    };
+  }, [projectWorkItems]);
 
-  const rowHeight = 48;
-  const headerHeight = 60;
-  const tableWidth = 500; // Wider table for work item details
-  const timelineHeight = filteredItems.length * rowHeight + headerHeight;
+  // Convert to vis-timeline items
+  const timelineItems = useMemo(() => {
+    return workItemsToTimelineItems(filteredWorkItems);
+  }, [filteredWorkItems]);
 
-  const handleItemClick = (item: GanttBarItem) => {
-    setSelectedId(item.id);
-    const workItem = workItems.find((w) => w.id === item.id);
+  // Create groups if showing hierarchy
+  const timelineGroups = useMemo(() => {
+    return showHierarchy ? workItemsToGroups(filteredWorkItems) : undefined;
+  }, [filteredWorkItems, showHierarchy]);
+
+  // Calculate date range
+  const dateRange = useMemo(() => {
+    return calculateDateRange(filteredWorkItems.length > 0 ? filteredWorkItems : [project]);
+  }, [filteredWorkItems, project]);
+
+  // vis-timeline options
+  const timelineOptions: TimelineOptions = useMemo(() => ({
+    editable: {
+      updateTime: true,
+      updateGroup: false,
+      add: false,
+      remove: false,
+    },
+    stack: true,
+    orientation: 'top',
+    start: dateRange.start,
+    end: dateRange.end,
+    zoomMin: 86400000, // 1 day
+    zoomMax: 31536000000, // 1 year
+    margin: {
+      item: {
+        horizontal: 5,
+        vertical: 3,
+      },
+      axis: 5,
+    },
+    height: '100%',
+  }), [dateRange]);
+
+  // Get unique values for filters
+  const uniqueStatuses = useMemo(() => {
+    return Array.from(new Set(projectWorkItems.map(item => item.status)));
+  }, [projectWorkItems]);
+
+  const uniqueTypes = useMemo(() => {
+    return Array.from(new Set(projectWorkItems.map(item => item.type)));
+  }, [projectWorkItems]);
+
+  // Event handlers
+  const handleItemClick = useCallback((item: VisTimelineItem) => {
+    const workItem = workItems.find(w => w.id === Number(item.id));
     if (workItem && onWorkItemClick) {
       onWorkItemClick(workItem);
     }
+  }, [workItems, onWorkItemClick]);
+
+  const handleItemDoubleClick = useCallback((item: VisTimelineItem) => {
+    const workItem = workItems.find(w => w.id === Number(item.id));
+    if (workItem) {
+      message.info(`Opening work item: ${workItem.title}`);
+      if (onWorkItemClick) {
+        onWorkItemClick(workItem);
+      }
+    }
+  }, [workItems, onWorkItemClick]);
+
+  const handleItemUpdate = useCallback((
+    item: VisTimelineItem,
+    callback: (item: VisTimelineItem | null) => void
+  ) => {
+    const workItemId = Number(item.id);
+    const updates = timelineItemToWorkItemUpdate(item);
+
+    if (onWorkItemUpdate) {
+      onWorkItemUpdate(workItemId, updates);
+      message.success('Work item dates updated');
+      callback(item);
+    } else {
+      console.log('Work item update:', workItemId, updates);
+      callback(item);
+    }
+  }, [onWorkItemUpdate]);
+
+  // Export handler
+  const handleExport = () => {
+    if (onExport) {
+      onExport();
+    } else {
+      // Default CSV export
+      const csvContent = [
+        ['Type', 'Title', 'Status', 'Start Date', 'End Date', 'Notes'].join(','),
+        ...filteredWorkItems.map(item => [
+          item.type,
+          `"${item.title}"`,
+          item.status,
+          item.start_date || '',
+          item.end_date || '',
+          item.notes ? `"${item.notes.replace(/"/g, '""')}"` : '',
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${project.name}-workitems-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      message.success('Work items exported to CSV');
+    }
   };
-
-  // Get unique statuses and types for filters
-  const uniqueStatuses = useMemo(() => {
-    return Array.from(new Set(ganttItems.map((item) => item.status)));
-  }, [ganttItems]);
-
-  const uniqueTypes = useMemo(() => {
-    return Array.from(new Set(ganttItems.map((item) => item.type)));
-  }, [ganttItems]);
 
   return (
     <div className="flex flex-col h-full">
       {/* Header with Breadcrumb */}
-      <div className="border-b border-theme-border bg-theme-bg-container px-6 py-4">
+      <div className="border-b border-gray-200 bg-white px-6 py-4">
         <Breadcrumb className="mb-2">
-          <Breadcrumb.Item>
+          <Breadcrumb.Item onClick={onBack} className="cursor-pointer hover:text-blue-500">
             <HomeOutlined /> Portfolio
           </Breadcrumb.Item>
           <Breadcrumb.Item>
             <ProjectOutlined /> {project.name}
           </Breadcrumb.Item>
         </Breadcrumb>
-        <Title level={4} className="mb-2">
-          {project.name}
-        </Title>
-        <Space size="large">
-          <Text>
-            {stats.total} Work Items | {stats.byStatus.Done || 0} Done | {stats.byStatus['In Progress'] || 0} In Progress
-          </Text>
-          {project.progress !== undefined && (
-            <Progress percent={project.progress} size="small" style={{ width: 200 }} />
+        <div className="flex items-center justify-between">
+          <div>
+            <Title level={4} className="mb-1">
+              {project.name}
+            </Title>
+            <Space size="large" className="text-sm">
+              <Text>
+                <strong>{stats.total}</strong> work items
+              </Text>
+              <Text type="success">
+                <strong>{stats.done}</strong> done
+              </Text>
+              <Text className="text-blue-600">
+                <strong>{stats.in_progress}</strong> in progress
+              </Text>
+              {stats.blocked > 0 && (
+                <Text type="danger">
+                  <strong>{stats.blocked}</strong> blocked
+                </Text>
+              )}
+            </Space>
+          </div>
+          {project.end_date && (
+            <div className="text-right">
+              <div className="text-xs text-gray-500 mb-1">Project Progress</div>
+              <Progress
+                percent={stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0}
+                size="small"
+                style={{ width: 200 }}
+              />
+            </div>
           )}
-        </Space>
+        </div>
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-theme-border">
-        <Space>
-          <Button icon={<HomeOutlined />} onClick={onBack}>
-            Back to Portfolio
-          </Button>
-          <Select
-            value={scale}
-            onChange={setScale}
-            style={{ width: 100 }}
-            options={[
-              { label: 'Day', value: 'day' },
-              { label: 'Week', value: 'week' },
-              { label: 'Month', value: 'month' },
-              { label: 'Quarter', value: 'quarter' },
-            ]}
-          />
-        </Space>
+      <Card
+        className="flex-1 flex flex-col"
+        styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column', padding: 0 } }}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <Space size="middle">
+            <Button icon={<HomeOutlined />} onClick={onBack}>
+              Back
+            </Button>
+            <Tag color="blue">{filteredWorkItems.length} items</Tag>
+          </Space>
 
-        <Space>
-          <Select
-            placeholder="Filter by status"
-            value={filterStatus}
-            onChange={setFilterStatus}
-            style={{ width: 150 }}
-            allowClear
-            options={[
-              { label: 'All Statuses', value: 'all' },
-              ...uniqueStatuses.map((s) => ({ label: s, value: s })),
-            ]}
-          />
-          <Select
-            placeholder="Filter by type"
-            value={filterType}
-            onChange={setFilterType}
-            style={{ width: 150 }}
-            allowClear
-            options={[
-              { label: 'All Types', value: 'all' },
-              ...uniqueTypes.map((t) => ({ label: t, value: t })),
-            ]}
-          />
-        </Space>
+          <Space size="middle">
+            {/* Status Filter */}
+            <Select
+              placeholder="Filter by status"
+              value={filterStatus}
+              onChange={setFilterStatus}
+              style={{ width: 150 }}
+              size="small"
+              options={[
+                { label: 'All Statuses', value: 'all' },
+                ...uniqueStatuses.map(s => ({
+                  label: s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' '),
+                  value: s
+                })),
+              ]}
+            />
 
-        <Space>
-          <Button icon={<ZoomOutOutlined />} onClick={zoomOut} />
-          <Button icon={<ZoomInOutlined />} onClick={zoomIn} />
-          <Button icon={<LeftOutlined />} onClick={panLeft} />
-          <Button icon={<RightOutlined />} onClick={panRight} />
-          <Button icon={<CalendarOutlined />} onClick={goToday}>
-            Today
-          </Button>
-        </Space>
-      </div>
+            {/* Type Filter */}
+            <Select
+              placeholder="Filter by type"
+              value={filterType}
+              onChange={setFilterType}
+              style={{ width: 150 }}
+              size="small"
+              options={[
+                { label: 'All Types', value: 'all' },
+                ...uniqueTypes.map(t => ({
+                  label: t.charAt(0).toUpperCase() + t.slice(1),
+                  value: t
+                })),
+              ]}
+            />
 
-      {/* Gantt Chart */}
-      <div className="flex-1 overflow-auto">
-        <div className="relative" style={{ width: tableWidth + totalTimelineWidth }}>
-          <svg
-            ref={svgRef}
-            width={tableWidth + totalTimelineWidth}
-            height={timelineHeight}
-            style={{ display: 'block' }}
-          >
-            {/* Background */}
-            <rect x={0} y={0} width={tableWidth + totalTimelineWidth} height={timelineHeight} fill="#f5f5f5" />
+            {/* Hierarchy Toggle */}
+            <Select
+              value={showHierarchy ? 'hierarchy' : 'flat'}
+              onChange={(v) => setShowHierarchy(v === 'hierarchy')}
+              style={{ width: 120 }}
+              size="small"
+              options={[
+                { label: 'Flat View', value: 'flat' },
+                { label: 'Hierarchy', value: 'hierarchy' },
+              ]}
+            />
 
-            {/* Left Panel - Work Item Table */}
-            <rect x={0} y={0} width={tableWidth} height={timelineHeight} fill="white" />
-            <line x1={tableWidth} y1={0} x2={tableWidth} y2={timelineHeight} stroke="#d9d9d9" strokeWidth={1} />
+            {/* Today Button */}
+            <Button
+              icon={<CalendarOutlined />}
+              size="small"
+              onClick={() => message.info('Navigate to today')}
+            >
+              Today
+            </Button>
 
-            {/* Header background */}
-            <rect x={0} y={0} width={tableWidth + totalTimelineWidth} height={headerHeight} fill="#fafafa" />
-            <line x1={0} y1={headerHeight} x2={tableWidth + totalTimelineWidth} y2={headerHeight} stroke="#d9d9d9" strokeWidth={1} />
-
-            {/* Table headers */}
-            <text x={10} y={35} fontSize={14} fontWeight="bold" fill="#333">
-              Work Item
-            </text>
-            <text x={350} y={35} fontSize={14} fontWeight="bold" fill="#333">
-              Status
-            </text>
-            <text x={tableWidth + 10} y={35} fontSize={14} fontWeight="bold" fill="#333">
-              Timeline
-            </text>
-
-            {/* Timeline header */}
-            {headerColumns.map((col, index) => {
-              const x = tableWidth + index * col.width;
-              return (
-                <g key={col.key}>
-                  <rect x={x} y={0} width={col.width} height={headerHeight} fill={col.isWeekend ? '#f0f0f0' : 'white'} />
-                  <text x={x + 5} y={35} fontSize={12} fill="#666">
-                    {col.label}
-                  </text>
-                  <line x1={x} y1={0} x2={x} y2={timelineHeight} stroke="#f0f0f0" strokeWidth={1} />
-                </g>
-              );
-            })}
-
-            {/* Grid lines */}
-            {gridLines.map((line, index) => {
-              const x = tableWidth + line.x;
-              return (
-                <line
-                  key={index}
-                  x1={x}
-                  y1={headerHeight}
-                  x2={x}
-                  y2={timelineHeight}
-                  stroke={line.type === 'major' ? '#e8e8e8' : '#f5f5f5'}
-                  strokeWidth={line.type === 'major' ? 1 : 0.5}
-                />
-              );
-            })}
-
-            {/* Row backgrounds */}
-            {filteredItems.map((item, index) => {
-              const y = headerHeight + index * rowHeight;
-              return (
-                <rect
-                  key={item.id}
-                  x={0}
-                  y={y}
-                  width={tableWidth + totalTimelineWidth}
-                  height={rowHeight}
-                  fill={selectedId === item.id ? '#e6f7ff' : index % 2 === 0 ? 'white' : '#fafafa'}
-                />
-              );
-            })}
-
-            {/* Work item rows */}
-            {filteredItems.map((item, index) => {
-              const y = headerHeight + index * rowHeight;
-              const workItem = workItems.find((w) => w.id === item.id);
-
-              // Status color for tag
-              let statusColor = 'default';
-              if (item.status === 'Done') statusColor = 'success';
-              else if (item.status === 'In Progress') statusColor = 'processing';
-              else if (item.status === 'Blocked') statusColor = 'error';
-              else if (item.status === 'In Review' || item.status === 'In Test') statusColor = 'warning';
-
-              return (
-                <g key={item.id} onClick={() => handleItemClick(item)} style={{ cursor: 'pointer' }}>
-                  {/* Type icon */}
-                  <text x={10} y={y + 20} fontSize={16}>
-                    {item.isMilestone ? '◆' : item.type === 'Story' ? '📖' : item.type === 'Bug' ? '🐛' : item.type === 'Spike' ? '🔬' : '📝'}
-                  </text>
-
-                  {/* Work item name */}
-                  <text x={35} y={y + 20} fontSize={13} fontWeight="500" fill="#333">
-                    {item.name.length > 35 ? item.name.substring(0, 35) + '...' : item.name}
-                  </text>
-
-                  {/* Assignee */}
-                  {item.assignee && (
-                    <text x={35} y={y + 38} fontSize={11} fill="#999">
-                      👤 {item.assignee}
-                    </text>
-                  )}
-
-                  {/* Status tag */}
-                  <foreignObject x={320} y={y + 12} width={100} height={24}>
-                    <Tag color={statusColor} style={{ margin: 0, fontSize: 11 }}>
-                      {item.status}
-                    </Tag>
-                  </foreignObject>
-                </g>
-              );
-            })}
-
-            {/* Gantt bars */}
-            <g transform={`translate(0, ${headerHeight})`}>
-              {filteredItems.map((item, index) => (
-                <GanttBar
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  rowHeight={rowHeight}
-                  viewStart={viewStart}
-                  onClick={handleItemClick}
-                  selected={selectedId === item.id}
-                />
-              ))}
-            </g>
-
-            {/* Today marker */}
-            {(() => {
-              const today = dayjs();
-              if (today.isAfter(viewStart) && today.isBefore(viewEnd)) {
-                const pixelsPerDay = columnWidth / (scale === 'day' ? 1 : scale === 'week' ? 7 : scale === 'month' ? 30 : 90);
-                const todayX = tableWidth + today.diff(viewStart, 'day') * pixelsPerDay;
-                return (
-                  <>
-                    <line x1={todayX} y1={0} x2={todayX} y2={timelineHeight} stroke="#ff4d4f" strokeWidth={2} strokeDasharray="5,5" />
-                    <rect x={todayX - 25} y={5} width={50} height={20} rx={4} fill="#ff4d4f" />
-                    <text x={todayX} y={19} fontSize={11} fill="white" textAnchor="middle" fontWeight="bold">
-                      TODAY
-                    </text>
-                  </>
-                );
-              }
-              return null;
-            })()}
-          </svg>
+            {/* Export Button */}
+            <Button
+              icon={<DownloadOutlined />}
+              size="small"
+              onClick={handleExport}
+            >
+              Export CSV
+            </Button>
+          </Space>
         </div>
 
-        {/* Empty state */}
-        {filteredItems.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Text type="secondary" className="text-lg">
-              No work items found matching the current filters
-            </Text>
-            <Text type="secondary">
-              Try adjusting your filter settings or add work items to this project
-            </Text>
+        {/* Timeline */}
+        <div className="flex-1 relative" style={{ minHeight: 400 }}>
+          {loading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-50 z-10">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                <div className="text-sm text-gray-500">Loading work items...</div>
+              </div>
+            </div>
+          ) : filteredWorkItems.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <CalendarOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
+                <div className="mt-4 text-gray-500">No work items to display</div>
+                <div className="mt-2 text-sm text-gray-400">
+                  {filterStatus !== 'all' || filterType !== 'all'
+                    ? 'Try adjusting your filters'
+                    : 'Add work items to this project to get started'
+                  }
+                </div>
+              </div>
+            </div>
+          ) : (
+            <VisTimelineWrapper
+              items={timelineItems}
+              groups={timelineGroups}
+              options={timelineOptions}
+              onItemClick={handleItemClick}
+              onItemDoubleClick={handleItemDoubleClick}
+              onItemUpdate={handleItemUpdate}
+              className={loading ? 'loading' : ''}
+            />
+          )}
+        </div>
+
+        {/* Footer with legend and stats */}
+        <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <Space size="large" className="text-xs">
+              <span className="text-gray-500">Type Legend:</span>
+              <Space size="small">
+                <div className="w-4 h-2 bg-blue-100 border border-blue-500 rounded"></div>
+                <span className="text-gray-600">Task</span>
+              </Space>
+              <Space size="small">
+                <div className="w-4 h-2 bg-red-100 border border-red-500 rounded"></div>
+                <span className="text-gray-600">Issue</span>
+              </Space>
+              <Space size="small">
+                <div className="w-2 h-2 bg-purple-500 border border-purple-700 rounded-sm transform rotate-45"></div>
+                <span className="text-gray-600 ml-1">Milestone</span>
+              </Space>
+              <Space size="small">
+                <div className="w-4 h-2 border-2 border-green-500 border-dashed rounded"></div>
+                <span className="text-gray-600">Phase</span>
+              </Space>
+            </Space>
+            <span className="text-xs text-gray-400">
+              • Drag to change dates • Double-click to open • Ctrl+Scroll to zoom
+            </span>
           </div>
-        )}
-      </div>
+        </div>
+      </Card>
     </div>
   );
-};
+}
