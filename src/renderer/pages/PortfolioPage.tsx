@@ -1,188 +1,91 @@
-import React from 'react';
+/**
+ * Portfolio Page with Timeline View
+ * Displays all projects in an interactive Gantt chart
+ */
+
+import React, { useState, useEffect } from 'react';
+import { Typography } from 'antd';
+import { ProjectGanttChart } from '@/components/gantt/ProjectGanttChart';
+import { WorkItemGanttChart } from '@/components/gantt/WorkItemGanttChart';
 import { useProjectStore } from '@/stores/useProjectStore';
 import { useWorkItemStore } from '@/stores/useWorkItemStore';
-import { Card, Row, Col, Statistic, Progress, Table, Tag, Typography } from 'antd';
-import type { ColumnsType } from 'antd';
+import { useI18n } from '@/hooks/useI18n';
+import type { Project } from '@/shared/types';
 
 const { Title, Text } = Typography;
 
+type ViewMode = 'projects' | 'workitems';
+
 export function PortfolioPage() {
-  const { projects } = useProjectStore();
-  const { workItems } = useWorkItemStore();
+  const { projects, loadProjects, isLoading: projectsLoading } = useProjectStore();
+  const { workItems, loadAllWorkItems, isLoading: workItemsLoading } = useWorkItemStore();
+  const { t } = useI18n();
 
-  // Calculate KPIs
-  const totalProjects = projects.length;
-  const totalWorkItems = workItems.length;
-  const blockedProjects = projects.filter(p => p.status === 'blocked').length;
-  const blockedWorkItems = workItems.filter(w => w.status === 'blocked').length;
-  const blockedCount = blockedProjects + blockedWorkItems;
-  const atRiskCount = workItems.filter(w => w.type === 'issue').length;
+  const [viewMode, setViewMode] = useState<ViewMode>('projects');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  const statusCounts = {
-    not_started: projects.filter(p => p.status === 'not_started').length + workItems.filter(w => w.status === 'not_started').length,
-    in_progress: projects.filter(p => p.status === 'in_progress').length + workItems.filter(w => w.status === 'in_progress').length,
-    done: projects.filter(p => p.status === 'done').length + workItems.filter(w => w.status === 'done').length,
-    blocked: blockedCount,
+  useEffect(() => {
+    // Load data on mount
+    loadProjects();
+    loadAllWorkItems();
+  }, []);
+
+  const handleProjectClick = (project: Project) => {
+    setSelectedProject(project);
+    setViewMode('workitems');
   };
 
-  const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
-  const getPercentage = (count: number) => total > 0 ? (count / total) * 100 : 0;
-
-  const getStatusTag = (status: string) => {
-    const statusMap: Record<string, { color: string; text: string }> = {
-      done: { color: 'success', text: 'Done' },
-      in_progress: { color: 'processing', text: 'In Progress' },
-      blocked: { color: 'error', text: 'Blocked' },
-      not_started: { color: 'default', text: 'Not Started' },
-    };
-    const config = statusMap[status] || { color: 'default', text: status };
-    return <Tag color={config.color}>{config.text}</Tag>;
+  const handleBack = () => {
+    setSelectedProject(null);
+    setViewMode('projects');
   };
 
-  const projectColumns: ColumnsType<any> = [
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text: string) => <span className="font-medium">{text}</span>,
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => getStatusTag(status),
-    },
-    {
-      title: 'Start Date',
-      dataIndex: 'start_date',
-      key: 'start_date',
-      render: (date: string) => date || '-',
-    },
-    {
-      title: 'End Date',
-      dataIndex: 'end_date',
-      key: 'end_date',
-      render: (date: string) => date || '-',
-    },
-    {
-      title: 'Owner',
-      dataIndex: 'owner',
-      key: 'owner',
-      render: (owner: string) => owner || '-',
-    },
-  ];
+  const handleWorkItemClick = (workItem: any) => {
+    // Navigate to work item detail or open modal
+    console.log('Work item clicked:', workItem);
+    // TODO: Implement work item detail view
+  };
+
+  const isLoading = projectsLoading || workItemsLoading;
 
   return (
-    <div className="p-8 space-y-6">
-      <div>
-        <Title level={2}>Portfolio Dashboard</Title>
-        <Text type="secondary">Overview of all projects and work items</Text>
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <div className="border-b border-theme-border bg-theme-bg-container px-8 py-6">
+        <div>
+          <Title level={2} className="mb-2">
+            {t('portfolio.title')}
+          </Title>
+          <Text type="secondary">
+            {viewMode === 'projects'
+              ? 'Overview of all projects and their timelines'
+              : `Project timeline: ${selectedProject?.name}`}
+          </Text>
+        </div>
       </div>
 
-      {/* KPI Cards */}
-      <Row gutter={16}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Total Projects"
-              value={totalProjects}
-              valueStyle={{ color: '#1677ff' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Work Items"
-              value={totalWorkItems}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="At Risk"
-              value={atRiskCount}
-              valueStyle={{ color: '#faad14' }}
-              suffix={<Text type="secondary" className="text-xs">Open issues</Text>}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Blocked"
-              value={blockedCount}
-              valueStyle={{ color: '#ff4d4f' }}
-              suffix={<Text type="secondary" className="text-xs">Requires attention</Text>}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Status Distribution */}
-      <Card
-        title={<Title level={4} className="mb-0">Status Distribution</Title>}
-      >
-        <div className="space-y-4">
-          {/* Progress Bar */}
-          <div>
-            <Progress
-              percent={100}
-              strokeColor={{
-                '0%': '#52c41a',
-                [getPercentage(statusCounts.done) + '%']: '#1677ff',
-                [getPercentage(statusCounts.done) + getPercentage(statusCounts.in_progress) + '%']: '#ff4d4f',
-                [getPercentage(statusCounts.done) + getPercentage(statusCounts.in_progress) + getPercentage(statusCounts.blocked) + '%']: '#d9d9d9',
-              }}
-              showInfo={false}
-              trailColor="transparent"
-              strokeLinecap="butt"
-            />
-          </div>
-
-          {/* Legend */}
-          <Row gutter={16}>
-            <Col span={6}>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#52c41a' }} />
-                <Text>Done ({statusCounts.done})</Text>
-              </div>
-            </Col>
-            <Col span={6}>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#1677ff' }} />
-                <Text>In Progress ({statusCounts.in_progress})</Text>
-              </div>
-            </Col>
-            <Col span={6}>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff4d4f' }} />
-                <Text>Blocked ({statusCounts.blocked})</Text>
-              </div>
-            </Col>
-            <Col span={6}>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#d9d9d9' }} />
-                <Text>Not Started ({statusCounts.not_started})</Text>
-              </div>
-            </Col>
-          </Row>
-        </div>
-      </Card>
-
-      {/* Projects Table */}
-      <Card
-        title={<Title level={4} className="mb-0">All Projects</Title>}
-      >
-        <Table
-          columns={projectColumns}
-          dataSource={projects}
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-        />
-      </Card>
+      {/* Content */}
+      <div className="flex-1 overflow-hidden bg-theme-bg-layout">
+        {viewMode === 'projects' ? (
+          <ProjectGanttChart
+            projects={projects}
+            workItems={workItems}
+            viewMode="month"
+            loading={isLoading}
+            onProjectClick={handleProjectClick}
+            onWorkItemClick={handleWorkItemClick}
+          />
+        ) : selectedProject ? (
+          <WorkItemGanttChart
+            project={selectedProject}
+            workItems={workItems.filter((w) => w.project_id === selectedProject.id)}
+            viewMode="month"
+            loading={isLoading}
+            onBack={handleBack}
+            onWorkItemClick={handleWorkItemClick}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
