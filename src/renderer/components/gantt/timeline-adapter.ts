@@ -48,8 +48,8 @@ export function workItemsToTimelineItems(workItems: WorkItem[]): VisTimelineItem
     return {
       id: item.id,
       content: item.title,
-      start: item.start_date || new Date().toISOString(),
-      end: item.end_date,
+      start: item.start_date ? new Date(item.start_date) : new Date(),
+      end: item.end_date ? new Date(item.end_date) : undefined,
       type,
       className: classNames.join(' '),
       group: item.parent_id || 'root',
@@ -97,8 +97,8 @@ export function projectsToTimelineItems(projects: Project[]): VisTimelineItem[] 
     return {
       id: project.id,
       content: project.name,
-      start: project.start_date || new Date().toISOString(),
-      end: project.end_date || undefined,
+      start: project.start_date ? new Date(project.start_date) : new Date(),
+      end: project.end_date ? new Date(project.end_date) : undefined,
       type: hasEndDate ? 'range' : 'box',
       className: classNames.join(' '),
       group: project.portfolio_id?.toString() || 'unassigned',
