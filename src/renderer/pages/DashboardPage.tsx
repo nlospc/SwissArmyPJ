@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useDashboardStore } from '@/stores/useDashboardStore';
+import { useProjectStore } from '@/stores/useProjectStore';
 import { Card, Button, Alert, Space, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { formatDistanceToNow } from 'date-fns';
+import type { ProjectHealth } from '@/stores/useDashboardStore';
 
 // Import dashboard sub-components
 import { ProjectTable } from '@/components/dashboard/ProjectTable';
@@ -11,8 +13,11 @@ import { TopWidgetDrawer } from '@/components/dashboard/TopWidgetDrawer';
 const { Title, Text } = Typography;
 
 export function DashboardPage() {
+  // Get real project data from ProjectStore (same as Gantt chart)
+  const { projects, loadProjects, isLoading: projectsLoading } = useProjectStore();
+
+  // Get dashboard metrics from DashboardStore
   const {
-    projectHealthList,
     changeFeed,
     upcomingMilestones,
     riskSummary,
@@ -22,18 +27,42 @@ export function DashboardPage() {
     refreshAll,
   } = useDashboardStore();
 
+  // Convert real projects to ProjectHealth format for dashboard
+  const projectHealthList = useMemo((): ProjectHealth[] => {
+    return projects.map(project => ({
+      id: project.id,
+      uuid: project.uuid,
+      name: project.name,
+      owner: project.owner || 'Unassigned',
+      status: (project.status === 'done' ? 'on_track' :
+               project.status === 'blocked' ? 'blocked' :
+               project.status === 'in_progress' ? 'on_track' : 'at_risk') as any,
+      progressPercent: 0, // TODO: Calculate from work items
+      doneTasks: 0, // TODO: Calculate from work items
+      totalTasks: 0, // TODO: Calculate from work items
+      nextMilestone: null, // TODO: Get from work items
+      blockerCount: 0, // TODO: Calculate
+      highRiskCount: 0, // TODO: Calculate
+    }));
+  }, [projects]);
+
   useEffect(() => {
+    // Load real project data
+    loadProjects();
+    // Load dashboard metrics
     refreshAll();
 
     // Auto-refresh every 5 minutes
     const interval = setInterval(() => {
+      loadProjects();
       refreshAll();
     }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [refreshAll]);
+  }, [refreshAll, loadProjects]);
 
   const handleRefresh = () => {
+    loadProjects();
     refreshAll();
   };
 
@@ -74,8 +103,8 @@ export function DashboardPage() {
             )}
             <Button
               onClick={handleRefresh}
-              icon={<ReloadOutlined spin={loading} />}
-              loading={loading}
+              icon={<ReloadOutlined spin={loading || projectsLoading} />}
+              loading={loading || projectsLoading}
             >
               Refresh
             </Button>
