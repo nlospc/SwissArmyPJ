@@ -384,17 +384,40 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 - No API keys in config files (use OS keychain when needed)
 - Audit all data changes in `audit_log` table
 
-## Current Project Status
-
-**Maturity:** Early development
-
-**Backend:** Basic SQLite schema + IPC handlers (skeleton)
-**Frontend:** Design system + prototype complete (IndexedDB-based demo)
-**Integration:** Not yet connected (separate build outputs)
-
-**Next Steps:**
-1. Complete SQLite schema implementation
-2. Implement core IPC handlers (projects, items, dashboard)
-3. Build production renderer using design/ as reference
-4. Connect Zustand stores to IPC layer
-5. Migrate from Electron to Tauri v2
+## Current Project Status
+
+**Last Updated:** 2026-02-09
+**Maturity:** Mid-development (Backend 80% | Frontend 60%)
+
+### ✅ Completed
+- **Database Schema**: Complete with migrations, audit logging, and FTS5 search
+- **IPC Handlers**: 50+ handlers for portfolios, projects, work items, inbox, todos
+- **My Work Backend**: Fully implemented (19 handlers) with time tracking and Pomodoro
+- **Dashboard Backend**: Portfolio summaries, change feed, risk analysis
+- **Gantt/Timeline**: Excel-style frozen pane UI with drag-and-drop
+- **UI Migration**: Ant Design v5 integration complete
+- **State Management**: Zustand stores for all major features
+
+### 🚧 In Progress
+- **My Work Frontend**: Components built, integration testing needed
+- **Gantt Features**: Dependency visualization, critical path calculation
+- **Search**: Global search UI (backend ready)
+- **Settings Page**: Preferences and data export/import
+
+### 📋 Planned
+- **Testing Framework**: Vitest for unit tests, Playwright for E2E
+- **Inbox Processing**: AI-powered field extraction
+- **Calendar Integration**: External calendar sync (Phase 2)
+- **Tauri Migration**: Move from Electron to Tauri v2
+
+### 📊 Database Status
+- **Size**: 260 KB (with sample data)
+- **Tables**: 11 (workspaces, portfolios, projects, work_items, inbox_items, todos, time_logs, pomodoro_sessions, user_preferences, audit_log, settings)
+- **Migrations**: 4 applied successfully
+- **Indexes**: 25+ for optimized queries
+
+### 🎯 Key Files
+- **Backend**: `src/main/ipc/handlers.ts` (1000+ lines), `src/main/ipc/myWorkHandlers.ts`, `src/main/ipc/dashboardHandlers.ts`
+- **Frontend**: `src/renderer/App.tsx`, `src/renderer/components/gantt/ExcelGanttChart.tsx` (1700+ lines)
+- **Stores**: `src/renderer/stores/useMyWorkStore.ts` (900+ lines), `src/renderer/stores/useDashboardStore.ts`
+- **Schema**: `src/main/database/schema.ts`, `src/main/database/migrationRunner.ts`

@@ -58,45 +58,95 @@
 
 ## 📦 主要依赖库
 
+
+
 ### UI 相关
+
 ```json
+
 {
-  "antd": "^5.x.x",           // Ant Design 组件库
-  "@ant-design/icons": "^x.x.x", // Ant Design 图标库
-  "lucide-react": "^0.468.0"   // 轻量级图标库（可保留）
+
+  "antd": "^5.29.3",                // Ant Design 组件库 (企业级)
+
+  "@ant-design/icons": "^5.6.1",    // Ant Design 图标库 (3000+ 图标)
+
+  "lucide-react": "^0.468.0",       // 轻量级图标库 (补充用)
+
+  "agentation": "^1.3.2",           // UI 标注工具 (开发环境)
+
+  "vis-timeline": "^8.5.0",         // 时间线可视化 (甘特图)
+
+  "vis-data": "^8.0.3"              // 时间线数据集
+
 }
+
 ```
+
+
 
 ### 工具库
+
 ```json
+
 {
-  "date-fns": "^4.1.0",       // 日期处理
-  "immer": "^11.1.3",         // 不可变数据
-  "clsx": "^2.1.1",           // 类名工具
-  "tailwind-merge": "^2.5.5"  // Tailwind 类名合并
+
+  "date-fns": "^4.1.0",       // 日期处理 (现代化、tree-shakable)
+
+  "moment": "^2.29.4",        // 日期处理 (vis-timeline 依赖)
+
+  "immer": "^11.1.3",         // 不可变数据 (Zustand 推荐)
+
+  "zustand": "^5.0.2"         // 状态管理 (轻量级、灵活)
+
 }
+
 ```
 
-## 🔄 迁移状态
 
-### 从 Radix UI 到 Ant Design v5
 
-| 组件类型 | Radix UI | Ant Design v5 | 迁移状态 |
-|---------|----------|---------------|----------|
-| 按钮 | - | Button | ✅ 计划中 |
-| 输入框 | - | Input | ✅ 计划中 |
-| 对话框 | Dialog | Modal | ✅ 计划中 |
-| 下拉菜单 | Dropdown Menu | Dropdown | ✅ 计划中 |
-| 标签页 | Tabs | Tabs | ✅ 计划中 |
-| 复选框 | Checkbox | Checkbox | ✅ 计划中 |
-| 选择器 | Select | Select | ✅ 计划中 |
-| 弹出提示 | Popover | Popover | ✅ 计划中 |
-| 进度条 | Progress | Progress | ✅ 计划中 |
-| 分隔线 | Separator | Divider | ✅ 计划中 |
-| 提示消息 | Toast | message | ✅ 计划中 |
-| 警告对话框 | Alert Dialog | Modal.confirm | ✅ 计划中 |
+### 数据库相关
 
-详见 [迁移指南](./migration-guide.md)
+```json
+
+{
+
+  "better-sqlite3": "^9.6.0"  // SQLite 同步绑定 (高性能、类型安全)
+
+}
+
+```
+
+## 🔄 迁移状态
+
+### 从 Radix UI 到 Ant Design v5
+
+**迁移状态：✅ 已完成 (2026-02-04)**
+
+| 组件类型 | Radix UI | Ant Design v5 | 迁移状态 |
+|---------|----------|---------------|----------|
+| 按钮 | Button | Button | ✅ 已完成 |
+| 输入框 | Input | Input | ✅ 已完成 |
+| 对话框 | Dialog | Modal | ✅ 已完成 |
+| 下拉菜单 | Dropdown Menu | Dropdown | ✅ 已完成 |
+| 标签页 | Tabs | Tabs | ✅ 已完成 |
+| 复选框 | Checkbox | Checkbox | ✅ 已完成 |
+| 选择器 | Select | Select | ✅ 已完成 |
+| 弹出提示 | Popover | Popover | ✅ 已完成 |
+| 进度条 | Progress | Progress | ✅ 已完成 |
+| 分隔线 | Separator | Divider | ✅ 已完成 |
+| 提示消息 | Toast | message/notification | ✅ 已完成 |
+| 警告对话框 | Alert Dialog | Modal.confirm | ✅ 已完成 |
+| 表格 | Table | Table | ✅ 已完成 |
+| 表单 | Form | Form | ✅ 已完成 |
+| 布局 | Layout | Layout | ✅ 已完成 |
+
+**主要变化：**
+- 移除了所有 Radix UI 依赖
+- 采用 Ant Design v5 的主题系统 (ConfigProvider)
+- 支持暗色模式切换 (algorithm: darkAlgorithm)
+- 统一使用 Ant Design 图标库 (@ant-design/icons)
+
+详见 [迁移指南](./migration-guide.md) 和 [组件库指南](./component-library.md)
 
 ## 📊 性能优化策略
 
