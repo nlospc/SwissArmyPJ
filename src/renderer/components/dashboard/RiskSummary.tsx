@@ -12,7 +12,7 @@ export function RiskSummary({ summary, loading }: RiskSummaryProps) {
   if (loading) {
     return (
       <Card title={<span className="flex items-center gap-2 text-base"><AlertTriangle className="h-4 w-4" /> Risk Summary</span>}>
-        <div className="h-16 animate-pulse bg-gray-100 rounded" />
+        <div className="h-16 animate-pulse bg-theme-layout rounded" />
       </Card>
     );
   }
@@ -28,7 +28,7 @@ export function RiskSummary({ summary, loading }: RiskSummaryProps) {
       <Card title={<span className="flex items-center gap-2 text-base"><AlertTriangle className="h-4 w-4" /> Risk Summary</span>}>
         <div className="text-center py-4">
           <div className="text-green-600 font-semibold text-sm mb-1">No Active Risks</div>
-          <p className="text-xs text-gray-500">All issues are under control</p>
+          <p className="text-xs text-theme-secondary">All issues are under control</p>
         </div>
       </Card>
     );
@@ -117,7 +117,7 @@ export function RiskSummary({ summary, loading }: RiskSummaryProps) {
         </div>
 
         {totalRisks > 0 && (
-          <p className="text-xs text-center text-gray-500">
+          <p className="text-xs text-center text-theme-secondary">
             {totalRisks} open {totalRisks === 1 ? 'issue' : 'issues'} requiring attention
           </p>
         )}

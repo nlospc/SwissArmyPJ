@@ -38,7 +38,7 @@ export function LogSummary() {
         {/* Total Time */}
         {totalMinutes > 0 && (
           <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-            <div className="text-xs text-gray-500 mb-1">Total Today</div>
+            <div className="text-xs text-theme-secondary mb-1">Total Today</div>
             <div className="text-2xl font-bold">{formatDuration(totalMinutes)}</div>
           </div>
         )}
@@ -46,7 +46,7 @@ export function LogSummary() {
         {/* Log Entries */}
         {todayLogs.length === 0 ? (
           <div className="text-center py-8">
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-theme-secondary">
               No time logged today. Start a timer or add a manual entry.
             </div>
           </div>

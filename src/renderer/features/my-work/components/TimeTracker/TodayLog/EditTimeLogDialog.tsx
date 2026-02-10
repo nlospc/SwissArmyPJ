@@ -83,7 +83,7 @@ export function EditTimeLogDialog({ log, open, onOpenChange }: EditTimeLogDialog
         <div>
           <label className="block text-sm font-medium mb-1">Task</label>
           <div className="text-sm font-medium">{log.itemName}</div>
-          <div className="text-xs text-gray-500">{log.projectName}</div>
+          <div className="text-xs text-theme-secondary">{log.projectName}</div>
         </div>
 
         {/* Log Type */}
@@ -117,8 +117,8 @@ export function EditTimeLogDialog({ log, open, onOpenChange }: EditTimeLogDialog
         {/* Duration Change Indicator */}
         {hasDurationChange && (
           <div className="text-sm">
-            <span className="text-gray-500">Duration: </span>
-            <span className="line-through text-gray-500">
+            <span className="text-theme-secondary">Duration: </span>
+            <span className="line-through text-theme-secondary">
               {Math.floor(originalDuration / 60)}h {originalDuration % 60}m
             </span>
             {' → '}

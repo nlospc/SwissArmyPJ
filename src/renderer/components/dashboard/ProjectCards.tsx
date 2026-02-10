@@ -73,7 +73,7 @@ export function ProjectCards({ projects, loading }: ProjectCardsProps) {
       <Card title="Project Health Cards">
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 animate-pulse bg-gray-100 rounded" />
+            <div key={i} className="h-24 animate-pulse bg-theme-layout rounded" />
           ))}
         </div>
       </Card>
@@ -91,7 +91,7 @@ export function ProjectCards({ projects, loading }: ProjectCardsProps) {
       }
     >
       {projects.length === 0 ? (
-        <p className="text-center text-gray-500 py-8">No active projects</p>
+        <p className="text-center text-theme-secondary py-8">No active projects</p>
       ) : (
         <div className="space-y-3">
           {projects.map((project) => {
@@ -101,7 +101,7 @@ export function ProjectCards({ projects, loading }: ProjectCardsProps) {
               <div
                 key={project.id}
                 onClick={() => handleProjectClick(project.id)}
-                className={`border rounded-lg p-4 cursor-pointer transition-colors hover:bg-gray-50 ${config.borderColor}`}
+                className={`border rounded-lg p-4 cursor-pointer transition-colors hover:bg-theme-container ${config.borderColor}`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -114,7 +114,7 @@ export function ProjectCards({ projects, loading }: ProjectCardsProps) {
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between text-gray-500">
+                  <div className="flex items-center justify-between text-theme-secondary">
                     <span>
                       {project.doneTasks}/{project.totalTasks} tasks done
                     </span>
@@ -130,14 +130,14 @@ export function ProjectCards({ projects, loading }: ProjectCardsProps) {
                   {project.nextMilestone && (
                     <div className="flex items-center justify-between pt-2 border-t">
                       <div className="flex items-center gap-2">
-                        <Clock className="h-3 w-3 text-gray-500" />
-                        <span className="text-gray-500">
+                        <Clock className="h-3 w-3 text-theme-secondary" />
+                        <span className="text-theme-secondary">
                           {project.nextMilestone.name}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         {getMilestoneStatusTag(project.nextMilestone.status)}
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-theme-secondary">
                           {formatDistanceToNow(new Date(project.nextMilestone.date), { addSuffix: true })}
                         </span>
                       </div>

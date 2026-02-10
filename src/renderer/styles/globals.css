@@ -69,17 +69,179 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  html, body {
-    @apply h-full;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  #root {
-    @apply h-full;
-  }
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body {
+    @apply h-full;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  #root {
+    @apply h-full;
+  }
+}
+
+/* ========================================
+   Drawer Animations
+   ======================================== */
+
+/* Drawer overlay blur effect */
+.project-detail-drawer .ant-drawer-mask {
+  backdrop-filter: blur(2px);
+  transition: opacity 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+/* Drawer panel smooth slide */
+.project-detail-drawer .ant-drawer-content-wrapper {
+  transition: transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+/* Content fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Slide in animation for work items */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+  opacity: 0; /* Start hidden */
+}
+
+/* Progress bar animation */
+@keyframes progressSlide {
+  from {
+    width: 0%;
+  }
+}
+
+.progress-bar-animated .ant-progress-bg {
+  animation: progressSlide 1s ease-out;
+}
+
+/* Status tag pulse animation */
+@keyframes tagPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.status-tag-animated {
+  animation: tagPulse 2s ease-in-out infinite;
+}
+
+/* Slow spin for loading */
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 1s linear infinite;
+}
+
+/* Metric card hover effect */
+.metric-card {
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Work item card hover */
+.work-item-card {
+  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.work-item-card:hover {
+  border-color: var(--ant-colorPrimary, #1677ff);
+}
+
+/* Tab content transition */
+.drawer-content {
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.drawer-content.content-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Ant Design Tabs ink bar animation */
+.ant-tabs-ink-bar {
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1) !important;
+}
+
+/* Ant Design Tabs tab animation */
+.ant-tabs-tab {
+  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1) !important;
+}
+
+.ant-tabs-tab:hover {
+  transform: translateY(-1px);
+}
+
+/* Smooth scrollbar for drawer content */
+.project-detail-drawer .ant-drawer-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.project-detail-drawer .ant-drawer-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.project-detail-drawer .ant-drawer-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.project-detail-drawer .ant-drawer-body::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.project-detail-drawer .ant-drawer-body::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode adjustments */
+.dark .project-detail-drawer .ant-drawer-body::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark .project-detail-drawer .ant-drawer-body::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }

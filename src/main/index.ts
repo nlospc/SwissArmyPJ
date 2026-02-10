@@ -1,7 +1,19 @@
 import * as electron from 'electron';
 import { initDatabase } from './database/schema';
 import { registerIPCHandlers } from './ipc/handlers';
-import { default as installExtension, REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS } from 'electron-devtools-installer';
+
+// 在开发环境中导入 devtools installer
+let installExtension: any, REACT_DEVELOPER_TOOLS: any, REDUX_DEVTOOLS: any;
+if (process.env.NODE_ENV === 'development') {
+  try {
+    const devtools = require('electron-devtools-installer');
+    installExtension = devtools.default || devtools;
+    REACT_DEVELOPER_TOOLS = devtools.REACT_DEVELOPER_TOOLS;
+    REDUX_DEVTOOLS = devtools.REDUX_DEVTOOLS;
+  } catch (err) {
+    console.log('Failed to load electron-devtools-installer:', err);
+  }
+}
 
 let mainWindow: electron.BrowserWindow | null = null;
 
@@ -24,14 +36,16 @@ function createWindow(): void {
     mainWindow.webContents.openDevTools();
 
     // Install React DevTools
-    installExtension(REACT_DEVELOPER_TOOLS)
-      .then((name) => console.log(`Added Extension:  ${name}`))
-      .catch((err) => console.log('An error occurred:', err));
+    if (typeof installExtension === 'function') {
+      installExtension(REACT_DEVELOPER_TOOLS)
+        .then((name: string) => console.log(`Added Extension:  ${name}`))
+        .catch((err: Error) => console.log('An error occurred:', err));
 
-    // Install Redux DevTools (if using Redux)
-    installExtension(REDUX_DEVTOOLS)
-      .then((name) => console.log(`Added Extension:  ${name}`))
-      .catch((err) => console.log('An error occurred:', err));
+      // Install Redux DevTools (if using Redux)
+      installExtension(REDUX_DEVTOOLS)
+        .then((name: string) => console.log(`Added Extension:  ${name}`))
+        .catch((err: Error) => console.log('An error occurred:', err));
+    }
 
     // Add keyboard shortcuts for DevTools
     mainWindow.webContents.on('before-input-event', (event, input) => {

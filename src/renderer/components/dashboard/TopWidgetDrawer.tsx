@@ -21,15 +21,15 @@ export function TopWidgetDrawer({
 }: TopWidgetDrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  return (
-    <div className="border-b bg-white">
-      {/* Header/Trigger */}
-      <div className="flex items-center justify-between px-8 py-3">
-        <div className="flex items-center gap-4">
-          <h2 className="text-sm font-semibold text-gray-500">
-            Quick Overview
-          </h2>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+  return (
+    <div className="border-b bg-theme-container theme-transition">
+      {/* Header/Trigger */}
+      <div className="flex items-center justify-between px-8 py-3">
+        <div className="flex items-center gap-4">
+          <h2 className="text-sm font-semibold text-theme-secondary theme-transition">
+            Quick Overview
+          </h2>
+          <div className="flex items-center gap-2 text-xs text-theme-secondary theme-transition">
             {upcomingMilestones.length > 0 && (
               <span className="flex items-center gap-1">
                 <span className="font-medium">{upcomingMilestones.length}</span> milestones

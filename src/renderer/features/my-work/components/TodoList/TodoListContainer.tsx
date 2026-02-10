@@ -75,7 +75,7 @@ export function TodoListContainer() {
 
       {/* Quick Add Task - Sticky at Top */}
       {projects.length > 0 && (
-        <div className="sticky top-0 z-10 bg-white px-6 py-3 border-b shadow-sm">
+        <div className="sticky top-0 z-10 bg-theme-container px-6 py-3 border-b shadow-sm">
           <QuickTaskInput projects={projects} />
         </div>
       )}

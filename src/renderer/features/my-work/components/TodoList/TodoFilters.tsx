@@ -17,15 +17,15 @@ export function TodoFilters() {
   const updateFilter = useMyWorkStore((state) => state.updateFilter);
 
   return (
-    <div className="flex items-center gap-3 px-6 py-4 border-b bg-white flex-wrap">
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+    <div className="flex items-center gap-3 px-6 py-4 border-b bg-theme-container flex-wrap">
+      <div className="flex items-center gap-2 text-sm text-theme-secondary">
         <SlidersHorizontal className="h-4 w-4" />
         <span>View:</span>
       </div>
 
       {/* Group By */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-500">Group:</label>
+        <label className="text-sm text-theme-secondary">Group:</label>
         <Select
           value={groupBy}
           onChange={(value) => updateGrouping(value as GroupByOption)}
@@ -41,7 +41,7 @@ export function TodoFilters() {
 
       {/* Sort By */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-500">Sort:</label>
+        <label className="text-sm text-theme-secondary">Sort:</label>
         <Select
           value={sortBy}
           onChange={(value) => updateSorting(value as SortByOption)}
@@ -57,7 +57,7 @@ export function TodoFilters() {
 
       {/* Filter */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-500">Filter:</label>
+        <label className="text-sm text-theme-secondary">Filter:</label>
         <Select
           value={filterStatus}
           onChange={(value) => updateFilter(value as FilterOption)}

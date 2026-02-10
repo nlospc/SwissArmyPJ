@@ -164,7 +164,7 @@ export function InboxPage() {
   return (
     <div className="flex h-full">
       {/* Left Panel - Inbox List */}
-      <div className="w-96 border-r border-gray-200 p-4 space-y-4 overflow-auto dark:border-gray-700">
+      <div className="w-96 border-r border-theme-secondary p-4 space-y-4 overflow-auto dark:border-gray-700">
         <div>
           <h2 className="text-xl font-bold mb-2">Inbox</h2>
           <div className="space-y-2">
@@ -231,7 +231,7 @@ export function InboxPage() {
       <div className="flex-1 p-8 overflow-auto">
         {!selectedItem ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500">
+            <div className="text-center text-theme-secondary">
               <p className="text-lg font-medium">Select an inbox item to process</p>
               <p className="text-sm mt-2">Choose an item from the left panel</p>
             </div>
@@ -250,7 +250,7 @@ export function InboxPage() {
               title={<span className="text-sm">Original Inbox Item</span>}
               size="small"
             >
-              <p className="text-sm bg-gray-50 p-3 rounded dark:bg-gray-800">
+              <p className="text-sm bg-theme-container p-3 rounded dark:bg-gray-800">
                 {selectedItem.raw_text}
               </p>
             </Card>
@@ -259,7 +259,7 @@ export function InboxPage() {
             {currentStep === 0 && (
               <Card title="Step 1: Classify Entity Type">
                 <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-theme-secondary">
                     What type of entity should this create?
                   </p>
                   <div className="grid grid-cols-2 gap-4">
@@ -269,7 +269,7 @@ export function InboxPage() {
                       onClick={() => handleClassify('project')}
                     >
                       <span className="text-lg font-semibold">Project</span>
-                      <span className="text-xs text-gray-500">A new project container</span>
+                      <span className="text-xs text-theme-secondary">A new project container</span>
                     </Button>
                     <Button
                       size="large"

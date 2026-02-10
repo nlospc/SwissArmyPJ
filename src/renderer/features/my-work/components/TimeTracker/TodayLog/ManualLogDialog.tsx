@@ -136,7 +136,7 @@ export function ManualLogDialog({ open, onOpenChange }: ManualLogDialogProps) {
 
         {/* Duration Display */}
         {durationMinutes > 0 && (
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-theme-secondary">
             Duration: {Math.floor(durationMinutes / 60)}h {durationMinutes % 60}m
           </div>
         )}

@@ -28,7 +28,7 @@ export function UpcomingMilestones({ milestones, loading }: UpcomingMilestonesPr
       <Card title={<span className="flex items-center gap-2 text-base"><Flag className="h-4 w-4" /> Upcoming Milestones</span>}>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 animate-pulse bg-gray-100 rounded" />
+            <div key={i} className="h-12 animate-pulse bg-theme-layout rounded" />
           ))}
         </div>
       </Card>
@@ -41,17 +41,17 @@ export function UpcomingMilestones({ milestones, loading }: UpcomingMilestonesPr
       extra={<Tag>{milestones.length} total</Tag>}
     >
       {milestones.length === 0 ? (
-        <p className="text-center text-gray-500 py-4 text-sm">No upcoming milestones</p>
+        <p className="text-center text-theme-secondary py-4 text-sm">No upcoming milestones</p>
       ) : (
         <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
           {milestones.map((milestone) => (
             <div
               key={milestone.id}
-              className="flex items-center justify-between p-2 rounded border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+              className="flex items-center justify-between p-2 rounded border border-theme-secondary hover:bg-theme-container transition-colors cursor-pointer"
             >
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium truncate text-sm leading-tight">{milestone.name}</h4>
-                <p className="text-xs text-gray-500 truncate mt-0.5">{milestone.projectName}</p>
+                <p className="text-xs text-theme-secondary truncate mt-0.5">{milestone.projectName}</p>
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -59,7 +59,7 @@ export function UpcomingMilestones({ milestones, loading }: UpcomingMilestonesPr
                   <div className="text-sm font-medium">
                     {format(new Date(milestone.dueDate), 'MMM dd')}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-theme-secondary">
                     {formatDistanceToNow(new Date(milestone.dueDate), { addSuffix: true })}
                   </div>
                 </div>

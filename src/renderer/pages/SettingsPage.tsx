@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useUIStore } from '@/stores/useUIStore';
+import { useI18n } from '@/hooks/useI18n';
 import { ipc } from '@/lib/ipc';
 import { loadSampleData } from '@/lib/sampleData';
-import { Card, Input, Button, Alert, Space, Typography, Modal, Upload, Descriptions } from 'antd';
+import { Card, Input, Button, Alert, Space, Typography, Modal, Upload, Descriptions, Select } from 'antd';
 import { ExclamationCircleOutlined, DownloadOutlined, UploadOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { UploadChangeParam } from 'antd/es/upload';
 
@@ -11,13 +13,16 @@ const { Dragger } = Upload;
 
 export function SettingsPage() {
   const { workspace, updateWorkspaceName } = useWorkspaceStore();
+  const { language, setLanguage } = useUIStore();
+  const { t } = useI18n();
+  
   const [workspaceName, setWorkspaceName] = useState(workspace?.name || '');
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const handleUpdateWorkspace = async () => {
     if (!workspaceName.trim()) return;
     await updateWorkspaceName(workspaceName);
-    setMessage({ type: 'success', text: 'Workspace name updated successfully' });
+    setMessage({ type: 'success', text: t('settings.workspaceNameUpdated') });
     setTimeout(() => setMessage(null), 3000);
   };
 
@@ -33,10 +38,10 @@ export function SettingsPage() {
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
 
-      setMessage({ type: 'success', text: 'Data exported successfully' });
+      setMessage({ type: 'success', text: t('settings.exportSuccess') });
       setTimeout(() => setMessage(null), 3000);
     } else {
-      setMessage({ type: 'error', text: 'Failed to export data' });
+      setMessage({ type: 'error', text: t('settings.exportFailed') });
     }
   };
 
@@ -47,29 +52,29 @@ export function SettingsPage() {
       const result = await ipc.settings.import(data);
 
       if (result.success) {
-        setMessage({ type: 'success', text: 'Data imported successfully. Please reload the page.' });
+        setMessage({ type: 'success', text: t('settings.importSuccess') });
         setTimeout(() => window.location.reload(), 2000);
       } else {
-        setMessage({ type: 'error', text: 'Failed to import data' });
+        setMessage({ type: 'error', text: t('settings.importFailed') });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Invalid import file' });
+      setMessage({ type: 'error', text: t('settings.invalidImportFile') });
     }
   };
 
   const handleResetToSampleData = async () => {
     Modal.confirm({
-      title: 'Are you absolutely sure?',
+      title: t('settings.resetConfirmTitle'),
       icon: <ExclamationCircleOutlined />,
       content: (
         <div>
-          <p>This action will delete ALL your current data and replace it with sample data.</p>
-          <p>This action cannot be undone. Make sure to export your data first if you want to keep it.</p>
+          <p>{t('settings.resetConfirmContent1')}</p>
+          <p>{t('settings.resetConfirmContent2')}</p>
         </div>
       ),
-      okText: 'Yes, reset to sample data',
+      okText: t('settings.resetConfirmOk'),
       okType: 'danger',
-      cancelText: 'Cancel',
+      cancelText: t('common.cancel'),
       onOk: async () => {
         try {
           await ipc.settings.import({
@@ -81,10 +86,10 @@ export function SettingsPage() {
             settings: [],
           });
           await loadSampleData();
-          setMessage({ type: 'success', text: 'Sample data loaded. Reloading page...' });
+          setMessage({ type: 'success', text: t('settings.resetSampleLoaded') });
           setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-          setMessage({ type: 'error', text: 'Failed to reset data' });
+          setMessage({ type: 'error', text: t('settings.resetFailed') });
         }
       },
     });
@@ -95,7 +100,7 @@ export function SettingsPage() {
     accept: '.json' as const,
     beforeUpload: (file: File) => {
       handleImport(file);
-      return false; // Prevent automatic upload
+      return false;
     },
     showUploadList: false,
   };
@@ -103,8 +108,8 @@ export function SettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
       <div>
-        <Title level={2}>Settings</Title>
-        <Text type="secondary">Manage your workspace and data</Text>
+        <Title level={2}>{t('settings.title')}</Title>
+        <Text type="secondary">{t('settings.subtitle')}</Text>
       </div>
 
       {message && (
@@ -118,80 +123,100 @@ export function SettingsPage() {
       )}
 
       {/* Workspace Settings */}
-      <Card title={<Title level={4} className="mb-0">Workspace</Title>}>
+      <Card title={<Title level={4} className="mb-0">{t('settings.workspace')}</Title>}>
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
           <div>
-            <Text strong>Workspace Name</Text>
+            <Text strong>{t('settings.workspaceName')}</Text>
             <div className="flex gap-2 mt-2">
               <Input
                 value={workspaceName}
                 onChange={(e) => setWorkspaceName(e.target.value)}
-                placeholder="My Workspace"
+                placeholder={t('settings.workspaceNamePlaceholder')}
                 style={{ flex: 1 }}
               />
               <Button type="primary" onClick={handleUpdateWorkspace}>
-                Update
+                {t('settings.updateWorkspace')}
               </Button>
             </div>
           </div>
         </Space>
       </Card>
 
+      {/* Language Settings */}
+      <Card title={<Title level={4} className="mb-0">{t('settings.language')}</Title>}>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div>
+            <Text type="secondary" className="block mb-3">
+              {t('settings.languageDesc')}
+            </Text>
+            <Select
+              value={language}
+              onChange={setLanguage}
+              style={{ width: 200 }}
+              options={[
+                { label: t('settings.languageChinese'), value: 'zh' },
+                { label: t('settings.languageEnglish'), value: 'en' },
+              ]}
+            />
+          </div>
+        </Space>
+      </Card>
+
       {/* Data Management */}
-      <Card title={<Title level={4} className="mb-0">Data Management</Title>}>
+      <Card title={<Title level={4} className="mb-0">{t('settings.dataManagement')}</Title>}>
         <Space direction="vertical" style={{ width: '100%' }} size="large">
           {/* Export */}
           <div>
-            <Title level={5}>Export Data</Title>
+            <Title level={5}>{t('settings.exportData')}</Title>
             <Text type="secondary" className="block mb-3">
-              Download all your data as a JSON file
+              {t('settings.exportDataDesc')}
             </Text>
             <Button
               icon={<DownloadOutlined />}
               onClick={handleExport}
             >
-              Export Data
+              {t('settings.exportDataButton')}
             </Button>
           </div>
 
           {/* Import */}
           <div className="border-t border-gray-100 pt-4 dark:border-gray-700">
-            <Title level={5}>Import Data</Title>
+            <Title level={5}>{t('settings.importData')}</Title>
             <Text type="secondary" className="block mb-3">
-              Import data from a previously exported JSON file
+              {t('settings.importDataDesc')}
             </Text>
             <Dragger {...uploadProps} style={{ maxWidth: '500px' }}>
               <p className="ant-upload-drag-icon">
                 <UploadOutlined />
               </p>
-              <p className="ant-upload-text">Click or drag JSON file to this area to upload</p>
-              <p className="ant-upload-hint">Support for .json files only</p>
+              <p className="ant-upload-text">{t('settings.importUploadText')}</p>
+              <p className="ant-upload-hint">{t('settings.importFileHint')}</p>
             </Dragger>
           </div>
 
           {/* Reset */}
           <div className="border-t border-gray-100 pt-4 dark:border-gray-700">
-            <Title level={5}>Reset to Sample Data</Title>
+            <Title level={5}>{t('settings.resetToSample')}</Title>
             <Text type="secondary" className="block mb-3">
-              Clear all data and reload sample projects and work items
+              {t('settings.resetToSampleDesc')}
             </Text>
             <Button
               danger
               icon={<ReloadOutlined />}
               onClick={handleResetToSampleData}
             >
-              Reset to Sample Data
+              {t('settings.resetToSampleButton')}
             </Button>
           </div>
         </Space>
       </Card>
 
       {/* App Info */}
-      <Card title={<Title level={4} className="mb-0">About</Title>}>
+      <Card title={<Title level={4} className="mb-0">{t('settings.about')}</Title>}>
         <Descriptions column={1} size="small">
-          <Descriptions.Item label="Version">1.0.0</Descriptions.Item>
-          <Descriptions.Item label="Platform">Electron + SQLite</Descriptions.Item>
-          <Descriptions.Item label="Component Library">Ant Design v5</Descriptions.Item>
+          <Descriptions.Item label={t('settings.version')}>1.0.0</Descriptions.Item>
+          <Descriptions.Item label={t('settings.platform')}>Electron + SQLite</Descriptions.Item>
+          <Descriptions.Item label={t('settings.componentLibrary')}>Ant Design v5</Descriptions.Item>
         </Descriptions>
       </Card>
     </div>

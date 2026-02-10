@@ -581,7 +581,7 @@ export function ProjectsPage() {
             <Tag color={TYPE_COLORS[record.type] || 'default'} style={{ margin: 0, fontSize: 11 }}>
               {record.type}
             </Tag>
-            <span className={record.level === 2 ? 'text-sm text-gray-600 ml-2' : 'text-sm font-medium'}>
+            <span className={record.level === 2 ? 'text-sm text-theme-primary ml-2' : 'text-sm font-medium'}>
               {text}
             </span>
           </Space>
@@ -616,7 +616,7 @@ export function ProjectsPage() {
         if (record.key === editingRowKey) {
           return <Input type="date" value={rowValues.start_date} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, start_date: e.target.value }))} />;
         }
-        return <span className="text-xs text-gray-500">{d || '—'}</span>;
+        return <span className="text-xs text-theme-secondary">{d || '—'}</span>;
       },
     },
     {
@@ -628,7 +628,7 @@ export function ProjectsPage() {
         if (record.key === editingRowKey) {
           return <Input type="date" value={rowValues.end_date} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, end_date: e.target.value }))} />;
         }
-        return <span className="text-xs text-gray-500">{d || '—'}</span>;
+        return <span className="text-xs text-theme-secondary">{d || '—'}</span>;
       },
     },
     {
@@ -640,7 +640,7 @@ export function ProjectsPage() {
         if (record.key === editingRowKey) {
           return <Input value={rowValues.notes} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, notes: e.target.value }))} />;
         }
-        return <span className="text-xs text-gray-500">{n || '—'}</span>;
+        return <span className="text-xs text-theme-secondary">{n || '—'}</span>;
       },
     },
     {
@@ -718,7 +718,7 @@ export function ProjectsPage() {
       dataIndex: 'notes',
       key: 'notes',
       ellipsis: true,
-      render: (n: string) => <span className="text-xs text-gray-500">{n || '—'}</span>,
+      render: (n: string) => <span className="text-xs text-theme-secondary">{n || '—'}</span>,
     },
   ];
 
@@ -741,20 +741,20 @@ export function ProjectsPage() {
 
   return (
     <div className="flex h-full">
-      {/* ================================================== Left panel */}
-      <div className="w-80 border-r border-gray-200 flex flex-col dark:border-gray-700" style={{ minWidth: 320 }}>
-        {/* Search + filter */}
-        <div className="p-4 space-y-2 border-b border-gray-100">
+      {/* ================================================== Left panel */}
+      <div className="w-80 border-r border-theme-border flex flex-col bg-theme-bg-layout dark:border-gray-700 dark:bg-gray-900" style={{ minWidth: 320 }}>
+        {/* Search + filter */}
+        <div className="p-4 space-y-2 border-b border-theme-border dark:border-gray-700">
           <div className="flex items-center justify-between">
             <Title level={4} className="mb-0">Projects</Title>
             <Space size="small" align="center">
               <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => { projectForm.resetFields(); setAddProjectOpen(true); }}>New</Button>
-              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{filteredProjects.length} total</span>
+              <span className="text-xs text-theme-secondary bg-theme-layout px-2 py-0.5 rounded-full">{filteredProjects.length} total</span>
             </Space>
           </div>
           <Input
             placeholder="Search…"
-            prefix={<SearchOutlined className="text-gray-400" />}
+            prefix={<SearchOutlined className="text-theme-secondary" />}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             allowClear
@@ -801,28 +801,47 @@ export function ProjectsPage() {
               return (
                 <div key={group.key}>
                   {groupBy !== 'none' && (
+
                     <div
-                      className="group flex items-center justify-between px-3 py-1.5 bg-gray-100 border-b border-gray-200 cursor-pointer select-none"
+
+                      className="group flex items-center justify-between px-3 py-1.5 bg-theme-bg-elevated border-b border-theme-border cursor-pointer select-none dark:bg-gray-800 dark:border-gray-700"
+
                       onClick={() => toggleGroup(group.key)}
+
                     >
+
                       <div className="flex items-center gap-1.5">
-                        {isCollapsed ? <CaretRightOutlined className="text-gray-500" /> : <CaretDownOutlined className="text-gray-500" />}
+
+                        {isCollapsed ? <CaretRightOutlined className="text-theme-secondary dark:text-gray-400" /> : <CaretDownOutlined className="text-theme-secondary dark:text-gray-400" />}
+
                         {portfolioId != null ? (
-                          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide" onClick={(e) => e.stopPropagation()}>
+
+                          <span className="text-xs font-semibold text-theme-primary uppercase tracking-wide dark:text-gray-100" onClick={(e) => e.stopPropagation()}>
+
                             <InlineEdit
+
                               value={group.label}
+
                               onSave={(v) => { if (v?.trim()) updatePortfolio(portfolioId, { name: v.trim() }); }}
+
                             />
+
                           </span>
+
                         ) : (
-                          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{group.label}</span>
+
+                          <span className="text-xs font-semibold text-theme-primary uppercase tracking-wide dark:text-gray-100">{group.label}</span>
+
                         )}
+
                       </div>
+
                       <div className="flex items-center gap-1">
-                        <span className="text-xs text-gray-400 bg-white border border-gray-200 rounded-full px-1.5 py-0.5">{group.projects.length}</span>
+
+                        <span className="text-xs text-theme-secondary bg-theme-bg-container border border-theme-border rounded-full px-1.5 py-0.5 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600">{group.projects.length}</span>
                         {portfolioId != null && (
                           <DeleteOutlined
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 cursor-pointer"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-theme-secondary hover:text-red-500 cursor-pointer"
                             onClick={(e) => { e.stopPropagation(); handleDeletePortfolio(portfolioId, group.label); }}
                           />
                         )}
@@ -831,36 +850,67 @@ export function ProjectsPage() {
                   )}
 
                   {!isCollapsed && group.projects.map((project) => (
+
                     <div
+
                       key={project.id}
+
                       onClick={() => handleSelect(project)}
+
                       className={[
-                        'px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors',
+
+                        'px-4 py-3 border-b cursor-pointer transition-colors dark:border-gray-700',
+
                         selectedProjectId === project.id
-                          ? 'bg-blue-50 border-l-[3px] border-l-blue-600'
-                          : 'border-l-[3px] border-l-transparent hover:bg-gray-50',
+
+                          ? 'bg-blue-50 border-l-[3px] border-l-blue-600 dark:bg-blue-900/20 dark:border-l-blue-400'
+
+                          : 'border-l-[3px] border-l-transparent hover:bg-theme-bg-container dark:hover:bg-gray-800/50',
+
                       ].join(' ')}
+
                     >
+
                       <div className="flex items-center justify-between gap-2">
+
                         <div className="flex items-center gap-2 min-w-0">
+
                           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: STATUS_DOT[project.status] }} />
-                          <span className="text-sm font-medium truncate">{project.name}</span>
+
+                          <span className="text-sm font-medium truncate dark:text-gray-100">{project.name}</span>
+
                         </div>
+
                         <StatusTag status={project.status} />
+
                       </div>
+
                       {project.owner && (
-                        <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+
+                        <div className="flex items-center gap-1 mt-1 text-xs text-theme-secondary dark:text-gray-400">
+
                           <UserOutlined /> {project.owner}
+
                         </div>
+
                       )}
+
                       {project.tags && project.tags.length > 0 && (
+
                         <div className="flex gap-1 mt-1.5 flex-wrap">
+
                           {project.tags.slice(0, 3).map((t) => (
+
                             <Tag key={t} style={{ fontSize: 10, padding: '0 5px', margin: 0, lineHeight: '16px' }}>{t}</Tag>
+
                           ))}
+
                         </div>
+
                       )}
+
                     </div>
+
                   ))}
                 </div>
               );
@@ -904,7 +954,7 @@ export function ProjectsPage() {
         ) : (
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="px-6 pt-5 pb-4 border-b border-gray-200 bg-white flex-shrink-0">
+            <div className="px-6 pt-5 pb-4 border-b border-theme-secondary bg-theme-container flex-shrink-0">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-3 flex-wrap">
@@ -917,7 +967,7 @@ export function ProjectsPage() {
                       renderDisplay={() => <StatusTag status={selectedProject.status} />}
                     />
                   </div>
-                  <div className="flex items-center gap-4 mt-1.5 text-sm text-gray-500 flex-wrap">
+                  <div className="flex items-center gap-4 mt-1.5 text-sm text-theme-secondary flex-wrap">
                     {selectedProject.owner && (
                       <span className="flex items-center gap-1"><UserOutlined /> {selectedProject.owner}</span>
                     )}
@@ -993,7 +1043,7 @@ export function ProjectsPage() {
                             strokeWidth={14}
                             showInfo
                           />
-                          <div className="flex justify-between mt-2 text-xs text-gray-500">
+                          <div className="flex justify-between mt-2 text-xs text-theme-secondary">
                             <span>{stats.done} of {stats.total} items completed</span>
                           </div>
                         </Card>
@@ -1002,9 +1052,9 @@ export function ProjectsPage() {
                         <Card title="Project Details">
                           <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
                             <div>
-                              <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Project Lead</div>
+                              <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Project Lead</div>
                               <div className="mt-0.5 flex items-center gap-1">
-                                <UserOutlined className="text-gray-400" />
+                                <UserOutlined className="text-theme-secondary" />
                                 <InlineEdit
                                   value={selectedProject.owner}
                                   onSave={(v) => saveProjectField({ owner: v || undefined })}
@@ -1012,11 +1062,11 @@ export function ProjectsPage() {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Sponsor</div>
+                              <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Sponsor</div>
                               <div className="mt-0.5">{getSponsor(selectedProject.name)}</div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Start Date</div>
+                              <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Start Date</div>
                               <div className="mt-0.5">
                                 <InlineEdit
                                   value={selectedProject.start_date}
@@ -1026,7 +1076,7 @@ export function ProjectsPage() {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Target End</div>
+                              <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Target End</div>
                               <div className="mt-0.5">
                                 <InlineEdit
                                   value={selectedProject.end_date}
@@ -1036,7 +1086,7 @@ export function ProjectsPage() {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Portfolio</div>
+                              <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Portfolio</div>
                               <div className="mt-0.5">
                                 <InlineEdit
                                   value={selectedProject.portfolio_id}
@@ -1048,7 +1098,7 @@ export function ProjectsPage() {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Open Risks</div>
+                              <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Open Risks</div>
                               <div className="mt-0.5 flex items-center gap-2">
                                 {(() => {
                                   const open = risks.filter((r) => r.status !== 'Resolved').length;
@@ -1068,7 +1118,7 @@ export function ProjectsPage() {
 
                           <Divider />
                           <div>
-                            <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Description</div>
+                            <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold mb-1">Description</div>
                             <InlineEdit
                               value={selectedProject.description}
                               multiline
@@ -1078,7 +1128,7 @@ export function ProjectsPage() {
 
                           <Divider />
                           <div>
-                            <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Tags</div>
+                            <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold mb-1">Tags</div>
                             <InlineEdit
                               value={selectedProject.tags?.join(', ') || ''}
                               placeholder="tag1, tag2"
@@ -1088,7 +1138,7 @@ export function ProjectsPage() {
                                   <div className="flex gap-1.5 flex-wrap">
                                     {selectedProject.tags.map((t) => <Tag key={t} style={{ margin: 0 }}>{t}</Tag>)}
                                   </div>
-                                ) : <span className="text-gray-400">tag1, tag2</span>
+                                ) : <span className="text-theme-secondary">tag1, tag2</span>
                               )}
                             />
                           </div>
@@ -1202,7 +1252,7 @@ export function ProjectsPage() {
                             strokeWidth={16}
                             showInfo
                           />
-                          <div className="flex justify-between mt-2 text-xs text-gray-500">
+                          <div className="flex justify-between mt-2 text-xs text-theme-secondary">
                             <span>${budget.spent.toLocaleString()} spent of ${budget.planned.toLocaleString()} planned</span>
                           </div>
 

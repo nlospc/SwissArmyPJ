@@ -115,7 +115,7 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
   return (
     <tr
       className={[
-        'border-b last:border-0 transition-colors hover:bg-gray-50',
+        'border-b last:border-0 transition-colors hover:bg-theme-container',
         isCompleted ? 'opacity-60' : '',
         dueDateInfo.isOverdue && !isCompleted ? 'bg-red-50' : '',
       ].filter(Boolean).join(' ')}
@@ -124,7 +124,7 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
       <td className="w-8 px-3 py-2.5">
         <button
           onClick={() => markDone(todo.id)}
-          className="text-gray-400 hover:text-blue-600 transition-colors"
+          className="text-theme-secondary hover:text-blue-600 transition-colors"
           disabled={isCompleted}
         >
           {isCompleted ? (
@@ -137,13 +137,13 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
 
       {/* Task */}
       <td className="px-3 py-2.5">
-        <span className={`font-medium text-sm${isCompleted ? ' line-through text-gray-400' : ''}`}>
+        <span className={`font-medium text-sm${isCompleted ? ' line-through text-theme-secondary' : ''}`}>
           {todo.name}
         </span>
       </td>
 
       {/* Project */}
-      <td className="px-3 py-2.5 text-sm text-gray-500">
+      <td className="px-3 py-2.5 text-sm text-theme-secondary">
         {todo.projectName}
       </td>
 
@@ -154,7 +154,7 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
             {todo.priority.toUpperCase()}
           </Tag>
         ) : (
-          <span className="text-xs text-gray-400">—</span>
+          <span className="text-xs text-theme-secondary">—</span>
         )}
       </td>
 
@@ -167,12 +167,12 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
             {dueDateInfo.isOverdue && <AlertCircle className="h-3 w-3" />}
           </span>
         ) : (
-          <span className="text-xs text-gray-400">—</span>
+          <span className="text-xs text-theme-secondary">—</span>
         )}
       </td>
 
       {/* Time */}
-      <td className="px-3 py-2.5 text-sm text-gray-500">
+      <td className="px-3 py-2.5 text-sm text-theme-secondary">
         {todo.estimatedMinutes || todo.loggedMinutes > 0 ? (
           <div className="flex flex-col gap-0.5">
             {todo.estimatedMinutes ? (

@@ -12,7 +12,7 @@ export function PortfolioSummary({ metrics, loading }: PortfolioSummaryProps) {
   if (loading && !metrics) {
     return (
       <Card title="Portfolio Summary">
-        <div className="h-20 animate-pulse bg-gray-100 rounded" />
+        <div className="h-20 animate-pulse bg-theme-layout rounded" />
       </Card>
     );
   }
@@ -27,19 +27,19 @@ export function PortfolioSummary({ metrics, loading }: PortfolioSummaryProps) {
         {/* Metrics Row */}
         <div className="flex flex-wrap gap-6 text-sm">
           <div>
-            <span className="text-gray-500">Active Projects: </span>
+            <span className="text-theme-secondary">Active Projects: </span>
             <span className="font-semibold">{metrics.activeProjects}</span>
           </div>
           <div>
-            <span className="text-gray-500">Total Tasks: </span>
+            <span className="text-theme-secondary">Total Tasks: </span>
             <span className="font-semibold">{metrics.totalTasks}</span>
           </div>
           <div>
-            <span className="text-gray-500">Open Issues: </span>
+            <span className="text-theme-secondary">Open Issues: </span>
             <span className="font-semibold">{metrics.openIssues}</span>
           </div>
           <div>
-            <span className="text-gray-500">Upcoming Milestones: </span>
+            <span className="text-theme-secondary">Upcoming Milestones: </span>
             <span className="font-semibold">{metrics.upcomingMilestones}</span>
           </div>
         </div>

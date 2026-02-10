@@ -51,7 +51,7 @@ export function TimerWidget() {
     return (
       <Card title={<span className="text-sm flex items-center gap-2"><Timer className="h-4 w-4" /> Timer</span>}>
         <div className="text-center py-8">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-theme-secondary">
             No active timer. Start a timer or Pomodoro from your tasks.
           </div>
         </div>
@@ -78,7 +78,7 @@ export function TimerWidget() {
           <div className="text-5xl font-bold tabular-nums text-blue-600">
             {formatSecondsMMSS(elapsedSeconds)}
           </div>
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs text-theme-secondary mt-2">
             Started at {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
         </div>
@@ -139,11 +139,11 @@ export function TimerWidget() {
         </div>
 
         {activePomodoro.isPaused && (
-          <div className="text-xs text-gray-500 mt-2">Paused</div>
+          <div className="text-xs text-theme-secondary mt-2">Paused</div>
         )}
 
         {!activePomodoro.isPaused && (
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs text-theme-secondary mt-2">
             Finishes at {formatCompletionTime(completionTime)}
           </div>
         )}

@@ -1,10 +1,19 @@
 import { useState } from 'react';
+
 import { ArrowUpDown, Search, Filter, MoreVertical } from 'lucide-react';
+
 import { Button, Input } from 'antd';
+
 import type { ProjectHealth } from '@/stores/useDashboardStore';
 
+
+
 interface ProjectTableProps {
+
   projects: ProjectHealth[];
+
+  onProjectClick?: (project: ProjectHealth) => void;
+
 }
 
 type SortField = 'name' | 'status' | 'progress' | 'owner' | 'nextMilestone';
@@ -32,7 +41,7 @@ const STATUS_ICONS: Record<string, string> = {
   blocked: '🚫',
 };
 
-export function ProjectTable({ projects }: ProjectTableProps) {
+export function ProjectTable({ projects, onProjectClick }: ProjectTableProps) {
   const [sortField, setSortField] = useState<SortField>('status');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [filters, setFilters] = useState<FilterState>({
@@ -134,7 +143,7 @@ export function ProjectTable({ projects }: ProjectTableProps) {
       {/* Filter Bar */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" style={{ zIndex: 1 }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-theme-secondary" style={{ zIndex: 1 }} />
           <Input
             placeholder="Search projects..."
             value={filters.search}
@@ -165,7 +174,7 @@ export function ProjectTable({ projects }: ProjectTableProps) {
 
       {/* Advanced Filters Panel */}
       {showFilters && (
-        <div className="border rounded-lg p-4 space-y-4 bg-gray-50">
+        <div className="border rounded-lg p-4 space-y-4 bg-theme-container">
           {/* Status Filter */}
           <div>
             <label className="text-sm font-medium mb-2 block">Status</label>
@@ -177,7 +186,7 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                   className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
                     filters.statuses.includes(option.value)
                       ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white hover:bg-gray-100'
+                      : 'bg-theme-container hover:bg-theme-layout'
                   }`}
                 >
                   {STATUS_ICONS[option.value]} {option.label}
@@ -204,7 +213,7 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                   className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
                     filters.owners.includes(owner)
                       ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white hover:bg-gray-100'
+                      : 'bg-theme-container hover:bg-theme-layout'
                   }`}
                 >
                   {owner}
@@ -254,34 +263,32 @@ export function ProjectTable({ projects }: ProjectTableProps) {
       <div className="border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-theme-container border-b">
               <tr>
                 <SortableHeader field="status" label="Status" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                 <SortableHeader field="name" label="Project" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                 <SortableHeader field="owner" label="Owner" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                 <SortableHeader field="progress" label="Progress" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                <th className="h-12 px-4 text-left text-sm font-medium text-gray-500">Tasks</th>
+                <th className="h-12 px-4 text-left text-sm font-medium text-theme-secondary">Tasks</th>
                 <SortableHeader field="nextMilestone" label="Next Milestone" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                <th className="h-12 px-4 text-center text-sm font-medium text-gray-500">Blockers</th>
-                <th className="h-12 px-4 text-center text-sm font-medium text-gray-500">Risks</th>
-                <th className="h-12 px-4 text-center text-sm font-medium text-gray-500 w-20">Actions</th>
+                <th className="h-12 px-4 text-center text-sm font-medium text-theme-secondary">Blockers</th>
+                <th className="h-12 px-4 text-center text-sm font-medium text-theme-secondary">Risks</th>
+                <th className="h-12 px-4 text-center text-sm font-medium text-theme-secondary w-20">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {sortedProjects.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="h-32 text-center text-gray-500">
+                  <td colSpan={9} className="h-32 text-center text-theme-secondary">
                     No projects found matching your filters
                   </td>
                 </tr>
               ) : (
-                sortedProjects.map((project) => (
-                  <tr
-                    key={project.id}
-                    className="hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => {
-                      console.log('Navigate to project:', project.id);
-                    }}
+                sortedProjects.map((project) => (
+                  <tr
+                    key={project.id}
+                    className="hover:bg-theme-container transition-colors cursor-pointer"
+                    onClick={() => onProjectClick?.(project)}
                   >
                     {/* Status */}
                     <td className="px-4 py-3">
@@ -294,20 +301,20 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                     </td>
 
                     {/* Owner */}
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-theme-secondary">
                       {project.owner || '—'}
                     </td>
 
                     {/* Progress */}
                     <td className="px-4 py-3">
                       <div className="space-y-1">
-                        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-2 w-full bg-theme-layout rounded-full overflow-hidden">
                           <div
                             className="h-full bg-blue-600 rounded-full transition-all"
                             style={{ width: `${project.progressPercent}%` }}
                           />
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-theme-secondary">
                           {project.progressPercent}%
                         </div>
                       </div>
@@ -323,13 +330,13 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                       {project.nextMilestone ? (
                         <div className="space-y-0.5">
                           <div className="text-sm font-medium">{project.nextMilestone.name}</div>
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-1 text-xs text-theme-secondary">
                             {formatDate(project.nextMilestone.date)}
                             <MilestoneStatusBadge status={project.nextMilestone.status} />
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500">—</span>
+                        <span className="text-sm text-theme-secondary">—</span>
                       )}
                     </td>
 
@@ -340,7 +347,7 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                           {project.blockerCount}
                         </span>
                       ) : (
-                        <span className="text-gray-500">—</span>
+                        <span className="text-theme-secondary">—</span>
                       )}
                     </td>
 
@@ -351,7 +358,7 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                           {project.highRiskCount}
                         </span>
                       ) : (
-                        <span className="text-gray-500">—</span>
+                        <span className="text-theme-secondary">—</span>
                       )}
                     </td>
 
@@ -376,7 +383,7 @@ export function ProjectTable({ projects }: ProjectTableProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-t bg-gray-50 px-4 py-2 text-sm text-gray-500">
+        <div className="border-t bg-theme-container px-4 py-2 text-sm text-theme-secondary">
           Showing {sortedProjects.length} of {projects.length} projects
         </div>
       </div>
@@ -397,7 +404,7 @@ function SortableHeader({ field, label, sortField, sortOrder, onSort }: Sortable
 
   return (
     <th
-      className="h-12 px-4 text-left text-sm font-medium text-gray-500 cursor-pointer hover:text-gray-800 transition-colors select-none"
+      className="h-12 px-4 text-left text-sm font-medium text-theme-secondary cursor-pointer hover:text-gray-800 transition-colors select-none"
       onClick={() => onSort(field)}
     >
       <div className="flex items-center gap-1">

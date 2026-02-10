@@ -5,6 +5,8 @@ import { ReloadOutlined } from '@ant-design/icons';
 
 import { Sidebar } from './components/features/Sidebar';
 import { useTheme } from './hooks/useTheme';
+import { useI18n } from './hooks/useI18n';
+import { getThemeConfig } from './config/theme';
 import { useUIStore } from './stores/useUIStore';
 import { useWorkspaceStore } from './stores/useWorkspaceStore';
 import { usePortfolioStore } from './stores/usePortfolioStore';
@@ -25,6 +27,7 @@ import { SettingsPage } from './pages/SettingsPage';
 
 function AppContent() {
   const { currentView } = useUIStore();
+  const { t } = useI18n();
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +91,7 @@ function AppContent() {
       <div className="h-full w-full flex items-center justify-center">
         <div className="text-center">
           <Spin size="large" />
-          <p className="mt-4 text-gray-500">Loading SwissArmyPM...</p>
+          <p className="mt-4 text-theme-secondary">{t('app.loading')}</p>
         </div>
       </div>
     );
@@ -98,7 +101,7 @@ function AppContent() {
     return (
       <div className="h-full w-full flex items-center justify-center p-8">
         <Alert
-          message="Failed to initialize"
+          message={t('app.initFailed')}
           description={error}
           type="error"
           showIcon
@@ -108,7 +111,7 @@ function AppContent() {
               icon={<ReloadOutlined />}
               onClick={() => window.location.reload()}
             >
-              Retry
+              {t('app.retry')}
             </Button>
           }
         />
@@ -120,8 +123,8 @@ function AppContent() {
     return (
       <div className="h-full w-full flex items-center justify-center">
         <div className="text-center text-red-500">
-          <p className="font-semibold mb-2">Failed to initialize</p>
-          <p className="text-sm text-gray-500">Please check the console for errors</p>
+          <p className="font-semibold mb-2">{t('app.initFailed')}</p>
+          <p className="text-sm text-theme-secondary">{t('app.checkConsole')}</p>
         </div>
       </div>
     );
@@ -150,24 +153,10 @@ function AppContent() {
 }
 
 function App() {
-  const { algorithm, isDark } = useTheme();
+  const { isDark } = useTheme();
 
   return (
-    <ConfigProvider
-      theme={{
-        algorithm,
-        token: {
-          borderRadius: 6,
-          colorPrimary: '#1677ff',
-        },
-        components: {
-          Layout: {
-            headerBg: isDark ? '#1f1f1f' : '#ffffff',
-            headerHeight: 64,
-          },
-        },
-      }}
-    >
+    <ConfigProvider theme={getThemeConfig(isDark)}>
       <AppContent />
     </ConfigProvider>
   );

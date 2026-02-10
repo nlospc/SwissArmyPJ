@@ -38,15 +38,15 @@ export function StatCard({
       style={{ borderColor: styles.borderColor, backgroundColor: styles.background }}
     >
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-white" style={{ color: styles.iconColor }}>
+        <div className="p-2 rounded-lg bg-theme-container" style={{ color: styles.iconColor }}>
           <Icon className="h-5 w-5" />
         </div>
 
         <div className="flex flex-col gap-0.5">
           <span className="text-2xl font-semibold">{value}</span>
-          <span className="text-xs text-gray-500">{label}</span>
+          <span className="text-xs text-theme-secondary">{label}</span>
           {subtext && (
-            <span className="text-[10px] text-gray-400">{subtext}</span>
+            <span className="text-[10px] text-theme-secondary">{subtext}</span>
           )}
         </div>
       </div>

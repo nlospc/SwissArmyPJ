@@ -17,27 +17,27 @@ export function MyWorkPage() {
   useMyWorkInit();
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-theme-container">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
+      <div className="bg-theme-container border-b px-6 py-4">
         <h1 className="text-2xl font-bold text-gray-900">My Work</h1>
       </div>
 
       {/* Main content */}
       <div className="flex-1 overflow-hidden flex">
         {/* Todo List - Left column */}
-        <div className="flex-1 overflow-auto border-r bg-white">
+        <div className="flex-1 overflow-auto border-r bg-theme-container">
           <TodoListContainer />
         </div>
 
         {/* Right Sidebar - Time Tracker */}
-        <div className="w-80 overflow-auto bg-gray-50">
+        <div className="w-80 overflow-auto bg-theme-container">
           <TrackerSidebar />
         </div>
       </div>
 
       {/* Quick Stats Bar - Bottom */}
-      <div className="bg-white border-t">
+      <div className="bg-theme-container border-t">
         <StatsBar />
       </div>
     </div>
