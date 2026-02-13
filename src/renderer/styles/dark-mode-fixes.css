@@ -1,0 +1,494 @@
+/**
+ * 深色模式全面修复方案
+ * 系统性地解决所有深色模式下的UI问题
+ */
+
+/* ===========================
+   1. 全局颜色重置
+   =========================== */
+
+/* 强制所有使用硬编码白色的元素使用主题变量 */
+.dark .bg-white,
+.dark [class*="bg-white"],
+.dark [style*="background: white"],
+.dark [style*="background:#fff"],
+.dark [style*="background:#ffffff"] {
+  background-color: var(--ant-color-bg-container) !important;
+}
+
+/* 强制所有使用硬编码黑色文字的颜色 */
+.dark .text-black,
+.dark [class*="text-black"],
+.dark [style*="color: black"],
+.dark [style*="color:#000"],
+.dark [style*="color:#000000"] {
+  color: var(--ant-color-text) !important;
+}
+
+/* 修复灰色文字 */
+.dark .text-gray-100,
+.dark .text-gray-200,
+.dark .text-gray-300,
+.dark .text-gray-400,
+.dark .text-gray-500,
+.dark .text-gray-600,
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-gray-900 {
+  color: var(--ant-color-text-secondary) !important;
+}
+
+/* 修复边框颜色 */
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-gray-400,
+.dark [class*="border-gray"] {
+  border-color: var(--ant-color-border) !important;
+}
+
+/* ===========================
+   2. Ant Design 组件修复
+   =========================== */
+
+/* === 图标颜色修复 === */
+.dark .anticon,
+.dark svg:not([fill]),
+.dark .ant-btn-icon .anticon {
+  color: var(--ant-color-text) !important;
+  fill: currentColor !important;
+}
+
+/* 主要按钮内的图标保持白色 */
+.dark .ant-btn-primary .anticon,
+.dark .ant-btn-primary svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+/* 危险按钮内的图标 */
+.dark .ant-btn-dangerous .anticon,
+.dark .ant-btn-dangerous svg {
+  color: #ffffff !important;
+}
+
+/* 文本按钮内的图标 */
+.dark .ant-btn-text .anticon {
+  color: var(--ant-color-text) !important;
+}
+
+/* === Card 组件修复 === */
+.dark .ant-card {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-card-head {
+  background-color: var(--ant-color-bg-container) !important;
+  border-bottom-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-card-body {
+  background-color: var(--ant-color-bg-container) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-card-meta-title,
+.dark .ant-card-meta-description {
+  color: var(--ant-color-text) !important;
+}
+
+/* === Input 组件修复 === */
+.dark .ant-input,
+.dark .ant-input-number,
+.dark .ant-input-number-input {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-input::placeholder,
+.dark .ant-input-number-input::placeholder {
+  color: var(--ant-color-text-tertiary) !important;
+}
+
+.dark .ant-input:focus,
+.dark .ant-input-number:focus {
+  background-color: var(--ant-color-bg-elevated) !important;
+  border-color: var(--ant-color-primary) !important;
+}
+
+/* === Select 组件修复 === */
+.dark .ant-select-selector {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-select-item {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-select-item-option-selected {
+  background-color: var(--ant-color-primary) !important;
+  color: #ffffff !important;
+}
+
+.dark .ant-select-dropdown {
+  background-color: var(--ant-color-bg-elevated) !important;
+  border-color: var(--ant-color-border) !important;
+}
+
+/* === Table 组件修复 === */
+.dark .ant-table {
+  background-color: var(--ant-color-bg-container) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-table-thead > tr > th {
+  background-color: var(--ant-color-bg-container) !important;
+  color: var(--ant-color-text) !important;
+  border-bottom-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-table-tbody > tr > td {
+  border-bottom-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-table-tbody > tr:hover > td {
+  background-color: var(--ant-color-bg-spotlight) !important;
+}
+
+/* === Modal 组件修复 === */
+.dark .ant-modal-content,
+.dark .ant-modal-header,
+.dark .ant-modal-body {
+  background-color: var(--ant-color-bg-container) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-modal-title {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-modal-close-x {
+  color: var(--ant-color-text-secondary) !important;
+}
+
+/* === Drawer 组件修复 === */
+.dark .ant-drawer-content,
+.dark .ant-drawer-header,
+.dark .ant-drawer-body {
+  background-color: var(--ant-color-bg-container) !important;
+  color: var(--ant-color-text) !important;
+}
+
+/* === Menu 组件修复 === */
+.dark .ant-menu {
+  background-color: var(--ant-color-bg-container) !important;
+}
+
+.dark .ant-menu-item,
+.dark .ant-menu-submenu-title {
+  color: var(--ant-color-text-secondary) !important;
+}
+
+.dark .ant-menu-item-selected,
+.dark .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  background-color: var(--ant-color-primary) !important;
+  color: #ffffff !important;
+}
+
+.dark .ant-menu-item:hover,
+.dark .ant-menu-submenu-title:hover {
+  color: var(--ant-color-text) !important;
+}
+
+/* === Tabs 组件修复 === */
+.dark .ant-tabs-tab {
+  color: var(--ant-color-text-secondary) !important;
+}
+
+.dark .ant-tabs-tab-active {
+  color: var(--ant-color-primary) !important;
+}
+
+.dark .ant-tabs-ink-bar {
+  background-color: var(--ant-color-primary) !important;
+}
+
+/* === Typography 组件修复 === */
+.dark .ant-typography {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-typography-secondary {
+  color: var(--ant-color-text-secondary) !important;
+}
+
+/* === Space 组件修复 === */
+.dark .ant-space-item {
+  color: var(--ant-color-text) !important;
+}
+
+/* === Divider 组件修复 === */
+.dark .ant-divider {
+  border-top-color: var(--ant-color-border) !important;
+}
+
+/* === Tag 组件修复 === */
+.dark .ant-tag {
+  color: var(--ant-color-text) !important;
+  background-color: var(--ant-color-bg-spotlight) !important;
+  border-color: var(--ant-color-border) !important;
+}
+
+/* === Badge 组件修复 === */
+.dark .ant-badge {
+  color: var(--ant-color-text) !important;
+}
+
+/* === Alert 组件修复 === */
+.dark .ant-alert {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-alert-message,
+.dark .ant-alert-description {
+  color: var(--ant-color-text) !important;
+}
+
+/* === Tooltip 组件修复 === */
+.dark .ant-tooltip-inner {
+  background-color: var(--ant-color-bg-elevated) !important;
+  color: var(--ant-color-text) !important;
+}
+
+/* === Popover 组件修复 === */
+.dark .ant-popover-inner {
+  background-color: var(--ant-color-bg-elevated) !important;
+  color: var(--ant-color-text) !important;
+}
+
+/* === Progress 组件修复 === */
+.dark .ant-progress-text {
+  color: var(--ant-color-text) !important;
+}
+
+/* === Steps 组件修复 === */
+.dark .ant-steps-item-description {
+  color: var(--ant-color-text-secondary) !important;
+}
+
+/* === Empty 组件修复 === */
+.dark .ant-empty-description {
+  color: var(--ant-color-text-tertiary) !important;
+}
+
+/* === Collapse 组件修复 === */
+.dark .ant-collapse {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-collapse-header {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-collapse-content {
+  background-color: var(--ant-color-bg-container) !important;
+  color: var(--ant-color-text) !important;
+}
+
+/* === Checkbox 组件修复 === */
+.dark .ant-checkbox-wrapper {
+  color: var(--ant-color-text) !important;
+}
+
+/* === Radio 组件修复 === */
+.dark .ant-radio-wrapper {
+  color: var(--ant-color-text) !important;
+}
+
+/* === DatePicker 组件修复 === */
+.dark .ant-picker {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-picker-input {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-picker-dropdown {
+  background-color: var(--ant-color-bg-elevated) !important;
+}
+
+.dark .ant-picker-panel-container {
+  background-color: var(--ant-color-bg-elevated) !important;
+}
+
+.dark .ant-picker-header {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-picker-cell {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-picker-cell-in-view {
+  color: var(--ant-color-text) !important;
+}
+
+/* === Button 组件额外修复 === */
+.dark .ant-btn-default {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-btn-default:hover {
+  background-color: var(--ant-color-bg-spotlight) !important;
+  border-color: var(--ant-color-primary) !important;
+  color: var(--ant-color-primary) !important;
+}
+
+.dark .ant-btn-dashed {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-btn-link {
+  color: var(--ant-color-primary) !important;
+}
+
+/* ===========================
+   3. Lucide Icons 修复
+   =========================== */
+
+.dark svg {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .lucide,
+.dark [data-lucide] {
+  color: var(--ant-color-text) !important;
+  stroke: var(--ant-color-text) !important;
+}
+
+/* ===========================
+   4. 第三方组件库修复
+   =========================== */
+
+/* React Select */
+.dark .react-select__control {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+}
+
+.dark .react-select__single-value {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .react-select__menu {
+  background-color: var(--ant-color-bg-elevated) !important;
+}
+
+.dark .react-select__option {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .react-select__option:hover {
+  background-color: var(--ant-color-bg-spotlight) !important;
+}
+
+/* ===========================
+   5. 滚动条样式修复
+   =========================== */
+
+/* WebKit 浏览器滚动条 */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--ant-color-bg-layout);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--ant-color-border);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--ant-color-text-tertiary);
+}
+
+/* Firefox 滚动条 */
+.dark * {
+  scrollbar-color: var(--ant-color-border) var(--ant-color-bg-layout);
+  scrollbar-width: thin;
+}
+
+/* ===========================
+   6. 过渡动画
+   =========================== */
+
+/* 为所有主题相关的元素添加平滑过渡 */
+.dark .ant-card,
+.dark .ant-input,
+.dark .ant-select-selector,
+.dark .ant-btn,
+.dark .ant-table,
+.dark .ant-modal-content,
+.dark .ant-drawer-content {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* ===========================
+   7. 特殊情况处理
+   =========================== */
+
+/* 修复 flex 容器的背景 */
+.dark .flex.bg-white,
+.dark .flex[class*="bg-white"] {
+  background-color: var(--ant-color-bg-container) !important;
+}
+
+/* 修复 space 容器 */
+.dark .ant-space {
+  color: var(--ant-color-text) !important;
+}
+
+/* 确保所有文本继承正确的颜色 */
+.dark div {
+  color: inherit;
+}
+
+/* 确保所有文本元素继承正确的颜色 */
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: inherit;
+}
+
+/* 修复链接颜色 */
+.dark a {
+  color: var(--ant-color-primary) !important;
+}
+
+.dark a:hover {
+  color: var(--ant-color-primary) !important;
+  opacity: 0.8;
+}

@@ -20,7 +20,6 @@ import { loadSampleData } from './lib/sampleData';
 import { DashboardPage } from './pages/DashboardPage';
 import { PortfolioPage } from './pages/PortfolioPage';
 import { InboxPage } from './pages/InboxPage';
-import { ProjectsPage } from './pages/ProjectsPage';
 import { MyWorkPage } from './features/my-work';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -137,7 +136,6 @@ function AppContent() {
         {currentView === 'dashboard' && <DashboardPage />}
         {currentView === 'portfolio' && <PortfolioPage />}
         {currentView === 'inbox' && <InboxPage />}
-        {currentView === 'projects' && <ProjectsPage />}
         {currentView === 'my-work' && <MyWorkPage />}
         {currentView === 'search' && <SearchPage />}
         {currentView === 'settings' && <SettingsPage />}

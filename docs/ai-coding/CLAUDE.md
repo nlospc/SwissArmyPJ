@@ -92,6 +92,8 @@ SwissArmyPM/
 4. **Follow existing patterns** in similar features
 5. **Test thoroughly** before committing
 6. **Update documentation** when architecture changes
+7. **Clarify requirements before coding**: when a user asks for changes, first confirm intent, scope, and interactions (use sketches, step-by-step flows, or examples). Do **not** modify code until both sides agree on the exact behavior.
+8. **Avoid rework**: if requirements are uncertain or evolving, pause and align on intent and acceptance criteria before implementing. Prioritize clarity over speed to minimize rework.
 
 ## 🤝 Collaboration Notes
 

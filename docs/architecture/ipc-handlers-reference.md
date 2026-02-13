@@ -1,4 +1,52 @@
-# My Work IPC Handlers Reference
+# IPC Handlers Reference
+
+> DocOps / Vault Integration (design note only, not implemented):
+> Certain IPC handlers (e.g. `projects:*`, `timeline:*`) MAY be extended in the future
+> to include an optional `docOps` field in their response payloads. This field will
+> expose Vault/DocOps context (portfolio IDs, linked docs) **without changing** the
+> semantics of existing execution fields.
+>
+> Design rules:
+> - Core execution data (status, dates, dependencies) **always** come from SQLite.
+> - Vault/DocOps-only data are attached under a `docOps` object and treated as
+>   read-only context from the renderer's perspective.
+> - Any write that affects execution data must still go through the existing
+>   `projects:*`, `timeline:*`, `workItems:*` IPC commands.
+> - Vault-originated changes that should affect execution must go through explicit
+>   `vault:*` IPC commands (e.g. `vault:applyTimelineTemplate`) instead of silently
+>   mutating normal handlers.
+>
+> Example (conceptual, for a Gantt item):
+>
+> ```ts
+> type VaultDocSummary = {
+>   id: string;
+>   type: 'PRD' | 'Decision' | 'Report' | 'Risk';
+>   title: string;
+>   date?: string;
+>   vaultPath: string; // e.g. "projects/PRJ-001.md"
+> };
+>
+> type GanttItem = {
+>   id: string;
+>   name: string;
+>   type: 'Task' | 'Milestone' | 'Phase' | 'Issue';
+>   startDate: string | null;
+>   endDate: string | null;
+>   status: string;
+>   // ... existing fields
+>   docOps?: {
+>     portfolioWorkItemId: string;
+>     linkedDecisions?: VaultDocSummary[];
+>     linkedRisks?: VaultDocSummary[];
+>   };
+> };
+> ```
+>
+> This section is a design guideline only; concrete handler signatures should be
+> updated as DocOps integration is implemented.
+
+## My Work IPC Handlers Reference
 
 **File**: `src/main/ipc/myWorkHandlers.ts`
 **Registered**: Automatically in `src/main/ipc/handlers.ts`

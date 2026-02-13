@@ -44,10 +44,10 @@ const healthConfig = {
 export function ProjectCards({ projects, loading }: ProjectCardsProps) {
   const setCurrentView = useUIStore((state) => state.setCurrentView);
 
-  const handleProjectClick = (projectId: number) => {
-    console.log('Navigate to project:', projectId);
-    setCurrentView('projects');
-  };
+  const handleProjectClick = (projectId: number) => {
+    console.log('Navigate to project:', projectId);
+    setCurrentView('dashboard');
+  };
 
   const getStatusIcon = (status: HealthStatus) => {
     const config = healthConfig[status];

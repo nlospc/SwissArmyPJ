@@ -4,25 +4,43 @@ import { useDashboardStore } from '@/stores/useDashboardStore';
 
 import { useProjectStore } from '@/stores/useProjectStore';
 
+
+
 import { Card, Button, Alert, Space, Typography } from 'antd';
 
-import { ReloadOutlined } from '@ant-design/icons';
+
+
+import { ReloadOutlined, LeftOutlined } from '@ant-design/icons';
+
+
 
 import { formatDistanceToNow } from 'date-fns';
 
+
+
 import type { ProjectHealth } from '@/stores/useDashboardStore';
 
-import type { Project } from '@/shared/types';
+
+
+
 
 
 
 // Import dashboard sub-components
 
+
+
 import { ProjectTable } from '@/components/dashboard/ProjectTable';
+
+
 
 import { TopWidgetDrawer } from '@/components/dashboard/TopWidgetDrawer';
 
-import { ProjectDetailDrawer } from '@/components/dashboard/ProjectDetailDrawer';
+
+
+import { DashboardProjectDetailView } from '@/components/dashboard/DashboardProjectDetailView';
+
+
 
 const { Title, Text } = Typography;
 
@@ -34,13 +52,42 @@ export function DashboardPage() {
 
 
 
-  // State for project detail drawer
+  // State for project detail view
 
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const [showProjectDetail, setShowProjectDetail] = useState(false);
+
+  const [detailVisible, setDetailVisible] = useState(false);
+
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+
+
+
+  useEffect(() => {
+
+    if (!showProjectDetail) {
+
+      setDetailVisible(false);
+
+      return;
+
+    }
+
+    setDetailVisible(false);
+
+    const timer = setTimeout(() => setDetailVisible(true), 20);
+
+    return () => clearTimeout(timer);
+
+  }, [showProjectDetail]);
+
+
+
+
 
   // Get dashboard metrics from DashboardStore
+
   const {
     changeFeed,
     upcomingMilestones,
@@ -97,15 +144,13 @@ export function DashboardPage() {
 
   const handleProjectClick = (projectHealth: ProjectHealth) => {
 
-    // Find the full project object from projects array
-
     const project = projects.find((p) => p.id === projectHealth.id);
 
     if (project) {
 
-      setSelectedProject(project);
+      setSelectedProjectId(project.id);
 
-      setDrawerOpen(true);
+      setShowProjectDetail(true);
 
     }
 
@@ -113,15 +158,15 @@ export function DashboardPage() {
 
 
 
-  const handleDrawerClose = () => {
+  const handleProjectDetailClose = () => {
 
-    setDrawerOpen(false);
+    setShowProjectDetail(false);
 
-    // Don't clear selectedProject immediately to allow animation
-
-    setTimeout(() => setSelectedProject(null), 300);
+    setSelectedProjectId(null);
 
   };
+
+
 
   if (error) {
     return (
@@ -177,22 +222,42 @@ export function DashboardPage() {
         loading={loading}
       />
 
-      {/* Main Content */}
-      <div className="px-8 pt-6 space-y-6">
-        {/* Project Health Table */}
-        <Card
-          title={<Title level={4} className="mb-0">Project Health</Title>}
-        >
-          <ProjectTable projects={projectHealthList} onProjectClick={handleProjectClick} />
-        </Card>
+      {/* Main Content */}
+      <div className="px-8 pt-6 space-y-6">
+        {showProjectDetail ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Title level={4} className="mb-0">Project Details</Title>
+              <Button size="small" icon={<LeftOutlined />} onClick={handleProjectDetailClose}>
+                Back to Dashboard
+              </Button>
+            </div>
+            <div
+              className="border border-theme-border rounded-lg overflow-hidden bg-theme-container"
+              style={{
+                height: 'calc(100vh - 320px)',
+                minHeight: 520,
+                transform: detailVisible ? 'translateX(0)' : 'translateX(16px)',
+                opacity: detailVisible ? 1 : 0,
+                transition: 'transform 220ms ease, opacity 220ms ease',
+              }}
+            >
+              <DashboardProjectDetailView
+                projectId={selectedProjectId}
+                onClose={handleProjectDetailClose}
+              />
+            </div>
+          </div>
+        ) : (
+          <Card title={<Title level={4} className="mb-0">Project Health</Title>}>
+            <ProjectTable projects={projectHealthList} onProjectClick={handleProjectClick} />
+          </Card>
+        )}
       </div>
-
-      {/* Project Detail Drawer */}
-      <ProjectDetailDrawer
-        project={selectedProject}
-        open={drawerOpen}
-        onClose={handleDrawerClose}
-      />
-    </div>
-  );
+
+
+    </div>
+
+  );
+
 }

@@ -18,7 +18,6 @@ export function Sidebar() {
     { id: 'dashboard', icon: <LayoutDashboard className="h-4 w-4" />, labelKey: 'nav.dashboard' as const },
     { id: 'portfolio', icon: <FolderKanban className="h-4 w-4" />, labelKey: 'nav.portfolio' as const },
     { id: 'inbox', icon: <Inbox className="h-4 w-4" />, labelKey: 'nav.inbox' as const, badge: unprocessedCount },
-    { id: 'projects', icon: <FolderKanban className="h-4 w-4" />, labelKey: 'nav.projects' as const },
     { id: 'my-work', icon: <ListChecks className="h-4 w-4" />, labelKey: 'nav.myWork' as const },
     { id: 'search', icon: <Search className="h-4 w-4" />, labelKey: 'nav.search' as const },
     { id: 'settings', icon: <Settings className="h-4 w-4" />, labelKey: 'nav.settings' as const },

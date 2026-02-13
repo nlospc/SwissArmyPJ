@@ -385,9 +385,15 @@ WHERE type = 'Issue' AND status != 'Done' AND risk_level IS NOT NULL
 GROUP BY risk_level;
 ```
 
----
-
-## 5. Interactions
+---
+
+## 4.x Related Documents
+
+- [Dashboard 架构与 IPC 参考](../architecture/ipc-handlers-reference.md)
+
+---
+
+## 5. Interactions
 
 ### 5.1 Navigation
 
@@ -813,119 +819,232 @@ interface ChangeEvent {
 
 ---
 
-## 11. Related Documents
-
-- @PRD-001-Master.md — Master PRD
-- @PRD-002-DataModel.md — Project and item schema (includes workflow definitions)
-- @PRD-008-Governance.md — Audit log for change feed
-- @PRD-009-WorkflowEngine.md — (FUTURE) Workflow state machine implementation
-
----
-
-## 12. Workflow-Specific Considerations
-
-### 12.1 Health Status Rules for Different Item Types
-
-| Item Type | At-Risk Indicators | Critical Indicators |
-|-----------|-------------------|---------------------|
-| **Story** | In Test > 5 days | Blocked |
-| **Task** | In Progress > 7 days | Blocked |
-| **Bug** | High severity > 3 days open | Critical severity in In Fix |
-| **Spike** | In Research > 14 days | Overdue (past end_date) |
-| **Milestone** | Due within 3 days | Overdue |
-
-### 12.2 Workflow Metrics for Dashboard
-
-```typescript
-interface WorkflowHealthMetrics {
-  // Story flow health
-  stories: {
-    backlog: number;
-    ready: number;
-    inProgress: number;
-    inReview: number;
-    inTest: number;
-    done: number;
-    cycleTimeAvg: number; // days from Ready → Done
-    blocked: number;
-  };
-
-  // Bug flow health
-  bugs: {
-    new: number;
-    inTriage: number;
-    inFix: number;
-    inVerification: number;
-    closed: number;
-    fixTimeAvg: number; // days from In Fix → Closed
-    criticalInFix: number; // 🔴 Critical alert
-  };
-
-  // Spike flow health
-  spikes: {
-    proposed: number;
-    inResearch: number;
-    findingsReady: number;
-    closed: number;
-    overdue: number; // 🔴 Alert if > 0
-  };
-
-  // Overall flow metrics
-  aggregate: {
-    totalWIP: number;
-    avgCycleTime: number;
-    avgLeadTime: number;
-    flowEfficiency: number; // percentage
-  };
-}
-```
-
-### 12.3 Ant Design v5 Component Mapping
-
-```typescript
-// Workflow Distribution Card
-import { Card, Tabs, Statistic, Progress, Row, Col } from 'antd';
-
-const { TabPane } = Tabs;
-
-function WorkflowDistributionCard({ data }: { data: WorkflowMetrics }) {
-  return (
-    <Card title="Workflow Distribution" extra={<a href="#">View CFD</a>}>
-      <Tabs defaultActiveKey="stories">
-        <TabPane tab="Stories" key="stories">
-          <WorkflowFlow data={data.stories} flow={STORY_FLOW} />
-        </TabPane>
-        <TabPane tab="Bugs" key="bugs">
-          <WorkflowFlow data={data.bugs} flow={BUG_FLOW} />
-        </TabPane>
-        <TabPane tab="Spikes" key="spikes">
-          <WorkflowFlow data={data.spikes} flow={SPIKE_FLOW} />
-        </TabPane>
-      </Tabs>
-    </Card>
-  );
-}
-
-// Cumulative Flow Chart (using Ant Design charts or external library)
-function CumulativeFlowChart({ history }: { history: WorkflowHistoryEntry[] }) {
-  // Implementation using Recharts, ECharts, or Ant Design Charts
-  return (
-    <Card title="Cumulative Flow Diagram - Last 30 Days">
-      <ResponsiveContainer width="100%" height={300}>
-        <AreaChart data={history}>
-          <XAxis dataKey="date" />
-          <YAxis />
-          {/* Stacked areas for each status */}
-          <Area dataKey="backlog" stackId="1" fill="#8884d8" />
-          <Area dataKey="inProgress" stackId="1" fill="#82ca9d" />
-          {/* ... other statuses */}
-        </AreaChart>
-      </ResponsiveContainer>
-    </Card>
-  );
-}
-```
-
+## 11. Related Documents
+
+
+
+- @PRD-001-Master.md — Master PRD
+
+- @PRD-002-DataModel.md — Project and item schema (includes workflow definitions)
+
+- @PRD-008-Governance.md — Audit log for change feed
+
+- @PRD-009-WorkflowEngine.md — (FUTURE) Workflow state machine implementation
+
+
+
+---
+
+
+
+## 12. Workflow-Specific Considerations
+
+
+
+### 12.1 Health Status Rules for Different Item Types
+
+
+
+| Item Type | At-Risk Indicators | Critical Indicators |
+
+|-----------|-------------------|---------------------|
+
+| **Story** | In Test > 5 days | Blocked |
+
+| **Task** | In Progress > 7 days | Blocked |
+
+| **Bug** | High severity > 3 days open | Critical severity in In Fix |
+
+| **Spike** | In Research > 14 days | Overdue (past end_date) |
+
+| **Milestone** | Due within 3 days | Overdue |
+
+
+
+### 12.2 Workflow Metrics for Dashboard
+
+
+
+```typescript
+
+interface WorkflowHealthMetrics {
+
+  // Story flow health
+
+  stories: {
+
+    backlog: number;
+
+    ready: number;
+
+    inProgress: number;
+
+    inReview: number;
+
+    inTest: number;
+
+    done: number;
+
+    cycleTimeAvg: number; // days from Ready → Done
+
+    blocked: number;
+
+  };
+
+
+
+  // Bug flow health
+
+  bugs: {
+
+    new: number;
+
+    inTriage: number;
+
+    inFix: number;
+
+    inVerification: number;
+
+    closed: number;
+
+    fixTimeAvg: number; // days from In Fix → Closed
+
+    criticalInFix: number; // 🔴 Critical alert
+
+  };
+
+
+
+  // Spike flow health
+
+  spikes: {
+
+    proposed: number;
+
+    inResearch: number;
+
+    findingsReady: number;
+
+    closed: number;
+
+    overdue: number; // 🔴 Alert if > 0
+
+  };
+
+
+
+  // Overall flow metrics
+
+  aggregate: {
+
+    totalWIP: number;
+
+    avgCycleTime: number;
+
+    avgLeadTime: number;
+
+    flowEfficiency: number; // percentage
+
+  };
+
+}
+
+```
+
+
+
+### 12.3 Ant Design v5 Component Mapping
+
+
+
+```typescript
+
+// Workflow Distribution Card
+
+import { Card, Tabs, Statistic, Progress, Row, Col } from 'antd';
+
+
+
+const { TabPane } = Tabs;
+
+
+
+function WorkflowDistributionCard({ data }: { data: WorkflowMetrics }) {
+
+  return (
+
+    <Card title="Workflow Distribution" extra={<a href="#">View CFD</a>}>
+
+      <Tabs defaultActiveKey="stories">
+
+        <TabPane tab="Stories" key="stories">
+
+          <WorkflowFlow data={data.stories} flow={STORY_FLOW} />
+
+        </TabPane>
+
+        <TabPane tab="Bugs" key="bugs">
+
+          <WorkflowFlow data={data.bugs} flow={BUG_FLOW} />
+
+        </TabPane>
+
+        <TabPane tab="Spikes" key="spikes">
+
+          <WorkflowFlow data={data.spikes} flow={SPIKE_FLOW} />
+
+        </TabPane>
+
+      </Tabs>
+
+    </Card>
+
+  );
+
+}
+
+
+
+// Cumulative Flow Chart (using Ant Design charts or external library)
+
+function CumulativeFlowChart({ history }: { history: WorkflowHistoryEntry[] }) {
+
+  // Implementation using Recharts, ECharts, or Ant Design Charts
+
+  return (
+
+    <Card title="Cumulative Flow Diagram - Last 30 Days">
+
+      <ResponsiveContainer width="100%" height={300}>
+
+        <AreaChart data={history}>
+
+          <XAxis dataKey="date" />
+
+          <YAxis />
+
+          {/* Stacked areas for each status */}
+
+          <Area dataKey="backlog" stackId="1" fill="#8884d8" />
+
+          <Area dataKey="inProgress" stackId="1" fill="#82ca9d" />
+
+          {/* ... other statuses */}
+
+        </AreaChart>
+
+      </ResponsiveContainer>
+
+    </Card>
+
+  );
+
+}
+
+```
+
+
+
 ---
 
 *End of PRD-006*

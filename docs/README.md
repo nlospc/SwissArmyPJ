@@ -42,21 +42,18 @@
 
 
 
-### PRD 文档
-
-- [PRD-001: Master](./PRD/PRD-001-Master.md) - 主需求文档
-
-- [PRD-002: DataModel](./PRD/PRD-002-DataModel.md) - 数据模型规范
-
-- [PRD-003: Inbox](./PRD/PRD-003-Inbox.md) - 收件箱功能
-
-- [PRD-005: Timeline](./PRD/PRD-005-Timeline.md) - 时间线/甘特图
-
-- [PRD-006: Dashboard](./PRD/PRD-006-Dashboard.md) - 仪表盘
-
-- [PRD-011: MyWork](./PRD/PRD-011-MyWork.md) - My Work 功能
-
-- [更多 PRD...](./PRD/)
+### PRD 文档
+
+> ⚠️ 产品需求与功能边界以 `docs/PRD/` 目录为唯一权威来源。
+> 根目录和 `architecture/` 下的文档仅作为实现与架构补充。
+
+- [PRD-001: Master](./PRD/PRD-001-Master.md) - 主需求文档
+- [PRD-002: DataModel](./PRD/PRD-002-DataModel.md) - 数据模型规范
+- [PRD-003: Inbox](./PRD/PRD-003-Inbox.md) - 收件箱功能
+- [PRD-005: Timeline](./PRD/PRD-005-Timeline.md) - 时间线/甘特图
+- [PRD-006: Dashboard](./PRD/PRD-006-Dashboard.md) - 仪表盘
+- [PRD-011: MyWork](./PRD/PRD-011-MyWork.md) - My Work 功能
+- [更多 PRD...](./PRD/)
 
 ## 🎯 项目特点
 
@@ -66,28 +63,50 @@
 - 📊 **本地数据** - SQLite + FTS5 全文搜索
 - 🔧 **易扩展** - 模块化架构设计
 
-## 📖 阅读建议
-
-### 新开发者入门
-建议按以下顺序阅读：
-
-1. [项目概述](./overview.md) - 了解项目整体和核心功能
-2. [当前状态](./current-status.md) - 查看实施进度，知道哪些已完成
-3. [快速开始](./getting-started.md) - 本地运行项目
-4. [技术栈](./tech-stack.md) - 熟悉技术选型
-5. [组件库指南](./component-library.md) - 学习 Ant Design v5 使用
-
-### 贡献者指南
-准备贡献代码？请阅读：
-
-1. [当前状态](./current-status.md) - 找到待开发或进行中的功能
-2. [IPC 处理器参考](./architecture/ipc-handlers-reference.md) - 了解后端 API
-3. [架构设计](./architecture/ARCHITECTURE.md) - 理解系统架构
-4. 相关 PRD 文档 - 查看功能详细规范
-
-### AI 编码助手
-如果你是 Claude Code 或其他 AI 助手，请优先阅读：
-- [CLAUDE.md](../CLAUDE.md) - AI 编码助手专用指南
+## 📖 阅读建议
+
+
+
+### 新开发者入门
+
+建议按以下顺序阅读：
+
+
+
+1. [项目概述](./overview.md) - 了解项目整体和核心功能
+
+2. [当前状态](./current-status.md) - 查看实施进度，知道哪些已完成
+
+3. [快速开始](./getting-started.md) - 本地运行项目
+
+4. [技术栈](./tech-stack.md) - 熟悉技术选型
+
+5. [组件库指南](./component-library.md) - 学习 Ant Design v5 使用
+
+
+
+### 贡献者指南
+
+准备贡献代码？请阅读：
+
+
+
+1. [当前状态](./current-status.md) - 找到待开发或进行中的功能
+
+2. [IPC 处理器参考](./architecture/ipc-handlers-reference.md) - 了解后端 API
+
+3. [架构设计](./architecture/ARCHITECTURE.md) - 理解系统架构
+
+4. 相关 PRD 文档 - 查看功能详细规范
+
+
+
+### AI 编码助手
+
+如果你是 Claude Code 或其他 AI 助手，请优先阅读：
+
+- [CLAUDE.md](../CLAUDE.md) - AI 编码助手专用指南
+
 - [当前状态](./current-status.md) - 项目最新状态
 
 ## 💬 获取帮助

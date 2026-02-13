@@ -273,9 +273,16 @@ Export timeline view as PNG:
 | Ctrl+F | Focus filter |
 | +/- | Zoom in/out |
 
----
-
-## 12. Technical Implementation
+---
+
+## 12. Related Documents
+
+- [Gantt 架构总览](../gantt-architecture-summary.md)
+- [Gantt 库集成说明](../gantt-library-integration.md)
+
+---
+
+## 13. Technical Implementation
 
 ### 12.1 Library Choice: vis-timeline
 

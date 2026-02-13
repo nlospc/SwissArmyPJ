@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Language } from '@/i18n';
 
-export type ViewType = 'dashboard' | 'inbox' | 'portfolio' | 'projects' | 'my-work' | 'search' | 'settings';
+export type ViewType = 'dashboard' | 'inbox' | 'portfolio' | 'my-work' | 'search' | 'settings';
 
 interface UIState {
   currentView: ViewType;
