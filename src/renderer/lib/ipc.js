@@ -1,122 +1,132 @@
+const hasInvoke = typeof window !== 'undefined'
+    && window.electron
+    && typeof window.electron.invoke === 'function';
+const invoke = hasInvoke
+    ? window.electron.invoke.bind(window.electron)
+    : (channel, ..._args) => Promise.resolve({
+        success: false,
+        error: `IPC bridge unavailable for ${channel}`,
+    });
+
 // Type-safe IPC wrapper
 export const ipc = {
     // ============================================================================
     // Workspace
     // ============================================================================
     workspace: {
-        get: () => window.electron.invoke('workspace:get'),
-        update: (name) => window.electron.invoke('workspace:update', name),
+        get: () => invoke('workspace:get'),
+        update: (name) => invoke('workspace:update', name),
     },
     // ============================================================================
     // Portfolios
     // ============================================================================
     portfolios: {
-        getAll: () => window.electron.invoke('portfolios:getAll'),
-        getById: (id) => window.electron.invoke('portfolios:getById', id),
-        create: (data) => window.electron.invoke('portfolios:create', data),
-        update: (id, data) => window.electron.invoke('portfolios:update', id, data),
-        delete: (id) => window.electron.invoke('portfolios:delete', id),
-        addProject: (portfolioId, projectId) => window.electron.invoke('portfolios:addProject', portfolioId, projectId),
-        removeProject: (portfolioId, projectId) => window.electron.invoke('portfolios:removeProject', portfolioId, projectId),
+        getAll: () => invoke('portfolios:getAll'),
+        getById: (id) => invoke('portfolios:getById', id),
+        create: (data) => invoke('portfolios:create', data),
+        update: (id, data) => invoke('portfolios:update', id, data),
+        delete: (id) => invoke('portfolios:delete', id),
+        addProject: (portfolioId, projectId) => invoke('portfolios:addProject', portfolioId, projectId),
+        removeProject: (portfolioId, projectId) => invoke('portfolios:removeProject', portfolioId, projectId),
     },
     // ============================================================================
     // Projects
     // ============================================================================
     projects: {
-        getAll: () => window.electron.invoke('projects:getAll'),
-        getById: (id) => window.electron.invoke('projects:getById', id),
-        getByPortfolio: (portfolioId) => window.electron.invoke('projects:getByPortfolio', portfolioId),
-        create: (data) => window.electron.invoke('projects:create', data),
-        update: (id, data) => window.electron.invoke('projects:update', id, data),
-        delete: (id) => window.electron.invoke('projects:delete', id),
+        getAll: () => invoke('projects:getAll'),
+        getById: (id) => invoke('projects:getById', id),
+        getByPortfolio: (portfolioId) => invoke('projects:getByPortfolio', portfolioId),
+        create: (data) => invoke('projects:create', data),
+        update: (id, data) => invoke('projects:update', id, data),
+        delete: (id) => invoke('projects:delete', id),
     },
     // ============================================================================
     // Work Items
     // ============================================================================
     workItems: {
-        getAll: () => window.electron.invoke('workItems:getAll'),
-        getByProject: (projectId) => window.electron.invoke('workItems:getByProject', projectId),
-        getByParent: (parentId) => window.electron.invoke('workItems:getByParent', parentId),
-        create: (data) => window.electron.invoke('workItems:create', data),
-        update: (id, data) => window.electron.invoke('workItems:update', id, data),
-        delete: (id) => window.electron.invoke('workItems:delete', id),
+        getAll: () => invoke('workItems:getAll'),
+        getByProject: (projectId) => invoke('workItems:getByProject', projectId),
+        getByParent: (parentId) => invoke('workItems:getByParent', parentId),
+        create: (data) => invoke('workItems:create', data),
+        update: (id, data) => invoke('workItems:update', id, data),
+        delete: (id) => invoke('workItems:delete', id),
     },
     // ============================================================================
     // Inbox
     // ============================================================================
     inbox: {
-        getAll: () => window.electron.invoke('inbox:getAll'),
-        create: (data) => window.electron.invoke('inbox:create', data),
-        markProcessed: (id) => window.electron.invoke('inbox:markProcessed', id),
-        delete: (id) => window.electron.invoke('inbox:delete', id),
+        getAll: () => invoke('inbox:getAll'),
+        create: (data) => invoke('inbox:create', data),
+        markProcessed: (id) => invoke('inbox:markProcessed', id),
+        delete: (id) => invoke('inbox:delete', id),
     },
     // ============================================================================
     // Todos
     // ============================================================================
     todos: {
-        getAll: () => window.electron.invoke('todos:getAll'),
-        getByDate: (date) => window.electron.invoke('todos:getByDate', date),
-        create: (data) => window.electron.invoke('todos:create', data),
-        update: (id, data) => window.electron.invoke('todos:update', id, data),
-        toggle: (id) => window.electron.invoke('todos:toggle', id),
-        delete: (id) => window.electron.invoke('todos:delete', id),
+        getAll: () => invoke('todos:getAll'),
+        getByDate: (date) => invoke('todos:getByDate', date),
+        create: (data) => invoke('todos:create', data),
+        update: (id, data) => invoke('todos:update', id, data),
+        toggle: (id) => invoke('todos:toggle', id),
+        delete: (id) => invoke('todos:delete', id),
     },
     // ============================================================================
     // Settings
     // ============================================================================
     settings: {
-        get: (key) => window.electron.invoke('settings:get', key),
-        set: (key, value) => window.electron.invoke('settings:set', key, value),
-        export: () => window.electron.invoke('settings:export'),
-        import: (data) => window.electron.invoke('settings:import', data),
+        get: (key) => invoke('settings:get', key),
+        set: (key, value) => invoke('settings:set', key, value),
+        export: () => invoke('settings:export'),
+        import: (data) => invoke('settings:import', data),
     },
     // ============================================================================
     // Dashboard
     // ============================================================================
     dashboard: {
-        getPortfolioSummary: () => window.electron.invoke('dashboard:getPortfolioSummary'),
+        getPortfolioSummary: () => invoke('dashboard:getPortfolioSummary'),
     },
     // ============================================================================
     // Search
     // ============================================================================
     search: {
-        global: (query) => window.electron.invoke('search:global', query),
+        global: (query) => invoke('search:global', query),
     },
     // ============================================================================
     // My Work
     // ============================================================================
     myWork: {
         // Todo List
-        getTodos: (userId, includeArchived = false) => window.electron.invoke('mywork:getTodos', { userId, includeArchived }),
-        markDone: (itemId, userId) => window.electron.invoke('mywork:markDone', { itemId, userId }),
-        addQuickTask: (projectId, title, userId) => window.electron.invoke('mywork:addQuickTask', { projectId, title, userId }),
-        getStats: (userId) => window.electron.invoke('mywork:getStats', { userId }),
+        getTodos: (userId, includeArchived = false) => invoke('mywork:getTodos', { userId, includeArchived }),
+        markDone: (itemId, userId) => invoke('mywork:markDone', { itemId, userId }),
+        addQuickTask: (projectId, title, userId) => invoke('mywork:addQuickTask', { projectId, title, userId }),
+        getStats: (userId) => invoke('mywork:getStats', { userId }),
     },
     // ============================================================================
     // Time Logging
     // ============================================================================
     timeLog: {
-        start: (workItemId, userId, logType) => window.electron.invoke('timelog:start', { workItemId, userId, logType }),
-        stop: (logId, notes) => window.electron.invoke('timelog:stop', { logId, notes }),
-        logManual: (entry) => window.electron.invoke('timelog:logManual', entry),
-        edit: (logId, updates, userId) => window.electron.invoke('timelog:edit', { logId, updates, userId }),
-        getToday: (userId) => window.electron.invoke('timelog:getToday', { userId }),
-        getWeeklySummary: (userId) => window.electron.invoke('timelog:getWeeklySummary', { userId }),
-        getActive: (userId) => window.electron.invoke('timelog:getActive', { userId }),
+        start: (workItemId, userId, logType) => invoke('timelog:start', { workItemId, userId, logType }),
+        stop: (logId, notes) => invoke('timelog:stop', { logId, notes }),
+        logManual: (entry) => invoke('timelog:logManual', entry),
+        edit: (logId, updates, userId) => invoke('timelog:edit', { logId, updates, userId }),
+        getToday: (userId) => invoke('timelog:getToday', { userId }),
+        getWeeklySummary: (userId) => invoke('timelog:getWeeklySummary', { userId }),
+        getActive: (userId) => invoke('timelog:getActive', { userId }),
     },
     // ============================================================================
     // Pomodoro
     // ============================================================================
     pomodoro: {
-        start: (timeLogId, sessionType, durationMinutes) => window.electron.invoke('pomodoro:start', { timeLogId, sessionType, durationMinutes }),
-        complete: (sessionId, interrupted) => window.electron.invoke('pomodoro:complete', { sessionId, interrupted }),
-        getSessionCount: (timeLogId) => window.electron.invoke('pomodoro:getSessionCount', { timeLogId }),
+        start: (timeLogId, sessionType, durationMinutes) => invoke('pomodoro:start', { timeLogId, sessionType, durationMinutes }),
+        complete: (sessionId, interrupted) => invoke('pomodoro:complete', { sessionId, interrupted }),
+        getSessionCount: (timeLogId) => invoke('pomodoro:getSessionCount', { timeLogId }),
     },
     // ============================================================================
     // Preferences
     // ============================================================================
     preferences: {
-        get: (userId) => window.electron.invoke('preferences:get', { userId }),
-        update: (userId, updates) => window.electron.invoke('preferences:update', { userId, updates }),
+        get: (userId) => invoke('preferences:get', { userId }),
+        update: (userId, updates) => invoke('preferences:update', { userId, updates }),
     },
 };

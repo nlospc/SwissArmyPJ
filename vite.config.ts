@@ -54,10 +54,12 @@ export default defineConfig({
       },
     ]),
   ],
-  resolve: {
-    alias: {
-      '@/shared': path.resolve(__dirname, './src/shared'),
-      '@': path.resolve(__dirname, './src/renderer'),
-    },
-  },
-});
+  resolve: {
+    alias: {
+      '@/shared': path.resolve(__dirname, './src/shared'),
+      '@': path.resolve(__dirname, './src/renderer'),
+    },
+    // Prefer TS/TSX sources when both TS and JS exist.
+    extensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx', '.json'],
+  },
+});

@@ -3,8 +3,9 @@
  */
 
 import { WeeklySummary } from '@/stores/useMyWorkStore';
+import { theme } from 'antd';
 import { formatMinutes } from '@/features/my-work/utils/timeFormatters';
-import { formatRelativeDate } from '@/features/my-work/utils/dateHelpers';
+import { formatRelativeDate } from '@/features/my-work/utils/timeFormatters';
 
 interface WeeklyChartProps {
   data: WeeklySummary | null;
@@ -12,17 +13,22 @@ interface WeeklyChartProps {
 }
 
 export function WeeklyChart({ data, loading }: WeeklyChartProps) {
+  const { token } = theme.useToken();
+
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+        <div
+          className="h-32 rounded-lg animate-pulse"
+          style={{ backgroundColor: token.colorFillSecondary }}
+        />
       </div>
     );
   }
 
   if (!data || data.days.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+      <div className="text-center py-8" style={{ color: token.colorTextSecondary }}>
         <p>No weekly data available</p>
       </div>
     );
@@ -30,7 +36,7 @@ export function WeeklyChart({ data, loading }: WeeklyChartProps) {
 
   // Find max value for scaling (minimum 60 minutes to avoid tiny bars)
   const maxMinutes = Math.max(60, ...data.days.map((d) => d.totalMinutes));
-  
+
   // Get today's date for highlighting
   const today = new Date().toISOString().split('T')[0];
 
@@ -38,10 +44,10 @@ export function WeeklyChart({ data, loading }: WeeklyChartProps) {
     <div className="space-y-3">
       {/* Chart Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <h3 className="text-sm font-medium" style={{ color: token.colorText }}>
           This Week
         </h3>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs" style={{ color: token.colorTextSecondary }}>
           {formatMinutes(data.weeklyActual)} / {formatMinutes(data.weeklyTarget)}
         </span>
       </div>
@@ -61,16 +67,27 @@ export function WeeklyChart({ data, loading }: WeeklyChartProps) {
               {/* Bar */}
               <div className="relative w-full flex items-end justify-center h-24">
                 <div
-                  className={`
-                    w-full max-w-[40px] rounded-t-md transition-all duration-200
-                    ${isToday 
-                      ? 'bg-blue-500 dark:bg-blue-600' 
-                      : hasData 
-                        ? 'bg-blue-300 dark:bg-blue-800 group-hover:bg-blue-400 dark:group-hover:bg-blue-700' 
-                        : 'bg-gray-200 dark:bg-gray-800'
+                  className="w-full max-w-[40px] rounded-t-md transition-all duration-200"
+                  style={{
+                    height: `${Math.max(4, percentage)}%`,
+                    backgroundColor: isToday
+                      ? token.colorPrimary
+                      : hasData
+                        ? token.colorInfo
+                        : token.colorFillSecondary,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isToday && hasData) {
+                      e.currentTarget.style.backgroundColor = token.colorPrimaryBg;
                     }
-                  `}
-                  style={{ height: `${Math.max(4, percentage)}%` }}
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = isToday
+                      ? token.colorPrimary
+                      : hasData
+                        ? token.colorInfo
+                        : token.colorFillSecondary;
+                  }}
                   title={`
                     ${formatRelativeDate(day.date)}
                     ${formatMinutes(day.totalMinutes)}
@@ -81,13 +98,12 @@ export function WeeklyChart({ data, loading }: WeeklyChartProps) {
 
               {/* Day Label */}
               <span
-                className={`
-                  text-[10px] font-medium tabular-nums
-                  ${isToday 
-                    ? 'text-blue-600 dark:text-blue-400' 
-                    : 'text-gray-500 dark:text-gray-400'
-                  }
-                `}
+                className="text-[10px] font-medium tabular-nums"
+                style={{
+                  color: isToday
+                    ? token.colorPrimary
+                    : token.colorTextSecondary,
+                }}
               >
                 {formatRelativeDate(day.date)}
               </span>
@@ -97,17 +113,29 @@ export function WeeklyChart({ data, loading }: WeeklyChartProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+      <div
+        className="flex items-center justify-center gap-4 text-xs"
+        style={{ color: token.colorTextSecondary }}
+      >
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-blue-500 rounded-sm" />
+          <div
+            className="w-3 h-3 rounded-sm"
+            style={{ backgroundColor: token.colorPrimary }}
+          />
           <span>Today</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-blue-300 dark:bg-blue-800 rounded-sm" />
+          <div
+            className="w-3 h-3 rounded-sm"
+            style={{ backgroundColor: token.colorInfo }}
+          />
           <span>Logged</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-gray-200 dark:bg-gray-800 rounded-sm" />
+          <div
+            className="w-3 h-3 rounded-sm"
+            style={{ backgroundColor: token.colorFillSecondary }}
+          />
           <span>Empty</span>
         </div>
       </div>
