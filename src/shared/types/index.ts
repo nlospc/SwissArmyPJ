@@ -48,6 +48,8 @@ export interface WorkItem {
   end_date: string | null;
   level: 1 | 2;
   notes: string | null;
+  owner: string | null;
+  priority: 'low' | 'medium' | 'high' | 'critical' | null;
   created_at: string;
   updated_at: string;
   children?: WorkItem[]; // Populated for hierarchical display
@@ -131,6 +133,8 @@ export interface CreateWorkItemDTO {
   start_date?: string;
   end_date?: string;
   notes?: string;
+  owner?: string;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface UpdateWorkItemDTO {
@@ -140,6 +144,8 @@ export interface UpdateWorkItemDTO {
   end_date?: string;
   notes?: string;
   type?: 'task' | 'issue' | 'milestone' | 'phase' | 'remark' | 'clash';
+  owner?: string;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface CreateInboxItemDTO {

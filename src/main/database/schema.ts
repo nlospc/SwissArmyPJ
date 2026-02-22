@@ -90,6 +90,8 @@ function createTables(): void {
       end_date TEXT,
       level INTEGER CHECK(level IN (1,2)) DEFAULT 1,
       notes TEXT,
+      owner TEXT,
+      priority TEXT CHECK(priority IN ('low','medium','high','critical')) DEFAULT 'medium',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,

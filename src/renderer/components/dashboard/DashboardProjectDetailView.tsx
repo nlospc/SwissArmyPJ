@@ -39,6 +39,17 @@ const TYPE_OPTIONS = [
   { value: 'clash',     label: 'Clash' },
 ];
 
+const PRIORITY_OPTIONS = [
+  { value: 'low',      label: 'Low' },
+  { value: 'medium',   label: 'Medium' },
+  { value: 'high',     label: 'High' },
+  { value: 'critical', label: 'Critical' },
+];
+
+const PRIORITY_COLORS: Record<string, string> = {
+  low: 'default', medium: 'blue', high: 'orange', critical: 'red',
+};
+
 // ============================================================================
 // Sponsor mapping (placeholder until sponsor field is added to DB)
 // ============================================================================
@@ -364,6 +375,8 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
         start_date: values.start_date || undefined,
         end_date: values.end_date || undefined,
         notes: values.notes || undefined,
+        owner: values.owner || undefined,
+        priority: values.priority || undefined,
       });
       workItemForm.resetFields();
       setAddWorkItemOpen(false);
@@ -396,6 +409,8 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
       start_date: record.start_date || '',
       end_date: record.end_date || '',
       notes: record.notes || '',
+      owner: record.owner || '',
+      priority: record.priority || 'medium',
     });
   };
 
@@ -408,6 +423,8 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
       start_date: rowValues.start_date || undefined,
       end_date: rowValues.end_date || undefined,
       notes: rowValues.notes || undefined,
+      owner: rowValues.owner || undefined,
+      priority: rowValues.priority || undefined,
     });
     setEditingRowKey(null);
   };
@@ -514,6 +531,37 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
           return <Input type="date" value={rowValues.end_date} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, end_date: e.target.value }))} />;
         }
         return <span className="text-xs text-gray-500 dark:text-gray-400">{d || '—'}</span>;
+      },
+    },
+    {
+      title: 'Owner',
+      dataIndex: 'owner',
+      key: 'owner',
+      width: 110,
+      render: (o: string | null, record: any) => {
+        if (record.key === editingRowKey) {
+          return <Input value={rowValues.owner} size="small" placeholder="Assignee" onChange={(e) => setRowValues((prev) => ({ ...prev, owner: e.target.value }))} />;
+        }
+        return <span className="text-xs text-gray-500 dark:text-gray-400">{o || '—'}</span>;
+      },
+    },
+    {
+      title: 'Priority',
+      dataIndex: 'priority',
+      key: 'priority',
+      width: 95,
+      render: (p: string | null, record: any) => {
+        if (record.key === editingRowKey) {
+          return (
+            <Select
+              value={rowValues.priority}
+              size="small"
+              options={PRIORITY_OPTIONS}
+              onChange={(v) => setRowValues((prev) => ({ ...prev, priority: v }))}
+            />
+          );
+        }
+        return p ? <Tag color={PRIORITY_COLORS[p] || 'default'} style={{ margin: 0, fontSize: 11 }}>{p}</Tag> : <span className="text-xs text-gray-400">—</span>;
       },
     },
     {
@@ -957,6 +1005,14 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
           <Form.Item name="parent_id" label="Parent Item">
             <Select placeholder="Top-level parent (optional)" allowClear options={workItems.map((wi) => ({ value: wi.id, label: `${wi.type}: ${wi.title}` }))} />
           </Form.Item>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Form.Item name="owner" label="Owner" style={{ flex: 1 }}>
+              <Input placeholder="Assignee name" />
+            </Form.Item>
+            <Form.Item name="priority" label="Priority" style={{ flex: 1 }}>
+              <Select options={PRIORITY_OPTIONS} defaultValue="medium" />
+            </Form.Item>
+          </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <Form.Item name="start_date" label="Start" style={{ flex: 1 }}>
               <Input type="date" />

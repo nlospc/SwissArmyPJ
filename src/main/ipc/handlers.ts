@@ -517,8 +517,8 @@ function handleCreateWorkItem(_event: any, data: CreateWorkItemDTO): IPCResponse
     const level = data.parent_id ? 2 : 1;
 
     const result = db.prepare(`
-      INSERT INTO work_items (uuid, project_id, parent_id, type, title, status, start_date, end_date, level, notes, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO work_items (uuid, project_id, parent_id, type, title, status, start_date, end_date, level, notes, owner, priority, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       uuid,
       data.project_id,
@@ -530,6 +530,8 @@ function handleCreateWorkItem(_event: any, data: CreateWorkItemDTO): IPCResponse
       data.end_date || null,
       level,
       data.notes || null,
+      data.owner || null,
+      data.priority || 'medium',
       now,
       now
     );
@@ -572,6 +574,14 @@ function handleUpdateWorkItem(_event: any, id: number, data: UpdateWorkItemDTO):
     if (data.type !== undefined) {
       updates.push('type = ?');
       values.push(data.type);
+    }
+    if (data.owner !== undefined) {
+      updates.push('owner = ?');
+      values.push(data.owner);
+    }
+    if (data.priority !== undefined) {
+      updates.push('priority = ?');
+      values.push(data.priority);
     }
 
     updates.push('updated_at = ?');
@@ -835,8 +845,8 @@ function handleImportData(_event: any, data: any): IPCResponse<void> {
 
     if (data.work_items) {
       for (const item of data.work_items) {
-        db.prepare('INSERT INTO work_items (id, uuid, project_id, parent_id, type, title, status, start_date, end_date, level, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-          .run(item.id, item.uuid, item.project_id, item.parent_id, item.type, item.title, item.status, item.start_date, item.end_date, item.level, item.notes, item.created_at, item.updated_at);
+        db.prepare('INSERT INTO work_items (id, uuid, project_id, parent_id, type, title, status, start_date, end_date, level, notes, owner, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          .run(item.id, item.uuid, item.project_id, item.parent_id, item.type, item.title, item.status, item.start_date, item.end_date, item.level, item.notes, item.owner || null, item.priority || 'medium', item.created_at, item.updated_at);
       }
     }
 

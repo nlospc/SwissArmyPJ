@@ -10,12 +10,9 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-import { Typography, Button } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
-
 import { ExcelGanttChart } from '@/components/gantt/ExcelGanttChart';
 
-import { WorkItemGanttChart } from '@/components/gantt/WorkItemGanttChart';
+import { WorkItemExcelGantt } from '@/components/gantt/WorkItemExcelGantt';
 
 import { ProjectsTableView } from '@/components/portfolio/ProjectsTableView';
 
@@ -379,19 +376,15 @@ export function PortfolioPage() {
 
         ) : selectedProject ? (
 
-          <WorkItemGanttChart
+          <WorkItemExcelGantt
 
             project={selectedProject}
 
             workItems={workItems.filter((w) => w.project_id === selectedProject.id)}
 
-            viewMode="month"
-
             loading={isLoading}
 
             onBack={handleBack}
-
-            onWorkItemClick={handleWorkItemClick}
 
             onWorkItemUpdate={handleWorkItemUpdate}
 
