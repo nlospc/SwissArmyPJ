@@ -13,10 +13,9 @@ import React, {
 import { Tag, Select, Button, Space, Tooltip, Input } from 'antd';
 import {
   ArrowLeftOutlined,
+  CalendarOutlined,
   DownloadOutlined,
   FilterOutlined,
-  ZoomInOutlined,
-  ZoomOutOutlined,
   CaretRightOutlined,
   CaretDownOutlined,
 } from '@ant-design/icons';
@@ -398,6 +397,29 @@ export function WorkItemExcelGantt({
     URL.revokeObjectURL(url);
   };
 
+  // ─── jump to today ────────────────────────────────────────────────────────
+
+  const handleJumpToToday = useCallback(() => {
+    if (!rightRef.current) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let left = 0;
+    if (scale === 'day') {
+      const off = Math.floor((today.getTime() - minDate.getTime()) / 86400000);
+      left = Math.max(0, off * colWidth - rightRef.current.clientWidth / 3);
+    } else if (scale === 'week') {
+      const ws = getMonday(minDate);
+      const off = Math.floor((getMonday(today).getTime() - ws.getTime()) / (7 * 86400000));
+      left = Math.max(0, off * colWidth - rightRef.current.clientWidth / 3);
+    } else {
+      const minYear = minDate.getFullYear();
+      const minMonth = minDate.getMonth();
+      const idx = (today.getFullYear() - minYear) * 12 + (today.getMonth() - minMonth);
+      left = Math.max(0, idx * colWidth - rightRef.current.clientWidth / 3);
+    }
+    syncTimeline(left);
+  }, [scale, minDate, colWidth, syncTimeline]);
+
   // ─── collapse toggle ──────────────────────────────────────────────────────
 
   const toggleCollapse = (id: number) => {
@@ -479,6 +501,9 @@ export function WorkItemExcelGantt({
               { value: 'month', label: 'Month' },
             ]}
           />
+          <Button size="small" icon={<CalendarOutlined />} onClick={handleJumpToToday}>
+            Today
+          </Button>
           <Button size="small" icon={<DownloadOutlined />} onClick={handleExport}>
             Export
           </Button>
@@ -498,13 +523,13 @@ export function WorkItemExcelGantt({
             className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
             style={{ height: HEADER_HEIGHT }}
           >
-            <div className="flex items-end h-full text-xs font-semibold text-gray-500 dark:text-gray-400">
-              <div style={{ width: LEFT_COL_WIDTHS.title }}   className="px-2 pb-1 border-r border-gray-200 dark:border-gray-700">Name</div>
-              <div style={{ width: LEFT_COL_WIDTHS.owner }}   className="px-2 pb-1 border-r border-gray-200 dark:border-gray-700">Owner</div>
-              <div style={{ width: LEFT_COL_WIDTHS.priority }} className="px-2 pb-1 border-r border-gray-200 dark:border-gray-700">Priority</div>
-              <div style={{ width: LEFT_COL_WIDTHS.status }}  className="px-2 pb-1 border-r border-gray-200 dark:border-gray-700">Status</div>
-              <div style={{ width: LEFT_COL_WIDTHS.start }}   className="px-2 pb-1 border-r border-gray-200 dark:border-gray-700">Start</div>
-              <div style={{ width: LEFT_COL_WIDTHS.end }}     className="px-2 pb-1">End</div>
+            <div className="flex items-center h-full text-xs font-semibold text-gray-500 dark:text-gray-400">
+              <div style={{ width: LEFT_COL_WIDTHS.title }}    className="px-2 h-full flex items-center border-r border-gray-200 dark:border-gray-700">Name</div>
+              <div style={{ width: LEFT_COL_WIDTHS.owner }}    className="px-2 h-full flex items-center border-r border-gray-200 dark:border-gray-700">Owner</div>
+              <div style={{ width: LEFT_COL_WIDTHS.priority }} className="px-2 h-full flex items-center border-r border-gray-200 dark:border-gray-700">Priority</div>
+              <div style={{ width: LEFT_COL_WIDTHS.status }}   className="px-2 h-full flex items-center border-r border-gray-200 dark:border-gray-700">Status</div>
+              <div style={{ width: LEFT_COL_WIDTHS.start }}    className="px-2 h-full flex items-center border-r border-gray-200 dark:border-gray-700">Start</div>
+              <div style={{ width: LEFT_COL_WIDTHS.end }}      className="px-2 h-full flex items-center">End</div>
             </div>
           </div>
 
@@ -566,16 +591,16 @@ export function WorkItemExcelGantt({
                   </div>
                 ))}
               </div>
-              {/* Period band */}
+              {/* Period band – render ALL columns (no virtualization) to stay in sync with scroll */}
               <div className="flex" style={{ height: 32 }}>
-                {visibleCols.map((col) => (
+                {columns.map((col, idx) => (
                   <div
-                    key={col.idx}
+                    key={idx}
                     className={`flex-shrink-0 border-r text-xs flex items-center justify-center font-medium
                       ${(col as any).isWeekend
                         ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 border-gray-200 dark:border-gray-600'
                         : 'text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600'}`}
-                    style={{ width: colWidth, marginLeft: col.idx === visCols.start ? col.idx * colWidth : 0 }}
+                    style={{ width: colWidth }}
                   >
                     {col.label}
                   </div>
@@ -685,6 +710,35 @@ export function WorkItemExcelGantt({
 
               {/* spacer bottom */}
               <div style={{ height: Math.max(0, (flatRows.length - visRows.end) * ROW_HEIGHT) }} />
+
+              {/* Today line */}
+              {(() => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let left = -1;
+                if (scale === 'day') {
+                  const off = Math.floor((today.getTime() - minDate.getTime()) / 86400000);
+                  if (off >= 0 && off <= columns.length) left = off * colWidth;
+                } else if (scale === 'week') {
+                  const ws = getMonday(minDate);
+                  const off = Math.floor((getMonday(today).getTime() - ws.getTime()) / (7 * 86400000));
+                  if (off >= 0 && off <= columns.length) left = off * colWidth;
+                } else {
+                  const minYear = minDate.getFullYear();
+                  const minMonth = minDate.getMonth();
+                  const idx = (today.getFullYear() - minYear) * 12 + (today.getMonth() - minMonth);
+                  const day = today.getDate();
+                  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                  if (idx >= 0 && idx <= columns.length) left = (idx + day / daysInMonth) * colWidth;
+                }
+                if (left < 0) return null;
+                return (
+                  <div
+                    className="absolute top-0 bottom-0 pointer-events-none z-20"
+                    style={{ left, width: 2, borderLeft: '2px dashed #ff7875', opacity: 0.8 }}
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>
