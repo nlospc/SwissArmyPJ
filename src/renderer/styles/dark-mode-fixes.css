@@ -134,6 +134,16 @@
   color: var(--ant-color-text-secondary) !important;
 }
 
+/* Inner card (type="inner") — slightly elevated background */
+.dark .ant-card-type-inner {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark .ant-card-type-inner .ant-card-head {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-bottom-color: var(--ant-color-border) !important;
+}
+
 .dark .ant-card-body {
   background-color: var(--ant-color-bg-container) !important;
   color: var(--ant-color-text) !important;
@@ -263,6 +273,30 @@
   background-color: var(--ant-color-primary) !important;
 }
 
+/* Card-type tabs */
+.dark .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+  color: var(--ant-color-text-secondary) !important;
+}
+
+.dark .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  background-color: var(--ant-color-bg-elevated) !important;
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-tabs-card > .ant-tabs-nav::before {
+  border-bottom-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-tabs-content-holder {
+  background-color: var(--ant-color-bg-container) !important;
+}
+
+.dark .ant-tabs-nav {
+  background-color: var(--ant-color-bg-container) !important;
+}
+
 /* === Typography 组件修复 === */
 .dark .ant-typography {
   color: var(--ant-color-text) !important;
@@ -375,8 +409,51 @@
 }
 
 /* === Steps 组件修复 === */
+.dark .ant-steps-item-title {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-steps-item-title::after {
+  background-color: var(--ant-color-border) !important;
+}
+
 .dark .ant-steps-item-description {
   color: var(--ant-color-text-secondary) !important;
+}
+
+.dark .ant-steps-item-wait .ant-steps-item-icon {
+  background-color: transparent !important;
+  border-color: var(--ant-color-text-tertiary) !important;
+}
+
+.dark .ant-steps-item-wait .ant-steps-item-icon .ant-steps-icon {
+  color: var(--ant-color-text-tertiary) !important;
+}
+
+.dark .ant-steps-item-wait .ant-steps-item-title {
+  color: var(--ant-color-text-tertiary) !important;
+}
+
+.dark .ant-steps-item-finish .ant-steps-item-icon {
+  background-color: transparent !important;
+  border-color: var(--ant-color-primary) !important;
+}
+
+.dark .ant-steps-item-finish .ant-steps-item-icon .ant-steps-icon {
+  color: var(--ant-color-primary) !important;
+}
+
+.dark .ant-steps-item-finish .ant-steps-item-title::after {
+  background-color: var(--ant-color-primary) !important;
+}
+
+.dark .ant-steps-item-process .ant-steps-item-icon {
+  background-color: var(--ant-color-primary) !important;
+  border-color: var(--ant-color-primary) !important;
+}
+
+.dark .ant-steps-item-process .ant-steps-item-icon .ant-steps-icon {
+  color: #ffffff !important;
 }
 
 /* === Empty 组件修复 === */
