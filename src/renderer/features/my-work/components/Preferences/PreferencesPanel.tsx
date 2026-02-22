@@ -213,4 +213,155 @@ export function PreferencesPanel({ onClose }: PreferencesPanelProps) {
               className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-              {
+              {Math.round((localPrefs.dailyTimeTarget || 480) / 60)}h
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Notification Settings */}
+      <section className="space-y-4">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
+          🔔 Notifications
+        </h3>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Desktop Notifications
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Show system notifications for timers
+            </p>
+          </div>
+          <button
+            onClick={() => handleChange('enableDesktopNotifications', !localPrefs.enableDesktopNotifications)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              localPrefs.enableDesktopNotifications ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                localPrefs.enableDesktopNotifications ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Notification Sound
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Play sound when timer completes
+            </p>
+          </div>
+          <button
+            onClick={() => handleChange('notificationSound', !localPrefs.notificationSound)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              localPrefs.notificationSound ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                localPrefs.notificationSound ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+      </section>
+
+      {/* Display Settings */}
+      <section className="space-y-4">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
+          👁️ Display
+        </h3>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            Default Group By
+          </label>
+          <select
+            value={localPrefs.defaultGroupBy || 'project'}
+            onChange={(e) => handleChange('defaultGroupBy', e.target.value as GroupByOption)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          >
+            <option value="project">Project</option>
+            <option value="priority">Priority</option>
+            <option value="due_date">Due Date</option>
+            <option value="status">Status</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            Default Sort By
+          </label>
+          <select
+            value={localPrefs.defaultSortBy || 'due_date'}
+            onChange={(e) => handleChange('defaultSortBy', e.target.value as SortByOption)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          >
+            <option value="due_date">Due Date</option>
+            <option value="priority">Priority</option>
+            <option value="title">Title</option>
+            <option value="created_at">Created At</option>
+          </select>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Show Completed Tasks
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Include completed tasks in the list
+            </p>
+          </div>
+          <button
+            onClick={() => handleChange('showCompletedTasks', !localPrefs.showCompletedTasks)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              localPrefs.showCompletedTasks ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                localPrefs.showCompletedTasks ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+      </section>
+
+      {/* Save Message */}
+      {saveMessage && (
+        <div className={`text-sm px-3 py-2 rounded-md ${
+          saveMessage.includes('Failed')
+            ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+            : 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+        }`}>
+          {saveMessage}
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={handleReset}
+          className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        >
+          Reset to Defaults
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
+        >
+          {isSaving ? 'Saving...' : 'Save Settings'}
+        </button>
+      </div>
+    </div>
+  );
+}

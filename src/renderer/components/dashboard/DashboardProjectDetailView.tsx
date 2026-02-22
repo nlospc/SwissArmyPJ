@@ -501,7 +501,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
         if (record.key === editingRowKey) {
           return <Input type="date" value={rowValues.start_date} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, start_date: e.target.value }))} />;
         }
-        return <span className="text-xs text-theme-secondary">{d || '—'}</span>;
+        return <span className="text-xs text-gray-500 dark:text-gray-400">{d || '—'}</span>;
       },
     },
     {
@@ -513,7 +513,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
         if (record.key === editingRowKey) {
           return <Input type="date" value={rowValues.end_date} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, end_date: e.target.value }))} />;
         }
-        return <span className="text-xs text-theme-secondary">{d || '—'}</span>;
+        return <span className="text-xs text-gray-500 dark:text-gray-400">{d || '—'}</span>;
       },
     },
     {
@@ -525,7 +525,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
         if (record.key === editingRowKey) {
           return <Input value={rowValues.notes} size="small" onChange={(e) => setRowValues((prev) => ({ ...prev, notes: e.target.value }))} />;
         }
-        return <span className="text-xs text-theme-secondary">{n || '—'}</span>;
+        return <span className="text-xs text-gray-500 dark:text-gray-400">{n || '—'}</span>;
       },
     },
     {
@@ -603,7 +603,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
       dataIndex: 'notes',
       key: 'notes',
       ellipsis: true,
-      render: (n: string) => <span className="text-xs text-theme-secondary">{n || '—'}</span>,
+      render: (n: string) => <span className="text-xs text-gray-500 dark:text-gray-400">{n || '—'}</span>,
     },
   ];
 
@@ -623,7 +623,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 pt-5 pb-4 border-b border-theme-secondary bg-theme-container flex-shrink-0">
+      <div className="px-6 pt-5 pb-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3 flex-wrap">
@@ -636,7 +636,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
                 renderDisplay={() => <StatusTag status={selectedProject.status} />}
               />
             </div>
-            <div className="flex items-center gap-4 mt-1.5 text-sm text-theme-secondary flex-wrap">
+            <div className="flex items-center gap-4 mt-1.5 text-sm text-gray-500 dark:text-gray-400 flex-wrap">
               {selectedProject.owner && (
                 <span className="flex items-center gap-1"><UserOutlined /> {selectedProject.owner}</span>
               )}
@@ -709,7 +709,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
                       size={14}
                       showInfo
                     />
-                    <div className="flex justify-between mt-2 text-xs text-theme-secondary">
+                    <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
                       <span>{stats.done} of {stats.total} items completed</span>
                     </div>
                   </Card>
@@ -717,9 +717,9 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
                   <Card title="Project Details">
                     <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
                       <div>
-                        <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Project Lead</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Project Lead</div>
                         <div className="mt-0.5 flex items-center gap-1">
-                          <UserOutlined className="text-theme-secondary" />
+                          <UserOutlined className="text-gray-500 dark:text-gray-400" />
                           <InlineEdit
                             value={selectedProject.owner}
                             onSave={(v) => saveProjectField({ owner: v || undefined })}
@@ -727,11 +727,11 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Sponsor</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Sponsor</div>
                         <div className="mt-0.5">{getSponsor(selectedProject.name)}</div>
                       </div>
                       <div>
-                        <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Start Date</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Start Date</div>
                         <div className="mt-0.5">
                           <InlineEdit
                             value={selectedProject.start_date}
@@ -741,7 +741,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Target End</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Target End</div>
                         <div className="mt-0.5">
                           <InlineEdit
                             value={selectedProject.end_date}
@@ -751,7 +751,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Portfolio</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Portfolio</div>
                         <div className="mt-0.5">
                           <InlineEdit
                             value={selectedProject.portfolio_id}
@@ -763,7 +763,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold">Open Risks</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Open Risks</div>
                         <div className="mt-0.5 flex items-center gap-2">
                           {(() => {
                             const open = risks.filter((r) => r.status !== 'Resolved').length;
@@ -783,7 +783,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
 
                     <Divider />
                     <div>
-                      <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold mb-1">Description</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold mb-1">Description</div>
                       <InlineEdit
                         value={selectedProject.description}
                         multiline
@@ -793,7 +793,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
 
                     <Divider />
                     <div>
-                      <div className="text-xs text-theme-secondary uppercase tracking-wide font-semibold mb-1">Tags</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold mb-1">Tags</div>
                       <InlineEdit
                         value={selectedProject.tags?.join(', ') || ''}
                         placeholder="tag1, tag2"
@@ -803,7 +803,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
                             <div className="flex gap-1.5 flex-wrap">
                               {selectedProject.tags.map((t) => <Tag key={t} style={{ margin: 0 }}>{t}</Tag>)}
                             </div>
-                          ) : <span className="text-theme-secondary">tag1, tag2</span>
+                          ) : <span className="text-gray-500 dark:text-gray-400">tag1, tag2</span>
                         )}
                       />
                     </div>
@@ -911,12 +911,12 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
                       size={16}
                       showInfo
                     />
-                    <div className="flex justify-between mt-2 text-xs text-theme-secondary">
+                    <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
                       <span>${budget.spent.toLocaleString()} spent of ${budget.planned.toLocaleString()} planned</span>
                     </div>
 
                     <Divider />
-                    <div className="text-sm font-semibold text-gray-700 mb-3">Breakdown by Category</div>
+                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Breakdown by Category</div>
                     <Table
                       columns={budgetBreakdownColumns}
                       dataSource={budgetBreakdown(budget.planned, budget.spent)}

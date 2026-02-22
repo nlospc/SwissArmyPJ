@@ -143,7 +143,7 @@ export function ProjectTable({ projects, onProjectClick }: ProjectTableProps) {
       {/* Filter Bar */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-theme-secondary" style={{ zIndex: 1 }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" style={{ zIndex: 1 }} />
           <Input
             placeholder="Search projects..."
             value={filters.search}
@@ -269,17 +269,17 @@ export function ProjectTable({ projects, onProjectClick }: ProjectTableProps) {
                 <SortableHeader field="name" label="Project" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                 <SortableHeader field="owner" label="Owner" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
                 <SortableHeader field="progress" label="Progress" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                <th className="h-12 px-4 text-left text-sm font-medium text-theme-secondary">Tasks</th>
+                <th className="h-12 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Tasks</th>
                 <SortableHeader field="nextMilestone" label="Next Milestone" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
-                <th className="h-12 px-4 text-center text-sm font-medium text-theme-secondary">Blockers</th>
-                <th className="h-12 px-4 text-center text-sm font-medium text-theme-secondary">Risks</th>
-                <th className="h-12 px-4 text-center text-sm font-medium text-theme-secondary w-20">Actions</th>
+                <th className="h-12 px-4 text-center text-sm font-medium text-gray-500 dark:text-gray-400">Blockers</th>
+                <th className="h-12 px-4 text-center text-sm font-medium text-gray-500 dark:text-gray-400">Risks</th>
+                <th className="h-12 px-4 text-center text-sm font-medium text-gray-500 dark:text-gray-400 w-20">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {sortedProjects.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="h-32 text-center text-theme-secondary">
+                  <td colSpan={9} className="h-32 text-center text-gray-500 dark:text-gray-400">
                     No projects found matching your filters
                   </td>
                 </tr>
@@ -301,7 +301,7 @@ export function ProjectTable({ projects, onProjectClick }: ProjectTableProps) {
                     </td>
 
                     {/* Owner */}
-                    <td className="px-4 py-3 text-sm text-theme-secondary">
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                       {project.owner || '—'}
                     </td>
 
@@ -314,7 +314,7 @@ export function ProjectTable({ projects, onProjectClick }: ProjectTableProps) {
                             style={{ width: `${project.progressPercent}%` }}
                           />
                         </div>
-                        <div className="text-xs text-theme-secondary">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {project.progressPercent}%
                         </div>
                       </div>
@@ -330,13 +330,13 @@ export function ProjectTable({ projects, onProjectClick }: ProjectTableProps) {
                       {project.nextMilestone ? (
                         <div className="space-y-0.5">
                           <div className="text-sm font-medium">{project.nextMilestone.name}</div>
-                          <div className="flex items-center gap-1 text-xs text-theme-secondary">
+                          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                             {formatDate(project.nextMilestone.date)}
                             <MilestoneStatusBadge status={project.nextMilestone.status} />
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm text-theme-secondary">—</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
                       )}
                     </td>
 
@@ -347,7 +347,7 @@ export function ProjectTable({ projects, onProjectClick }: ProjectTableProps) {
                           {project.blockerCount}
                         </span>
                       ) : (
-                        <span className="text-theme-secondary">—</span>
+                        <span className="text-gray-500 dark:text-gray-400">—</span>
                       )}
                     </td>
 
@@ -358,7 +358,7 @@ export function ProjectTable({ projects, onProjectClick }: ProjectTableProps) {
                           {project.highRiskCount}
                         </span>
                       ) : (
-                        <span className="text-theme-secondary">—</span>
+                        <span className="text-gray-500 dark:text-gray-400">—</span>
                       )}
                     </td>
 
@@ -383,7 +383,7 @@ export function ProjectTable({ projects, onProjectClick }: ProjectTableProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-t bg-theme-container px-4 py-2 text-sm text-theme-secondary">
+        <div className="border-t bg-theme-container px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
           Showing {sortedProjects.length} of {projects.length} projects
         </div>
       </div>
@@ -404,7 +404,7 @@ function SortableHeader({ field, label, sortField, sortOrder, onSort }: Sortable
 
   return (
     <th
-      className="h-12 px-4 text-left text-sm font-medium text-theme-secondary cursor-pointer hover:text-gray-800 transition-colors select-none"
+      className="h-12 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-gray-200 transition-colors select-none"
       onClick={() => onSort(field)}
     >
       <div className="flex items-center gap-1">

@@ -77,6 +77,28 @@
   color: var(--ant-color-text) !important;
 }
 
+/* Sidebar 导航文本按钮 */
+.dark nav .ant-btn-text {
+  color: rgba(255, 255, 255, 0.70) !important;
+}
+
+.dark nav .ant-btn-text:hover {
+  color: rgba(255, 255, 255, 0.92) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark nav .ant-btn-text .lucide,
+.dark nav .ant-btn-text svg {
+  color: rgba(255, 255, 255, 0.70) !important;
+  stroke: rgba(255, 255, 255, 0.70) !important;
+}
+
+.dark nav .ant-btn-text:hover .lucide,
+.dark nav .ant-btn-text:hover svg {
+  color: rgba(255, 255, 255, 0.92) !important;
+  stroke: rgba(255, 255, 255, 0.92) !important;
+}
+
 /* === Card 组件修复 === */
 .dark .ant-card {
   background-color: var(--ant-color-bg-container) !important;
@@ -86,6 +108,30 @@
 .dark .ant-card-head {
   background-color: var(--ant-color-bg-container) !important;
   border-bottom-color: var(--ant-color-border) !important;
+  color: var(--ant-color-text) !important;
+}
+
+/* Card title — plain string, Typography.Title, or span-with-icon */
+.dark .ant-card-head-title {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-card-head-title .ant-typography,
+.dark .ant-card-head-title h1.ant-typography,
+.dark .ant-card-head-title h2.ant-typography,
+.dark .ant-card-head-title h3.ant-typography,
+.dark .ant-card-head-title h4.ant-typography,
+.dark .ant-card-head-title h5.ant-typography {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-card-head-title span {
+  color: var(--ant-color-text) !important;
+}
+
+/* Card extra actions area */
+.dark .ant-card-extra {
+  color: var(--ant-color-text-secondary) !important;
 }
 
 .dark .ant-card-body {
@@ -219,6 +265,16 @@
 
 /* === Typography 组件修复 === */
 .dark .ant-typography {
+  color: var(--ant-color-text) !important;
+}
+
+.dark h1.ant-typography,
+.dark h2.ant-typography,
+.dark h3.ant-typography,
+.dark h4.ant-typography,
+.dark h5.ant-typography,
+.dark h6.ant-typography,
+.dark div.ant-typography {
   color: var(--ant-color-text) !important;
 }
 

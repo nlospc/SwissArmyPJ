@@ -6,7 +6,7 @@ import { TimerWidget } from './PomodoroTimer/TimerWidget';
 import { TimerControls } from './PomodoroTimer/TimerControls';
 import { SessionIndicator } from './PomodoroTimer/SessionIndicator';
 import { LogSummary } from './TodayLog/LogSummary';
-import { WeeklyChart, TargetProgress } from '../WeeklySummary';
+import { WeeklyChart, TargetProgress } from './WeeklySummary';
 import { useMyWorkStore } from '@/stores/useMyWorkStore';
 
 export function TrackerSidebar() {

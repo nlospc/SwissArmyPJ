@@ -209,7 +209,7 @@ function ResizableSplitPane({
 
         style={{ width: leftWidth + '%' }}
 
-        className="flex-shrink-0 overflow-y-auto overflow-x-hidden border-r border-theme-border"
+        className="flex-shrink-0 overflow-y-auto overflow-x-hidden border-r border-gray-200 dark:border-gray-700"
 
         onScroll={handleLeftScroll}
 
@@ -227,7 +227,7 @@ function ResizableSplitPane({
 
         className={`
 
-          flex-shrink-0 w-1 cursor-col-resize bg-theme-border
+          flex-shrink-0 w-1 cursor-col-resize bg-gray-200 dark:bg-gray-700
 
           hover:bg-blue-500 transition-colors relative z-10 flex-shrink-0
 
@@ -241,7 +241,7 @@ function ResizableSplitPane({
 
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-8 -ml-1.5 bg-gray-400 hover:bg-blue-500 rounded flex items-center justify-center">
 
-          <div className="w-0.5 h-4 bg-white mx-0.5"></div>
+          <div className="w-0.5 h-4 bg-white dark:bg-gray-600 mx-0.5"></div>
 
         </div>
 
@@ -353,7 +353,7 @@ export function PortfolioPage() {
     <div className="h-full flex flex-col">
       {/* Content */}
 
-      <div className="flex-1 overflow-hidden bg-theme-bg-layout">
+      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
 
         {viewMode === 'projects' ? (
 

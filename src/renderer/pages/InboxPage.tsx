@@ -155,7 +155,7 @@ export function InboxPage() {
           className={`cursor-pointer p-2 rounded transition-colors ${
             selectedItem?.id === record.id
               ? 'bg-blue-50 dark:bg-blue-900/20'
-              : 'hover:bg-theme-container dark:hover:bg-gray-800'
+              : 'hover:bg-gray-50 dark:hover:bg-gray-800'
           }`}
           onClick={() => handleSelectItem(record)}
         >
@@ -242,7 +242,7 @@ export function InboxPage() {
   return (
     <div className="flex h-full">
       {/* Left Panel - Inbox List */}
-      <div className="w-96 border-r border-theme-secondary p-4 space-y-4 overflow-auto dark:border-gray-700">
+      <div className="w-96 border-r border-gray-200 dark:border-gray-700 p-4 space-y-4 overflow-auto">
         <div>
           <Title level={4}>Inbox</Title>
           <Space direction="vertical" className="w-full" size="middle">
@@ -287,7 +287,7 @@ export function InboxPage() {
                 <Text strong type="secondary">
                   Original Inbox Item
                 </Text>
-                <div className="bg-theme-container dark:bg-gray-800 p-3 rounded">
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
                   <Text>{selectedItem.raw_text}</Text>
                 </div>
               </Space>
@@ -305,7 +305,7 @@ export function InboxPage() {
                     className="w-full"
                   >
                     <Space direction="vertical" className="w-full">
-                      <Radio value="project" className="w-full p-4 border rounded hover:bg-theme-container">
+                      <Radio value="project" className="w-full p-4 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
                         <Space direction="vertical" size={0}>
                           <Text strong>Project</Text>
                           <Text type="secondary" className="text-xs">
@@ -313,7 +313,7 @@ export function InboxPage() {
                           </Text>
                         </Space>
                       </Radio>
-                      <Radio value="work_item" className="w-full p-4 border rounded hover:bg-theme-container">
+                      <Radio value="work_item" className="w-full p-4 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
                         <Space direction="vertical" size={0}>
                           <Text strong>Work Item</Text>
                           <Text type="secondary" className="text-xs">

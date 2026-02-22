@@ -24,12 +24,12 @@ export function Sidebar() {
   ] as const;
 
   return (
-    <div className="w-64 border-r border-theme-secondary bg-theme-container h-full flex flex-col dark:border-gray-700 dark:bg-gray-900">
-      <div className="p-4 border-b border-theme-secondary dark:border-gray-700">
+    <div className="w-64 border-r border-gray-200 bg-white h-full flex flex-col dark:border-gray-700 dark:bg-gray-900">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">{t('app.name')}</h1>
-            <p className="text-sm text-theme-secondary dark:text-theme-secondary">Project Management</p>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('app.name')}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Project Management</p>
           </div>
           <Tooltip title={isDark ? '切换到亮色模式' : '切换到暗色模式'}>
             <Button
@@ -62,10 +62,10 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-theme-secondary text-xs text-theme-secondary dark:border-gray-700 dark:text-theme-secondary">
+      <div className="p-4 border-t border-gray-200 text-xs text-gray-400 dark:border-gray-700 dark:text-gray-500">
         <div className="flex items-center justify-between">
           <p>v1.0.0</p>
-          <span className={`text-xs ${isDark ? 'text-theme-secondary' : 'text-theme-secondary'}`}>
+          <span className="text-xs text-gray-400 dark:text-gray-500">
             {isDark ? '🌙 暗色' : '☀️ 亮色'}
           </span>
         </div>

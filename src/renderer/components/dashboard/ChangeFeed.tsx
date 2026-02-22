@@ -32,7 +32,7 @@ export function ChangeFeed({ events, loading }: ChangeFeedProps) {
       <Card title="Change Feed">
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-12 animate-pulse bg-theme-layout rounded" />
+            <div key={i} className="h-12 animate-pulse bg-gray-100 dark:bg-gray-700 rounded" />
           ))}
         </div>
       </Card>
@@ -42,7 +42,7 @@ export function ChangeFeed({ events, loading }: ChangeFeedProps) {
   return (
     <Card title="Change Feed">
       {events.length === 0 ? (
-        <p className="text-center text-theme-secondary py-4 text-sm">No recent changes</p>
+        <p className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">No recent changes</p>
       ) : (
         <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
           {events.map((event) => {
@@ -51,7 +51,7 @@ export function ChangeFeed({ events, loading }: ChangeFeedProps) {
             return (
               <div
                 key={event.id}
-                className="flex items-start gap-2 p-2 rounded border border-theme-secondary hover:bg-theme-container transition-colors"
+                className="flex items-start gap-2 p-2 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <span className="text-lg flex-shrink-0">{eventIcons[eventType]}</span>
 
@@ -59,12 +59,12 @@ export function ChangeFeed({ events, loading }: ChangeFeedProps) {
                   <p className="text-sm font-medium truncate leading-tight">{event.details}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {event.projectName && (
-                      <span className="text-xs text-theme-secondary truncate">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {event.projectName}
                       </span>
                     )}
-                    {event.projectName && <span className="text-xs text-theme-secondary">•</span>}
-                    <span className="text-xs text-theme-secondary whitespace-nowrap">
+                    {event.projectName && <span className="text-xs text-gray-500 dark:text-gray-400">•</span>}
+                    <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}
                     </span>
                   </div>

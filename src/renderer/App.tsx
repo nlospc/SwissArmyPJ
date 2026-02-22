@@ -90,7 +90,7 @@ function AppContent() {
       <div className="h-full w-full flex items-center justify-center">
         <div className="text-center">
           <Spin size="large" />
-          <p className="mt-4 text-theme-secondary">{t('app.loading')}</p>
+          <p className="mt-4 text-gray-500 dark:text-gray-400">{t('app.loading')}</p>
         </div>
       </div>
     );
@@ -121,9 +121,9 @@ function AppContent() {
   if (!isInitialized) {
     return (
       <div className="h-full w-full flex items-center justify-center">
-        <div className="text-center text-red-500">
+        <div className="text-center text-red-600 dark:text-red-400">
           <p className="font-semibold mb-2">{t('app.initFailed')}</p>
-          <p className="text-sm text-theme-secondary">{t('app.checkConsole')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('app.checkConsole')}</p>
         </div>
       </div>
     );

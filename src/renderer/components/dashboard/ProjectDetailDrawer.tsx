@@ -123,7 +123,7 @@ export function ProjectDetailDrawer({
     <div className="space-y-6 animate-fade-in">
       {/* Key Metrics */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="metric-card bg-theme-layout p-4 rounded-lg hover:shadow-md transition-shadow">
+        <div className="metric-card bg-gray-50 dark:bg-gray-800 p-4 rounded-lg hover:shadow-md transition-shadow">
           <Text type="secondary">Progress</Text>
           <div className="mt-2">
             <Progress
@@ -138,7 +138,7 @@ export function ProjectDetailDrawer({
             <Text className="text-xs">{metrics.doneTasks}/{metrics.totalTasks} tasks completed</Text>
           </div>
         </div>
-        <div className="metric-card bg-theme-layout p-4 rounded-lg hover:shadow-md transition-shadow">
+        <div className="metric-card bg-gray-50 dark:bg-gray-800 p-4 rounded-lg hover:shadow-md transition-shadow">
           <Text type="secondary">Timeline</Text>
           <div className="mt-2">
             <Text strong>
@@ -183,7 +183,7 @@ export function ProjectDetailDrawer({
             {metrics.blockerCount > 0 ? (
               <Tag color="red">{metrics.blockerCount}</Tag>
             ) : (
-              <span className="text-theme-secondary">None</span>
+              <span className="text-gray-500 dark:text-gray-400">None</span>
             )}
           </Descriptions.Item>
           <Descriptions.Item label="Milestones">{metrics.milestoneCount}</Descriptions.Item>
@@ -192,7 +192,7 @@ export function ProjectDetailDrawer({
             {metrics.nextMilestone ? (
               <span>{metrics.nextMilestone.title}</span>
             ) : (
-              <span className="text-theme-secondary">None</span>
+              <span className="text-gray-500 dark:text-gray-400">None</span>
             )}
           </Descriptions.Item>
         </Descriptions>
@@ -209,7 +209,7 @@ export function ProjectDetailDrawer({
           {workItems.map((item, index) => (
             <div
               key={item.id}
-              className="work-item-card border rounded-lg p-4 hover:bg-theme-layout transition-all duration-200 hover:shadow-md animate-slide-in"
+              className="work-item-card border rounded-lg p-4 hover:bg-gray-50 dark:bg-gray-800 transition-all duration-200 hover:shadow-md animate-slide-in"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex items-start justify-between">
@@ -220,10 +220,10 @@ export function ProjectDetailDrawer({
                     <Text strong>{item.title}</Text>
                   </div>
                   {item.notes && (
-                    <Paragraph className="mb-0 text-sm text-theme-secondary">{item.notes}</Paragraph>
+                    <Paragraph className="mb-0 text-sm text-gray-500 dark:text-gray-400">{item.notes}</Paragraph>
                   )}
                   {(item.start_date || item.end_date) && (
-                    <Text className="text-xs text-theme-secondary block mt-1">
+                    <Text className="text-xs text-gray-500 dark:text-gray-400 block mt-1">
                       {item.start_date && `Start: ${new Date(item.start_date).toLocaleDateString()}`}
                       {item.start_date && item.end_date && ' | '}
                       {item.end_date && `End: ${new Date(item.end_date).toLocaleDateString()}`}
@@ -236,7 +236,7 @@ export function ProjectDetailDrawer({
                   {item.children.map((child, childIndex) => (
                     <div
                       key={child.id}
-                      className="border-l-2 pl-3 py-1 hover:bg-theme-layout transition-colors rounded animate-fade-in"
+                      className="border-l-2 pl-3 py-1 hover:bg-gray-50 dark:bg-gray-800 transition-colors rounded animate-fade-in"
                       style={{ animationDelay: `${(index * 50) + (childIndex * 25) + 100}ms` }}
                     >
                       <div className="flex items-center gap-2">
