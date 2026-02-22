@@ -189,38 +189,42 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="px-8 pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <Title level={2} className="mb-1">Portfolio Dashboard</Title>
-            <Text type="secondary">
-              30-second context recovery for your IT portfolio
-            </Text>
-          </div>
-          <Space>
-            {lastRefreshed && (
-              <Text type="secondary" className="text-sm">
-                Last refreshed: {formatDistanceToNow(lastRefreshed, { addSuffix: true })}
+      {!showProjectDetail && (
+        <div className="px-8 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Title level={2} className="mb-1">Portfolio Dashboard</Title>
+              <Text type="secondary">
+                30-second context recovery for your IT portfolio
               </Text>
-            )}
-            <Button
-              onClick={handleRefresh}
-              icon={<ReloadOutlined spin={loading || projectsLoading} />}
-              loading={loading || projectsLoading}
-            >
-              Refresh
-            </Button>
-          </Space>
+            </div>
+            <Space>
+              {lastRefreshed && (
+                <Text type="secondary" className="text-sm">
+                  Last refreshed: {formatDistanceToNow(lastRefreshed, { addSuffix: true })}
+                </Text>
+              )}
+              <Button
+                onClick={handleRefresh}
+                icon={<ReloadOutlined spin={loading || projectsLoading} />}
+                loading={loading || projectsLoading}
+              >
+                Refresh
+              </Button>
+            </Space>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Top Widget Drawer */}
-      <TopWidgetDrawer
-        changeFeed={changeFeed}
-        upcomingMilestones={upcomingMilestones}
-        riskSummary={riskSummary}
-        loading={loading}
-      />
+      {!showProjectDetail && (
+        <TopWidgetDrawer
+          changeFeed={changeFeed}
+          upcomingMilestones={upcomingMilestones}
+          riskSummary={riskSummary}
+          loading={loading}
+        />
+      )}
 
       {/* Main Content */}
       <div className="px-8 pt-6 space-y-6">
