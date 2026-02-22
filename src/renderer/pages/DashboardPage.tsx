@@ -85,7 +85,6 @@ export function DashboardPage() {
 
 
 
-
   // Get dashboard metrics from DashboardStore
 
   const {
@@ -187,7 +186,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={showProjectDetail ? 'h-full flex flex-col' : 'space-y-6'}>
       {/* Header */}
       {!showProjectDetail && (
         <div className="px-8 pb-4">
@@ -226,38 +225,36 @@ export function DashboardPage() {
         />
       )}
 
-      {/* Main Content */}
-      <div className="px-8 pt-6 space-y-6">
-        {showProjectDetail ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Title level={4} className="mb-0">Project Details</Title>
-              <Button size="small" icon={<LeftOutlined />} onClick={handleProjectDetailClose}>
-                Back to Dashboard
-              </Button>
-            </div>
-            <div
-              className="border border-theme-border rounded-lg overflow-hidden bg-theme-container"
-              style={{
-                height: 'calc(100vh - 320px)',
-                minHeight: 520,
-                transform: detailVisible ? 'translateX(0)' : 'translateX(16px)',
-                opacity: detailVisible ? 1 : 0,
-                transition: 'transform 220ms ease, opacity 220ms ease',
-              }}
-            >
-              <DashboardProjectDetailView
-                projectId={selectedProjectId}
-                onClose={handleProjectDetailClose}
-              />
-            </div>
-          </div>
-        ) : (
-          <Card title={<Title level={4} className="mb-0">Project Health</Title>}>
-            <ProjectTable projects={projectHealthList} onProjectClick={handleProjectClick} />
-          </Card>
-        )}
-      </div>
+      {/* Main Content */}
+      <div className={showProjectDetail ? 'flex-1 flex flex-col min-h-0 px-8 pt-4 pb-4' : 'px-8 pt-6 space-y-6'}>
+        {showProjectDetail ? (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <Title level={4} className="mb-0">Project Details</Title>
+              <Button size="small" icon={<LeftOutlined />} onClick={handleProjectDetailClose}>
+                Back to Dashboard
+              </Button>
+            </div>
+            <div
+              className="flex-1 min-h-0 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900"
+              style={{
+                transform: detailVisible ? 'translateX(0)' : 'translateX(16px)',
+                opacity: detailVisible ? 1 : 0,
+                transition: 'transform 220ms ease, opacity 220ms ease',
+              }}
+            >
+              <DashboardProjectDetailView
+                projectId={selectedProjectId}
+                onClose={handleProjectDetailClose}
+              />
+            </div>
+          </>
+        ) : (
+          <Card title={<Title level={4} className="mb-0">Project Health</Title>}>
+            <ProjectTable projects={projectHealthList} onProjectClick={handleProjectClick} />
+          </Card>
+        )}
+      </div>
 
 
     </div>
