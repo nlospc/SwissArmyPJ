@@ -327,6 +327,48 @@
   color: var(--ant-color-text) !important;
 }
 
+/* === Upload 组件修复 === */
+.dark .ant-upload-drag {
+  background-color: var(--ant-color-bg-container) !important;
+  border-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-upload-drag:hover {
+  border-color: var(--ant-color-primary) !important;
+}
+
+.dark .ant-upload-text {
+  color: var(--ant-color-text) !important;
+}
+
+.dark .ant-upload-hint {
+  color: var(--ant-color-text-secondary) !important;
+}
+
+.dark .ant-upload-drag-icon .anticon {
+  color: var(--ant-color-primary) !important;
+}
+
+/* === Descriptions 组件修复 === */
+.dark .ant-descriptions-item-label {
+  color: var(--ant-color-text-secondary) !important;
+  background-color: var(--ant-color-bg-container) !important;
+}
+
+.dark .ant-descriptions-item-content {
+  color: var(--ant-color-text) !important;
+  background-color: var(--ant-color-bg-container) !important;
+}
+
+.dark .ant-descriptions-bordered .ant-descriptions-item-label,
+.dark .ant-descriptions-bordered .ant-descriptions-item-content {
+  border-color: var(--ant-color-border) !important;
+}
+
+.dark .ant-descriptions-view {
+  border-color: var(--ant-color-border) !important;
+}
+
 /* === Progress 组件修复 === */
 .dark .ant-progress-text {
   color: var(--ant-color-text) !important;

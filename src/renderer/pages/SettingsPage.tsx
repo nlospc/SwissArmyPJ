@@ -180,7 +180,7 @@ export function SettingsPage() {
           </div>
 
           {/* Import */}
-          <div className="border-t border-gray-100 pt-4 dark:border-gray-700">
+          <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
             <Title level={5}>{t('settings.importData')}</Title>
             <Text type="secondary" className="block mb-3">
               {t('settings.importDataDesc')}
@@ -195,7 +195,7 @@ export function SettingsPage() {
           </div>
 
           {/* Reset */}
-          <div className="border-t border-gray-100 pt-4 dark:border-gray-700">
+          <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
             <Title level={5}>{t('settings.resetToSample')}</Title>
             <Text type="secondary" className="block mb-3">
               {t('settings.resetToSampleDesc')}
