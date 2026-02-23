@@ -26,10 +26,6 @@ import type { Project } from '@/shared/types';
 
 
 
-const { Title, Text } = Typography;
-
-
-
 type ViewMode = 'projects' | 'workitems';
 
 // Excel-like Gantt Chart Split Pane Component
