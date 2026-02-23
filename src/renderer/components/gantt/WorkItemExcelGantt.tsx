@@ -56,6 +56,7 @@ type WorkItemStatus = WorkItem['status'];
 interface FlatRow extends WorkItem {
   depth: number;
   collapsed?: boolean;
+  hasChildren?: boolean; // true when this item has at least one child after filter
 }
 
 // ─── color palette (matches ExcelGanttChart exactly) ─────────────────────────
@@ -212,9 +213,10 @@ export function WorkItemExcelGantt({
         (filterStatus === 'all' || c.status === filterStatus) &&
         (filterType   === 'all' || c.type   === filterType),
       );
-      rows.push({ ...root, depth: 0, collapsed: isCollapsed && filteredChildren.length > 0 });
+      const hasChildren = filteredChildren.length > 0;
+      rows.push({ ...root, depth: 0, hasChildren, collapsed: isCollapsed && hasChildren });
       if (!isCollapsed) {
-        filteredChildren.forEach(child => rows.push({ ...child, depth: 1 }));
+        filteredChildren.forEach(child => rows.push({ ...child, depth: 1, hasChildren: false }));
       }
     });
     return rows;
@@ -1033,9 +1035,10 @@ function LeftRow({
   row, onToggle, editingId, editStart, editEnd,
   setEditStart, setEditEnd, onEdit, onCommit, onCancelEdit,
 }: LeftRowProps) {
-  const isEditing    = editingId === row.id;
-  const hasChildren  = row.type === 'phase';
-  const indent       = row.depth === 1 ? 20 : 6;
+  const isEditing   = editingId === row.id;
+  const isChild     = row.depth === 1;
+  const bgDefault   = isChild ? '#F7F9FC' : 'transparent';
+  const bgHover     = isChild ? '#E8F0FE' : colors.selected;
 
   return (
     <div
@@ -1043,20 +1046,28 @@ function LeftRow({
       style={{
         height: ROW_HEIGHT,
         borderBottom: `1px solid ${colors.border}`,
-        backgroundColor: row.depth === 1 ? '#FDFDFD' : 'transparent',
+        backgroundColor: bgDefault,
         color: colors.text,
         cursor: 'default',
+        // Left accent bar on child rows
+        borderLeft: isChild ? `3px solid ${colors.borderMedium}` : '3px solid transparent',
       }}
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = colors.selected; }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = row.depth === 1 ? '#FDFDFD' : 'transparent'; }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = bgHover; }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = bgDefault; }}
       onDoubleClick={() => onEdit(row.id)}
     >
       {/* Name */}
       <div
         className="flex items-center overflow-hidden text-xs"
-        style={{ width: COL.name, paddingLeft: indent, borderRight: `1px solid ${colors.border}`, flexShrink: 0 }}
+        style={{
+          width: COL.name,
+          // Children indented by 24px inside the 3px border-left
+          paddingLeft: isChild ? 24 : 6,
+          borderRight: `1px solid ${colors.border}`,
+          flexShrink: 0,
+        }}
       >
-        {hasChildren && (
+        {row.hasChildren && (
           <button
             className="flex-shrink-0 mr-1"
             style={{ color: colors.textMuted }}
@@ -1067,6 +1078,8 @@ function LeftRow({
               : <CaretDownOutlined  style={{ fontSize: 10 }} />}
           </button>
         )}
+        {/* Indent guide line for children (no button) */}
+        {isChild && !row.hasChildren && <span className="flex-shrink-0 mr-1" style={{ width: 14 }} />}
         <span
           className="mr-1 flex-shrink-0"
           style={{ color: TYPE_COLOR[row.type], fontSize: row.type === 'milestone' ? 10 : 11 }}
@@ -1075,7 +1088,11 @@ function LeftRow({
         </span>
         <span
           className="truncate"
-          style={{ color: row.depth === 1 ? colors.textMuted : colors.text, fontWeight: row.depth === 0 ? 500 : 400 }}
+          style={{
+            color: isChild ? colors.textMuted : colors.text,
+            fontWeight: isChild ? 400 : 500,
+            fontStyle: isChild ? 'italic' : 'normal',
+          }}
           title={row.title}
         >
           {row.title}
