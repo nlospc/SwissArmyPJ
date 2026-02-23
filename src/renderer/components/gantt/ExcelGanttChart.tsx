@@ -1039,16 +1039,25 @@ export function ExcelGanttChart({
             <div
               className="px-4 truncate"
               style={{
-                width: '45%',
+                width: '35%',
                 borderRight: `1px solid ${colors.border}`
               }}
             >
               Task Name
             </div>
             <div
+              className="px-3 truncate"
+              style={{
+                width: '14%',
+                borderRight: `1px solid ${colors.border}`
+              }}
+            >
+              Owner
+            </div>
+            <div
               className="px-3 text-center"
               style={{
-                width: '18%',
+                width: '16%',
                 borderRight: `1px solid ${colors.border}`
               }}
             >
@@ -1057,7 +1066,7 @@ export function ExcelGanttChart({
             <div
               className="px-3 text-center"
               style={{
-                width: '18%',
+                width: '16%',
                 borderRight: `1px solid ${colors.border}`
               }}
             >
@@ -1066,7 +1075,7 @@ export function ExcelGanttChart({
             <div
               className="px-3 text-center"
               style={{
-                width: '11%',
+                width: '10%',
                 borderRight: `1px solid ${colors.border}`
               }}
             >
@@ -1074,7 +1083,7 @@ export function ExcelGanttChart({
             </div>
             <div
               className="px-3 text-center"
-              style={{ width: '8%' }}
+              style={{ width: '9%' }}
             >
               Status
             </div>
@@ -1139,7 +1148,7 @@ export function ExcelGanttChart({
                     <div
                       className="px-4 truncate font-medium"
                       style={{
-                        width: '45%',
+                        width: '35%',
                         borderRight: `1px solid ${colors.border}`,
                         paddingLeft: isSelected ? '20px' : '16px'
                       }}
@@ -1148,11 +1157,25 @@ export function ExcelGanttChart({
                       {row.name}
                     </div>
 
+                    {/* Owner */}
+                    <div
+                      className="px-3 truncate"
+                      style={{
+                        width: '14%',
+                        borderRight: `1px solid ${colors.border}`,
+                        color: row.owner !== '—' ? colors.text : colors.textMuted,
+                        fontSize: 12
+                      }}
+                      title={row.owner}
+                    >
+                      {row.owner}
+                    </div>
+
                     {/* Start Date */}
                     <div
                       className="px-3 text-center"
                       style={{
-                        width: '18%',
+                        width: '16%',
                         borderRight: `1px solid ${colors.border}`,
                         color: row.startDate ? colors.text : colors.textMuted
                       }}
@@ -1166,7 +1189,7 @@ export function ExcelGanttChart({
                     <div
                       className="px-3 text-center"
                       style={{
-                        width: '18%',
+                        width: '16%',
                         borderRight: `1px solid ${colors.border}`,
                         color: row.endDate ? colors.text : colors.textMuted
                       }}
@@ -1180,7 +1203,7 @@ export function ExcelGanttChart({
                     <div
                       className="px-3 text-center tabular-nums"
                       style={{
-                        width: '11%',
+                        width: '10%',
                         borderRight: `1px solid ${colors.border}`,
                         color: row.duration > 0 ? colors.text : colors.textMuted
                       }}
@@ -1189,7 +1212,7 @@ export function ExcelGanttChart({
                     </div>
 
                     {/* Status (colored dot) */}
-                    <div className="px-3 flex justify-center" style={{ width: '8%' }}>
+                    <div className="px-3 flex justify-center" style={{ width: '9%' }}>
                       <Tooltip title={row.status.replace(/_/g, ' ').toUpperCase()}>
                         <div
                           className="w-2.5 h-2.5 rounded-full"
@@ -1662,37 +1685,44 @@ export function ExcelGanttChart({
                     );
                   })}
 
-                  {/* Today Line (red dotted - OpenProject style) */}
+                  {/* Today Line (dashed orange) */}
                   {(() => {
                     const today = new Date();
-                    let todayPosition = 0;
+                    let todayPosition = -1;
 
-                    if (viewMode === 'month') {
-                      // Find which month column contains today
+                    if (viewMode === 'year') {
+                      const todayQuarter = Math.floor(today.getMonth() / 3);
+                      const idx = timelineColumns.findIndex(
+                        (col: any) => col.year === today.getFullYear() && col.quarter === todayQuarter + 1
+                      );
+                      if (idx >= 0) {
+                        const quarterStart = timelineColumns[idx].date;
+                        const dayInQuarter = Math.floor((today.getTime() - quarterStart.getTime()) / 86400000);
+                        const quarterDays = [91, 91, 92, 92][todayQuarter] || 91;
+                        todayPosition = (idx + dayInQuarter / quarterDays) * columnWidth;
+                      }
+                    } else if (viewMode === 'month') {
                       const todayMonth = today.getMonth();
                       const todayYear = today.getFullYear();
                       const monthIndex = timelineColumns.findIndex(
                         (col: any) => col.date.getMonth() === todayMonth && col.date.getFullYear() === todayYear
                       );
                       if (monthIndex >= 0) {
-                        // Position within the month (proportional)
                         const dayOfMonth = today.getDate();
                         const daysInMonth = new Date(todayYear, todayMonth + 1, 0).getDate();
                         todayPosition = (monthIndex + dayOfMonth / daysInMonth) * columnWidth;
-                      } else {
-                        return null;
                       }
                     } else {
-                      // Week view: find exact day
+                      // Day view: find exact day column
                       const todayIndex = timelineColumns.findIndex(
                         (col: any) => col.date.toDateString() === today.toDateString()
                       );
                       if (todayIndex >= 0) {
                         todayPosition = todayIndex * columnWidth;
-                      } else {
-                        return null;
                       }
                     }
+
+                    if (todayPosition < 0) return null;
 
                     return (
                       <div
@@ -1700,8 +1730,8 @@ export function ExcelGanttChart({
                         style={{
                           left: todayPosition,
                           width: 1,
-                          borderLeft: '1px dashed #FA8C16', // AntD warning-5 (muted orange)
-                          opacity: 0.6
+                          borderLeft: '1px dashed #FA8C16',
+                          opacity: 0.7
                         }}
                       />
                     );
