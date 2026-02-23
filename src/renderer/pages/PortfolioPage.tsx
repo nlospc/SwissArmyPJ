@@ -337,9 +337,20 @@ export function PortfolioPage() {
   };
 
   const handleWorkItemUpdate = async (workItemId: number, updates: Partial<any>) => {
-    // Update work item in the store (will sync both table and timeline)
     const { updateWorkItem } = useWorkItemStore.getState();
     await updateWorkItem(workItemId, updates);
+  };
+
+  const handleWorkItemCreate = async (dto: any) => {
+    const { createWorkItem, loadAllWorkItems } = useWorkItemStore.getState();
+    await createWorkItem(dto);
+    await loadAllWorkItems(); // refresh so new item appears
+  };
+
+  const handleWorkItemDelete = async (workItemId: number) => {
+    const { deleteWorkItem, loadAllWorkItems } = useWorkItemStore.getState();
+    await deleteWorkItem(workItemId);
+    await loadAllWorkItems(); // refresh so deleted item disappears
   };
 
 
@@ -387,6 +398,10 @@ export function PortfolioPage() {
             onBack={handleBack}
 
             onWorkItemUpdate={handleWorkItemUpdate}
+
+            onWorkItemCreate={handleWorkItemCreate}
+
+            onWorkItemDelete={handleWorkItemDelete}
 
           />
 
