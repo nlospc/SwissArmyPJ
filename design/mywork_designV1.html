@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Work - Personal Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        antd: {
+                            blue: '#1677ff',
+                            blueHover: '#4096ff',
+                            bg: '#f5f5f5',
+                            text: 'rgba(0, 0, 0, 0.88)',
+                            textSecondary: 'rgba(0, 0, 0, 0.45)',
+                            border: '#f0f0f0',
+                            success: '#52c41a',
+                            warning: '#faad14',
+                            error: '#ff4d4f'
+                        }
+                    },
+                    boxShadow: {
+                        'antd': '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; }
+        /* AntD 风格滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+    </style>
+</head>
+<body class="bg-antd-bg text-antd-text min-h-screen">
+
+    <header class="bg-white border-b border-antd-border px-6 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-bullseye text-antd-blue text-xl"></i>
+            <h1 class="text-xl font-semibold m-0">My Work</h1>
+        </div>
+        <div class="flex items-center space-x-6 text-sm">
+            <span class="text-antd-textSecondary"><i class="fa-regular fa-calendar mr-1"></i> Today: Feb 1, 2026</span>
+            <div class="flex items-center space-x-2 cursor-pointer hover:text-antd-blue transition-colors">
+                <img src="https://ui-avatars.com/api/?name=John+Doe&background=1677ff&color=fff&rounded=true" alt="User" class="w-8 h-8 rounded-full">
+                <span>John Doe</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto p-6 space-y-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg border border-antd-border p-4 shadow-antd flex items-center justify-between">
+                <div>
+                    <div class="text-antd-textSecondary text-sm mb-1">Tasks Today</div>
+                    <div class="text-2xl font-semibold">12 <span class="text-sm text-antd-textSecondary font-normal">/ 2 Overdue</span></div>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-antd-blue text-xl">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg border border-antd-border p-4 shadow-antd flex items-center justify-between">
+                <div>
+                    <div class="text-antd-textSecondary text-sm mb-1">Time Logged</div>
+                    <div class="text-2xl font-semibold">4.5h <span class="text-sm text-antd-textSecondary font-normal">/ 8h Target</span></div>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-antd-success text-xl">
+                    <i class="fa-regular fa-clock"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg border border-antd-border p-4 shadow-antd flex items-center justify-between">
+                <div>
+                    <div class="text-antd-textSecondary text-sm mb-1">Pomodoros</div>
+                    <div class="text-2xl font-semibold">6 <span class="text-sm text-antd-textSecondary font-normal">Completed</span></div>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-antd-error text-xl">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg border border-antd-border p-4 shadow-antd flex flex-col justify-center">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-antd-textSecondary">Daily Target Progress</span>
+                    <span class="text-antd-blue">56%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-antd-blue h-2 rounded-full" style="width: 56%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <div class="lg:col-span-8 flex flex-col space-y-4">
+                <div class="bg-white rounded-lg border border-antd-border shadow-antd h-full flex flex-col">
+                    <div class="px-6 py-4 border-b border-antd-border flex justify-between items-center bg-[#fafafa] rounded-t-lg">
+                        <div class="flex space-x-3">
+                            <select class="border border-antd-border rounded text-sm px-3 py-1.5 focus:border-antd-blue focus:outline-none hover:border-antd-blue cursor-pointer">
+                                <option>Group by: Project</option>
+                                <option>Group by: Due Date</option>
+                                <option>Group by: Priority</option>
+                            </select>
+                            <select class="border border-antd-border rounded text-sm px-3 py-1.5 focus:border-antd-blue focus:outline-none hover:border-antd-blue cursor-pointer">
+                                <option>Sort by: Due Date</option>
+                                <option>Sort by: Priority</option>
+                            </select>
+                            <select class="border border-antd-border rounded text-sm px-3 py-1.5 focus:border-antd-blue focus:outline-none hover:border-antd-blue cursor-pointer">
+                                <option>Filter: Active</option>
+                                <option>Filter: All</option>
+                            </select>
+                        </div>
+                        <button class="bg-antd-blue text-white px-4 py-1.5 rounded text-sm hover:bg-antd-blueHover transition-colors">
+                            <i class="fa-solid fa-plus mr-1"></i> Add Task
+                        </button>
+                    </div>
+
+                    <div class="p-6 space-y-6 flex-1 overflow-y-auto">
+                        
+                        <div>
+                            <div class="font-semibold text-base mb-3 flex items-center cursor-pointer hover:text-antd-blue">
+                                <i class="fa-solid fa-chevron-down text-xs mr-2 text-antd-textSecondary"></i>
+                                ERP Migration <span class="ml-2 text-xs bg-gray-100 text-antd-textSecondary px-2 py-0.5 rounded-full border border-gray-200">2</span>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="border border-antd-border rounded-lg p-4 hover:shadow-md transition-shadow bg-white flex justify-between group">
+                                    <div class="flex space-x-3">
+                                        <div class="mt-0.5 cursor-pointer text-antd-border hover:text-antd-blue"><i class="fa-regular fa-square fa-lg"></i></div>
+                                        <div>
+                                            <div class="font-medium text-[15px] mb-1 group-hover:text-antd-blue transition-colors cursor-pointer">Design database schema</div>
+                                            <div class="flex items-center space-x-3 text-xs text-antd-textSecondary">
+                                                <span class="text-antd-error bg-[#fff2f0] border border-[#ffccc7] px-1.5 py-0.5 rounded"><i class="fa-solid fa-arrow-up mr-1"></i>High</span>
+                                                <span><i class="fa-regular fa-calendar mr-1"></i>Due: Today</span>
+                                                <span><i class="fa-solid fa-hourglass-half mr-1"></i>Est: 2h | Logged: 1.2h</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button class="text-antd-blue border border-antd-blue hover:bg-blue-50 px-3 py-1 rounded text-sm transition-colors"><i class="fa-solid fa-play mr-1"></i>Start</button>
+                                        <button class="text-antd-textSecondary border border-antd-border hover:text-antd-blue hover:border-antd-blue px-3 py-1 rounded text-sm transition-colors">Log</button>
+                                    </div>
+                                </div>
+                                <div class="border border-antd-border rounded-lg p-4 hover:shadow-md transition-shadow bg-white flex justify-between group">
+                                    <div class="flex space-x-3">
+                                        <div class="mt-0.5 cursor-pointer text-antd-border hover:text-antd-blue"><i class="fa-regular fa-square fa-lg"></i></div>
+                                        <div>
+                                            <div class="font-medium text-[15px] mb-1 group-hover:text-antd-blue transition-colors cursor-pointer">Review security audit</div>
+                                            <div class="flex items-center space-x-3 text-xs text-antd-textSecondary">
+                                                <span class="text-antd-warning bg-[#fffbe6] border border-[#ffe58f] px-1.5 py-0.5 rounded"><i class="fa-solid fa-minus mr-1"></i>Medium</span>
+                                                <span><i class="fa-regular fa-calendar mr-1"></i>Due: Tomorrow</span>
+                                                <span><i class="fa-solid fa-hourglass-half mr-1"></i>Est: 1.5h | Logged: 0h</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button class="text-antd-blue border border-antd-blue hover:bg-blue-50 px-3 py-1 rounded text-sm transition-colors"><i class="fa-solid fa-play mr-1"></i>Start</button>
+                                        <button class="text-antd-textSecondary border border-antd-border hover:text-antd-blue hover:border-antd-blue px-3 py-1 rounded text-sm transition-colors">Log</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="font-semibold text-base mb-3 flex items-center cursor-pointer hover:text-antd-blue mt-4">
+                                <i class="fa-solid fa-chevron-down text-xs mr-2 text-antd-textSecondary"></i>
+                                Mobile App <span class="ml-2 text-xs bg-gray-100 text-antd-textSecondary px-2 py-0.5 rounded-full border border-gray-200">1</span>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="border border-antd-border rounded-lg p-4 bg-gray-50 flex justify-between opacity-70">
+                                    <div class="flex space-x-3">
+                                        <div class="mt-0.5 text-antd-success"><i class="fa-solid fa-square-check fa-lg"></i></div>
+                                        <div>
+                                            <div class="font-medium text-[15px] mb-1 line-through text-antd-textSecondary">API endpoint design</div>
+                                            <div class="flex items-center space-x-3 text-xs text-antd-textSecondary">
+                                                <span class="text-antd-success"><i class="fa-solid fa-check mr-1"></i>Completed 2h ago</span>
+                                                <span><i class="fa-solid fa-hourglass-half mr-1"></i>Est: 2h | Logged: 2.5h</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <button class="text-antd-textSecondary text-sm hover:text-antd-blue">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-4 space-y-6">
+                
+                <div class="bg-white rounded-lg border border-antd-border shadow-antd overflow-hidden">
+                    <div class="bg-gradient-to-r from-red-50 to-orange-50 px-6 py-4 border-b border-red-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="font-medium text-red-600"><i class="fa-solid fa-stopwatch mr-1"></i> Pomodoro Focus</span>
+                            <div class="flex space-x-1 text-red-500 text-xs">
+                                <i class="fa-solid fa-circle"></i>
+                                <i class="fa-solid fa-circle"></i>
+                                <i class="fa-solid fa-circle"></i>
+                                <i class="fa-regular fa-circle text-red-200"></i>
+                            </div>
+                        </div>
+                        <div class="text-center py-6">
+                            <div class="text-5xl font-bold font-mono text-gray-800 mb-2 tracking-wider">24:35</div>
+                            <div class="text-sm text-antd-textSecondary mb-6">Designing database schema</div>
+                            
+                            <div class="flex justify-center space-x-3">
+                                <button class="w-12 h-12 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-antd-blue hover:border-antd-blue shadow-sm flex items-center justify-center transition-colors">
+                                    <i class="fa-solid fa-pause"></i>
+                                </button>
+                                <button class="w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-md flex items-center justify-center transition-colors">
+                                    <i class="fa-solid fa-stop"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg border border-antd-border shadow-antd p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold text-base m-0">Today's Log</h3>
+                        <span class="text-sm text-antd-textSecondary font-mono">Total: 3.7h</span>
+                    </div>
+                    
+                    <div class="relative pl-4 border-l-2 border-gray-100 space-y-6 mt-2">
+                        <div class="relative">
+                            <div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-antd-blue shadow-[0_0_0_3px_rgba(22,119,255,0.2)]"></div>
+                            <div class="flex justify-between items-start mb-0.5">
+                                <div class="font-medium text-sm text-antd-blue">Database Schema</div>
+                                <div class="text-sm text-antd-textSecondary font-mono">1.2h</div>
+                            </div>
+                            <div class="text-xs text-antd-textSecondary">In progress • ERP Migration</div>
+                        </div>
+                        
+                        <div class="relative">
+                            <div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-gray-300"></div>
+                            <div class="flex justify-between items-start mb-0.5">
+                                <div class="font-medium text-sm">API Design</div>
+                                <div class="text-sm text-antd-textSecondary font-mono">2.5h</div>
+                            </div>
+                            <div class="text-xs text-antd-textSecondary mb-1">9:00 - 11:30 • Mobile App</div>
+                            <div class="flex space-x-1 text-red-400 text-[10px]">
+                                <i class="fa-solid fa-apple-whole"></i>
+                                <i class="fa-solid fa-apple-whole"></i>
+                                <i class="fa-solid fa-apple-whole"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-antd-border text-center">
+                        <button class="text-antd-blue text-sm hover:underline">View Full History</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+</body>
+</html>

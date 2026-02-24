@@ -1,10 +1,10 @@
 /**
  * MyWorkPage - Main My Work feature page
  *
- * Three-column layout:
- * - Left: Todo list with filters and grouping
- * - Center: Quick stats
- * - Right: Time tracker (Pomodoro + Today's Log)
+ * New layout:
+ * - Header: Title and date
+ * - Top row: 4 quick stats cards
+ * - Main content: 12-column grid (8 cols tasks, 4 cols time tracker)
  */
 
 import { useMyWorkInit } from '@/stores/useMyWorkStore';
@@ -17,28 +17,43 @@ export function MyWorkPage() {
   useMyWorkInit();
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-theme-container">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-900 border-b px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Work</h1>
+      <div className="bg-white border-b px-6 py-4 flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-semibold">My Work</h1>
+        </div>
+        <div className="flex items-center space-x-6 text-sm">
+          <span className="text-gray-500">
+            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+        </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-hidden flex">
-        {/* Todo List - Left column */}
-        <div className="flex-1 overflow-auto border-r bg-white dark:bg-gray-900">
-          <TodoListContainer />
-        </div>
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-[1400px] mx-auto p-6 space-y-6">
+          {/* Quick Stats Cards Row */}
+          <StatsBar />
 
-        {/* Right Sidebar - Time Tracker */}
-        <div className="w-80 overflow-auto bg-white dark:bg-gray-900">
-          <TrackerSidebar />
-        </div>
-      </div>
+          {/* Main Grid: Tasks (8 cols) + Time Tracker (4 cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Task List - 8 columns */}
+            <div className="lg:col-span-8">
+              <TodoListContainer />
+            </div>
 
-      {/* Quick Stats Bar - Bottom */}
-      <div className="bg-white dark:bg-gray-900 border-t">
-        <StatsBar />
+            {/* Time Tracker - 4 columns */}
+            <div className="lg:col-span-4">
+              <TrackerSidebar />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
