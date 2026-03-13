@@ -20,14 +20,17 @@ import React, {
   useState, useMemo, useRef, useCallback, useEffect,
 } from 'react';
 import {
-  Tag, Select, Button, Tooltip,
+  Tag, Select, Button,
+
   Form, Modal, DatePicker, Input, Popconfirm,
+
 } from 'antd';
 import {
   ArrowLeftOutlined, CalendarOutlined, DownloadOutlined,
   CaretRightOutlined, CaretDownOutlined,
   ZoomInOutlined, ZoomOutOutlined,
   PlusOutlined, EditOutlined, DeleteOutlined,
+  LeftOutlined, RightOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Project, WorkItem, CreateWorkItemDTO } from '@/shared/types';
@@ -54,15 +57,6 @@ const COL = {
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
-const COL_MIN = {
-  name:     260,
-  owner:    120,
-  priority: 90,
-  status:   120,
-  start:    110,
-  end:      110,
-} as const;
-
 type ViewScale      = 'day' | 'week' | 'month' | 'quarter';
 type WorkItemType   = WorkItem['type'];
 type WorkItemStatus = WorkItem['status'];
@@ -74,7 +68,7 @@ interface FlatRow extends WorkItem {
 }
 
 interface BarDragState {
-  mode:               'move' | 'resize-start' | 'resize-end';
+  mode:               'move' | 'resize';
   rowId:              number;
   startClientX:       number;
   originalStartDate:  string | undefined;
@@ -187,7 +181,9 @@ export function WorkItemExcelGantt({
 
   // ── overlay ──────────────────────────────────────────────────────────────
   const [timelineWidthPercent, setTimelineWidthPercent] = useState(TIMELINE_DEFAULT_PCT);
+  const [timelineCollapsed, setTimelineCollapsed]       = useState(false);
   const [isDraggingTimeline, setIsDraggingTimeline]     = useState(false);
+  const prevTimelineWidthRef                            = useRef(TIMELINE_DEFAULT_PCT);
 
   // ── pan ──────────────────────────────────────────────────────────────────
   const [isPanningTimeline, setIsPanningTimeline]   = useState(false);
@@ -207,7 +203,6 @@ export function WorkItemExcelGantt({
 
   // ── refs ─────────────────────────────────────────────────────────────────
   const containerRef        = useRef<HTMLDivElement>(null);
-  const leftHeaderRef       = useRef<HTMLDivElement>(null);
   const leftScrollRef       = useRef<HTMLDivElement>(null);
   const rightScrollRef      = useRef<HTMLDivElement | null>(null);
   const timelineHeaderRef   = useRef<HTMLDivElement>(null);
@@ -404,7 +399,6 @@ export function WorkItemExcelGantt({
     if (!leftScrollRef.current || !rightScrollRef.current) return;
     const top = leftScrollRef.current.scrollTop;
     rightScrollRef.current.scrollTop = top;
-    if (leftHeaderRef.current) leftHeaderRef.current.scrollLeft = leftScrollRef.current.scrollLeft;
     const h = leftScrollRef.current.clientHeight;
     setVisRows({ start: Math.max(0, Math.floor(top / ROW_HEIGHT) - BUFFER_ROWS), end: Math.min(flatRows.length, Math.ceil((top + h) / ROW_HEIGHT) + BUFFER_ROWS) });
   }, [flatRows.length]);
@@ -494,8 +488,21 @@ export function WorkItemExcelGantt({
   }, [isDraggingTimeline]);
 
   // ─── collapse/expand toggle ───────────────────────────────────────────────
+  const handleCollapseToggle = useCallback(() => {
+    if (timelineCollapsed) {
+      setTimelineWidthPercent(prevTimelineWidthRef.current);
+      setTimelineCollapsed(false);
+    } else {
+      prevTimelineWidthRef.current = timelineWidthPercent > TIMELINE_MIN_PERCENT + 2
+        ? timelineWidthPercent
+        : TIMELINE_DEFAULT_PCT;
+      setTimelineWidthPercent(TIMELINE_MIN_PERCENT);
+      setTimelineCollapsed(true);
+    }
+  }, [timelineCollapsed, timelineWidthPercent]);
+
   // ─── bar drag (move + resize) ─────────────────────────────────────────────
-  const handleBarMouseDown = useCallback((e: React.MouseEvent, row: FlatRow, mode: BarDragState['mode']) => {
+  const handleBarMouseDown = useCallback((e: React.MouseEvent, row: FlatRow, mode: 'move' | 'resize') => {
     e.preventDefault();
     e.stopPropagation();
     barDragRef.current = {
@@ -536,12 +543,9 @@ export function WorkItemExcelGantt({
       if (drag.mode === 'move') {
         newStart = new Date(origStart + deltaMs);
         newEnd   = new Date(origEnd   + deltaMs);
-      } else if (drag.mode === 'resize-end') {
+      } else {
         newStart = new Date(origStart);
         newEnd   = new Date(Math.max(origEnd + deltaMs, origStart + 86400000));
-      } else {
-        newEnd   = new Date(origEnd);
-        newStart = new Date(Math.min(origStart + deltaMs, origEnd - 86400000));
       }
       const result = {
         start_date: newStart.toISOString().split('T')[0],
@@ -716,7 +720,8 @@ export function WorkItemExcelGantt({
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="border-b flex-shrink-0" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
         <div className="px-6 pt-4 pb-2 flex items-center gap-3">
-          <Button size="small" icon={<ArrowLeftOutlined />} onClick={onBack} style={{ flexShrink: 0 }}>All Projects</Button>
+          <Button size="small" icon={<ArrowLeftOutlined />} onClick={onBack} style={{ flexShrink: 0 }}>Back</Button>
+
           <div>
             <h1 className="text-xl font-semibold leading-tight" style={{ color: colors.text }}>{project.name}</h1>
             <p className="text-sm leading-snug" style={{ color: colors.textMuted }}>
@@ -757,16 +762,14 @@ export function WorkItemExcelGantt({
                 { value: 'month',   label: 'Month'   },
                 { value: 'quarter', label: 'Quarter' },
               ]} />
-            <Tooltip title="Zoom In (Ctrl+Scroll↑)">
-              <Button size="small" icon={<ZoomInOutlined />} disabled={scale === 'day'} onClick={zoomIn} />
-            </Tooltip>
-            <Tooltip title="Zoom Out (Ctrl+Scroll↓)">
-              <Button size="small" icon={<ZoomOutOutlined />} disabled={scale === 'quarter'} onClick={zoomOut} />
-            </Tooltip>
+            <Button size="small" icon={<ZoomInOutlined />} disabled={scale === 'day'} onClick={zoomIn} />
+
+            <Button size="small" icon={<ZoomOutOutlined />} disabled={scale === 'quarter'} onClick={zoomOut} />
+
             <div className="w-px h-5" style={{ backgroundColor: colors.borderMedium }} />
-            <Tooltip title="Jump to Today">
-              <Button size="small" icon={<CalendarOutlined />} onClick={handleJumpToToday}>Today</Button>
-            </Tooltip>
+
+            <Button size="small" icon={<CalendarOutlined />} onClick={handleJumpToToday}>Today</Button>
+
             <Button size="small" icon={<DownloadOutlined />} onClick={handleExport}>Export</Button>
           </div>
         </div>
@@ -779,21 +782,18 @@ export function WorkItemExcelGantt({
         <div className="absolute inset-0 flex flex-col"
           style={{ backgroundColor: colors.surface, marginRight: `${SAFE_ZONE_PERCENT}%` }}>
           {/* Table header */}
-          <div
-            ref={leftHeaderRef}
-            className="flex-shrink-0 overflow-x-hidden overflow-y-hidden flex items-center text-xs font-medium"
-            style={{ height: HEADER_HEIGHT, backgroundColor: colors.hover, borderBottom: `1px solid ${colors.border}`, color: colors.text }}
-          >
-            <div className="px-3 flex items-center h-full truncate" style={{ width: COL.name, minWidth: COL_MIN.name, flexShrink: 0, borderRight: `1px solid ${colors.border}` }}>Name</div>
-            <div className="px-3 flex items-center h-full truncate" style={{ width: COL.owner, minWidth: COL_MIN.owner, flexShrink: 0, borderRight: `1px solid ${colors.border}` }}>Owner</div>
-            <div className="px-2 flex items-center justify-center h-full" style={{ width: COL.priority, minWidth: COL_MIN.priority, flexShrink: 0, borderRight: `1px solid ${colors.border}` }}>Priority</div>
-            <div className="px-2 flex items-center h-full"              style={{ width: COL.status, minWidth: COL_MIN.status, flexShrink: 0, borderRight: `1px solid ${colors.border}` }}>Status</div>
-            <div className="px-2 flex items-center justify-center h-full" style={{ width: COL.start, minWidth: COL_MIN.start, flexShrink: 0, borderRight: `1px solid ${colors.border}` }}>Start</div>
-            <div className="px-2 flex items-center justify-center h-full" style={{ width: COL.end, minWidth: COL_MIN.end, flexShrink: 0 }}>End</div>
+          <div className="flex-shrink-0 flex items-center text-xs font-medium"
+            style={{ height: HEADER_HEIGHT, backgroundColor: colors.hover, borderBottom: `1px solid ${colors.border}`, color: colors.text }}>
+            <div className="px-3 flex items-center h-full truncate" style={{ width: COL.name,     borderRight: `1px solid ${colors.border}` }}>Name</div>
+            <div className="px-3 flex items-center h-full truncate" style={{ width: COL.owner,    borderRight: `1px solid ${colors.border}` }}>Owner</div>
+            <div className="px-2 flex items-center justify-center h-full" style={{ width: COL.priority, borderRight: `1px solid ${colors.border}` }}>Priority</div>
+            <div className="px-2 flex items-center h-full"              style={{ width: COL.status,    borderRight: `1px solid ${colors.border}` }}>Status</div>
+            <div className="px-2 flex items-center justify-center h-full" style={{ width: COL.start,    borderRight: `1px solid ${colors.border}` }}>Start</div>
+            <div className="px-2 flex items-center justify-center h-full" style={{ width: COL.end }}>End</div>
           </div>
 
           {/* Table body */}
-          <div ref={leftScrollRef} className="flex-1 overflow-auto" onScroll={handleLeftScroll}>
+          <div ref={leftScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden" onScroll={handleLeftScroll}>
             <div style={{ height: visRows.start * ROW_HEIGHT }} />
             {loading ? (
               <div className="flex items-center justify-center" style={{ height: 200, color: colors.textMuted }}>Loading…</div>
@@ -806,7 +806,7 @@ export function WorkItemExcelGantt({
               </div>
             ) : (
               visibleRows.map(row => (
-                <LeftRow key={row.id} row={{ ...row, ...(barDragOverride.get(row.id) ?? {}) }} onToggle={toggleCollapse} onEdit={openEditModal}
+                <LeftRow key={row.id} row={row} onToggle={toggleCollapse} onEdit={openEditModal}
                   onDelete={onWorkItemDelete ? (id => onWorkItemDelete(id)) : undefined} />
               ))
             )}
@@ -821,7 +821,7 @@ export function WorkItemExcelGantt({
             width: `${timelineWidthPercent}%`,
             backgroundColor: colors.surface,
             borderLeft: `2px solid ${colors.borderStrong}`,
-            boxShadow: '-6px 0 16px rgba(0,0,0,0.12)',
+            boxShadow: timelineCollapsed ? 'none' : '-6px 0 16px rgba(0,0,0,0.12)',
             zIndex: 50,
             transition: isDraggingTimeline ? 'none' : 'width 0.2s ease-out',
           }}>
@@ -830,10 +830,25 @@ export function WorkItemExcelGantt({
           <div className="absolute top-0 bottom-0 left-0 flex items-center justify-center cursor-col-resize z-[100]"
             style={{ width: 16, backgroundColor: isDraggingTimeline ? '#3B82F6' : colors.borderStrong, marginLeft: -2, transition: 'background-color 0.15s' }}
             onMouseDown={handleTimelineDragStart}>
+            {/* Collapse / expand button */}
+            <button
+              className="absolute flex items-center justify-center rounded-full bg-white border shadow-sm"
+              style={{ top: '50%', transform: 'translateY(-50%)', width: 22, height: 22, left: -3, borderColor: colors.borderMedium, cursor: 'pointer', zIndex: 110 }}
+              onMouseDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); handleCollapseToggle(); }}
+              title={timelineCollapsed ? 'Expand Timeline' : 'Collapse Timeline'}
+            >
+              {timelineCollapsed
+                ? <LeftOutlined  style={{ fontSize: 9, color: colors.textMuted }} />
+                : <RightOutlined style={{ fontSize: 9, color: colors.textMuted }} />}
+            </button>
             <div className="w-1 h-12 rounded-full bg-white opacity-60" style={{ pointerEvents: 'none', marginTop: 28 }} />
           </div>
 
-          {/* Timeline header */}
+          {/* Timeline content (hidden when collapsed) */}
+          {!timelineCollapsed && (
+            <>
+              {/* Timeline header */}
               <div ref={timelineHeaderRef}
                 className="flex-shrink-0 overflow-x-hidden overflow-y-hidden z-20"
                 style={{ height: HEADER_HEIGHT, borderBottom: `1px solid ${colors.border}`, cursor: isPanningTimeline ? 'grabbing' : 'grab', paddingLeft: 14 }}
@@ -955,37 +970,29 @@ export function WorkItemExcelGantt({
                               <div style={{ width: 4, height: 16, background: '#8c8c8c', flexShrink: 0 }} />
                             </div>
                           ) : (
-                            /* ── Standard bar ── */
-                            <Tooltip title={`${row.title} · ${row.start_date || '?'} → ${row.end_date || '?'}`}>
-                              <div className="gantt-bar absolute rounded flex items-center overflow-hidden select-none"
-                                style={{
-                                  left: pos.left, width: pos.width,
-                                  ...bStyle, position: 'absolute',
-                                  cursor: isDraggingThis ? 'grabbing' : 'grab',
-                                  opacity: isDraggingThis ? 0.75 : 1,
-                                }}
-                                onMouseDown={e => handleBarMouseDown(e, row, 'move')}
-                                onDoubleClick={e => { e.stopPropagation(); openEditModal(row); }}>
-                                {(row.type === 'issue' || row.type === 'clash' || row.type === 'remark') && (
-                                  <span className="ml-1 text-xs leading-none flex-shrink-0">{TYPE_ICON[row.type]}</span>
-                                )}
-                                {pos.width > 40 && (
-                                  <span className="ml-1 truncate text-white font-medium" style={{ fontSize: 10, lineHeight: '14px' }}>{row.title}</span>
-                                )}
-                                {/* Left-edge resize handle */}
-                                <div
-                                  className="absolute top-0 bottom-0 left-0"
-                                  style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: 'rgba(255,255,255,0.20)' }}
-                                  onMouseDown={e => { e.stopPropagation(); handleBarMouseDown(e, row, 'resize-start'); }}
-                                />
-                                {/* Right-edge resize handle */}
-                                <div
-                                  className="absolute top-0 bottom-0 right-0"
-                                  style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: 'rgba(255,255,255,0.25)' }}
-                                  onMouseDown={e => { e.stopPropagation(); handleBarMouseDown(e, row, 'resize-end'); }}
-                                />
-                              </div>
-                            </Tooltip>
+                            /* ── Standard bar ── */
+                            <div className="gantt-bar absolute rounded flex items-center overflow-hidden select-none"
+                              style={{
+                                left: pos.left, width: pos.width,
+                                ...bStyle, position: 'absolute',
+                                cursor: isDraggingThis ? 'grabbing' : 'grab',
+                                opacity: isDraggingThis ? 0.75 : 1,
+                              }}
+                              onMouseDown={e => handleBarMouseDown(e, row, 'move')}
+                              onDoubleClick={e => { e.stopPropagation(); openEditModal(row); }}>
+                              {(row.type === 'issue' || row.type === 'clash' || row.type === 'remark') && (
+                                <span className="ml-1 text-xs leading-none flex-shrink-0">{TYPE_ICON[row.type]}</span>
+                              )}
+                              {pos.width > 40 && (
+                                <span className="ml-1 truncate text-white font-medium" style={{ fontSize: 10, lineHeight: '14px' }}>{row.title}</span>
+                              )}
+                              {/* Right-edge resize handle */}
+                              <div
+                                className="absolute top-0 bottom-0 right-0"
+                                style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: 'rgba(255,255,255,0.25)' }}
+                                onMouseDown={e => { e.stopPropagation(); handleBarMouseDown(e, row, 'resize'); }}
+                              />
+                            </div>
                           )
                         )}
                       </div>
@@ -1001,6 +1008,17 @@ export function WorkItemExcelGantt({
                   )}
                 </div>
               </div>
+            </>
+          )}
+
+          {/* Collapsed placeholder label */}
+          {timelineCollapsed && (
+            <div className="flex-1 flex items-center justify-center" style={{ paddingLeft: 14 }}>
+              <span style={{ fontSize: 10, color: colors.textMuted, writingMode: 'vertical-rl', transform: 'rotate(180deg)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.6 }}>
+                Timeline
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1021,7 +1039,7 @@ export function WorkItemExcelGantt({
           ))}
         </div>
         <span className="text-xs" style={{ color: colors.textMuted }}>
-          Drag bars to move · Drag edges to resize · Ctrl+Scroll zoom · Shift+Scroll pan · {flatRows.length} rows
+          Drag bars to move · Drag right edge to resize · Ctrl+Scroll zoom · Shift+Scroll pan · {flatRows.length} rows
         </span>
       </div>
 
@@ -1115,7 +1133,7 @@ function LeftRow({ row, onToggle, onEdit, onDelete }: LeftRowProps) {
     >
       {/* Name */}
       <div className="flex items-center overflow-hidden text-xs"
-        style={{ width: COL.name, minWidth: COL_MIN.name, paddingLeft: isChild ? 24 : 6, borderRight: `1px solid ${colors.border}`, flexShrink: 0 }}>
+        style={{ width: COL.name, paddingLeft: isChild ? 24 : 6, borderRight: `1px solid ${colors.border}`, flexShrink: 0 }}>
         {row.hasChildren && (
           <button className="flex-shrink-0 mr-1" style={{ color: colors.textMuted }} onClick={() => onToggle(row.id)}>
             {row.collapsed ? <CaretRightOutlined style={{ fontSize: 10 }} /> : <CaretDownOutlined style={{ fontSize: 10 }} />}
@@ -1133,13 +1151,13 @@ function LeftRow({ row, onToggle, onEdit, onDelete }: LeftRowProps) {
 
       {/* Owner */}
       <div className="flex items-center px-2 text-xs overflow-hidden"
-        style={{ width: COL.owner, minWidth: COL_MIN.owner, borderRight: `1px solid ${colors.border}`, color: colors.textMuted, flexShrink: 0 }}>
+        style={{ width: COL.owner, borderRight: `1px solid ${colors.border}`, color: colors.textMuted, flexShrink: 0 }}>
         <span className="truncate">{row.owner || '—'}</span>
       </div>
 
       {/* Priority */}
       <div className="flex items-center justify-center px-1"
-        style={{ width: COL.priority, minWidth: COL_MIN.priority, borderRight: `1px solid ${colors.border}`, flexShrink: 0 }}>
+        style={{ width: COL.priority, borderRight: `1px solid ${colors.border}`, flexShrink: 0 }}>
         {row.priority
           ? <Tag color={PRIORITY_COLOR[row.priority] || 'default'} style={{ margin: 0, fontSize: 10 }}>{row.priority}</Tag>
           : <span style={{ color: colors.textMuted, fontSize: 11 }}>—</span>}
@@ -1147,18 +1165,18 @@ function LeftRow({ row, onToggle, onEdit, onDelete }: LeftRowProps) {
 
       {/* Status */}
       <div className="flex items-center px-1"
-        style={{ width: COL.status, minWidth: COL_MIN.status, borderRight: `1px solid ${colors.border}`, flexShrink: 0 }}>
+        style={{ width: COL.status, borderRight: `1px solid ${colors.border}`, flexShrink: 0 }}>
         <Tag color={STATUS_COLOR[row.status]} style={{ margin: 0, fontSize: 10 }}>{STATUS_LABEL[row.status]}</Tag>
       </div>
 
       {/* Start */}
       <div className="flex items-center px-1"
-        style={{ width: COL.start, minWidth: COL_MIN.start, borderRight: `1px solid ${colors.border}`, flexShrink: 0 }}>
+        style={{ width: COL.start, borderRight: `1px solid ${colors.border}`, flexShrink: 0 }}>
         <span style={{ color: colors.textMuted, fontSize: 11 }}>{row.start_date || '—'}</span>
       </div>
 
       {/* End */}
-      <div className="flex items-center px-1" style={{ width: COL.end, minWidth: COL_MIN.end, flexShrink: 0 }}>
+      <div className="flex items-center px-1" style={{ width: COL.end, flexShrink: 0 }}>
         <span style={{ color: colors.textMuted, fontSize: 11 }}>{row.end_date || '—'}</span>
       </div>
 
