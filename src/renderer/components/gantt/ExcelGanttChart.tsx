@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { Tag, Input, Select, Button, Space, Tooltip } from 'antd';
+import { Tag, Input, Select, Button, Space, Tooltip, Modal, Form, DatePicker } from 'antd';
 import {
   CalendarOutlined,
   DownloadOutlined,
@@ -18,9 +18,15 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
   FullscreenOutlined,
+  EditOutlined,
+  CaretUpOutlined,
+  CaretDownOutlined,
+  SettingOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
 import type { Project, WorkItem } from '@/shared/types';
 import { getStatusColor } from './timeline-adapter';
+import dayjs from 'dayjs';
 
 interface ExcelGanttChartProps {
   projects: Project[];
@@ -43,6 +49,9 @@ interface GanttRow {
   type: 'project' | 'workitem';
   portfolioId?: number;
 }
+
+type ProjectSortKey = 'name' | 'owner' | 'startDate' | 'endDate' | 'duration' | 'status';
+type ProjectColumnKey = 'name' | 'owner' | 'startDate' | 'endDate' | 'duration' | 'status';
 
 const ROW_HEIGHT = 40; // Fixed row height for alignment
 
@@ -81,6 +90,15 @@ export function ExcelGanttChart({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
   const [draggedItem, setDraggedItem] = useState<{ id: number; startX: number; startDate: Date } | null>(null);
+  const [sortKey, setSortKey] = useState<ProjectSortKey>('startDate');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [projectModalVisible, setProjectModalVisible] = useState(false);
+  const [projectForm] = Form.useForm();
+  const [columnModalVisible, setColumnModalVisible] = useState(false);
+  const [projectColumnOrder, setProjectColumnOrder] = useState<ProjectColumnKey[]>(['name', 'owner', 'startDate', 'endDate', 'duration', 'status']);
+  const [draggingColumnKey, setDraggingColumnKey] = useState<ProjectColumnKey | null>(null);
+  const [dragOverColumnKey, setDragOverColumnKey] = useState<ProjectColumnKey | null>(null);
 
   // Timeline overlay state (percentage of page width)
   // Always start at minimum width, ignore localStorage
@@ -115,7 +133,7 @@ export function ExcelGanttChart({
 
   // Convert projects to rows
   const rows = useMemo((): GanttRow[] => {
-    return projects
+    const filteredRows = projects
       .filter((project) => {
         const matchesSearch =
           !searchQuery ||
@@ -144,7 +162,33 @@ export function ExcelGanttChart({
           portfolioId: project.portfolio_id,
         };
       });
-  }, [projects, searchQuery, statusFilter]);
+    const compareText = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
+    return filteredRows.sort((a, b) => {
+      let result = 0;
+      switch (sortKey) {
+        case 'name':
+          result = compareText(a.name, b.name);
+          break;
+        case 'owner':
+          result = compareText(a.owner || '', b.owner || '');
+          break;
+        case 'status':
+          result = compareText(a.status, b.status);
+          break;
+        case 'duration':
+          result = a.duration - b.duration;
+          break;
+        case 'endDate':
+          result = (a.endDate?.getTime() ?? 0) - (b.endDate?.getTime() ?? 0);
+          break;
+        case 'startDate':
+        default:
+          result = (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0);
+          break;
+      }
+      return sortDirection === 'asc' ? result : -result;
+    });
+  }, [projects, searchQuery, statusFilter, sortKey, sortDirection]);
 
   // Calculate date range
   const { minDate, maxDate, totalDays } = useMemo(() => {
@@ -697,6 +741,77 @@ export function ExcelGanttChart({
     }
   };
 
+  const handleSort = (key: ProjectSortKey) => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortKey(key);
+    setSortDirection('asc');
+  };
+
+  const renderSortLabel = (label: string, key: ProjectSortKey) => (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 text-[11px] font-medium leading-none hover:opacity-100"
+      onClick={() => handleSort(key)}
+      style={{ color: colors.text, opacity: sortKey === key ? 1 : 0.68 }}
+    >
+      <span>{label}</span>
+      {sortKey === key ? (
+        sortDirection === 'asc' ? <CaretUpOutlined style={{ fontSize: 10 }} /> : <CaretDownOutlined style={{ fontSize: 10 }} />
+      ) : null}
+    </button>
+  );
+
+  const getProjectColumnOrder = (key: ProjectColumnKey) => projectColumnOrder.indexOf(key) + 1;
+
+  const moveProjectColumn = (key: ProjectColumnKey, targetKey: ProjectColumnKey) => {
+    setProjectColumnOrder((prev) => {
+      const index = prev.indexOf(key);
+      const target = prev.indexOf(targetKey);
+      if (index < 0 || target < 0 || target >= prev.length) return prev;
+      if (index === target) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(index, 1);
+      next.splice(target, 0, moved);
+      return next;
+    });
+  };
+
+  const handleOpenProjectEdit = useCallback(() => {
+    const project = selectedRowId ? projects.find((p) => p.id === selectedRowId) ?? null : null;
+    if (!project) return;
+    setEditingProject(project);
+    projectForm.setFieldsValue({
+      name: project.name,
+      owner: project.owner || '',
+      status: project.status,
+      dates: project.start_date || project.end_date
+        ? [project.start_date ? dayjs(project.start_date) : null, project.end_date ? dayjs(project.end_date) : null]
+        : null,
+    });
+    setProjectModalVisible(true);
+  }, [projectForm, projects, selectedRowId]);
+
+  const handleProjectModalOk = async () => {
+    if (!editingProject || !onProjectUpdate) {
+      setProjectModalVisible(false);
+      return;
+    }
+    const values = await projectForm.validateFields();
+    const [start, end] = values.dates || [null, null];
+    onProjectUpdate(editingProject.id, {
+      name: values.name,
+      owner: values.owner || undefined,
+      status: values.status,
+      start_date: start ? start.format('YYYY-MM-DD') : undefined,
+      end_date: end ? end.format('YYYY-MM-DD') : undefined,
+    });
+    setProjectModalVisible(false);
+    setEditingProject(null);
+  };
+
   // Handle timeline overlay resize drag
   const handleTimelineDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -978,6 +1093,23 @@ export function ExcelGanttChart({
                   }}
                 />
               </Tooltip>
+              <Tooltip title="Edit selected project">
+                <Button
+                  icon={<EditOutlined />}
+                  size="small"
+                  disabled={!selectedRowId}
+                  onClick={handleOpenProjectEdit}
+                />
+              </Tooltip>
+              <Tooltip title="Reorder columns">
+                <Button
+                  icon={<SettingOutlined />}
+                  size="small"
+                  onClick={() => setColumnModalVisible(true)}
+                >
+                  Columns
+                </Button>
+              </Tooltip>
 
               <div className="w-px h-6 bg-gray-300 mx-1" />
 
@@ -1039,53 +1171,58 @@ export function ExcelGanttChart({
             <div
               className="px-4 truncate"
               style={{
+                order: getProjectColumnOrder('name'),
                 width: '35%',
                 borderRight: `1px solid ${colors.border}`
               }}
             >
-              Task Name
+              {renderSortLabel('Task Name', 'name')}
             </div>
             <div
               className="px-3 truncate"
               style={{
+                order: getProjectColumnOrder('owner'),
                 width: '14%',
                 borderRight: `1px solid ${colors.border}`
               }}
             >
-              Owner
+              {renderSortLabel('Owner', 'owner')}
             </div>
             <div
               className="px-3 text-center"
               style={{
+                order: getProjectColumnOrder('startDate'),
                 width: '16%',
                 borderRight: `1px solid ${colors.border}`
               }}
             >
-              Start Date
+              {renderSortLabel('Start Date', 'startDate')}
             </div>
             <div
               className="px-3 text-center"
               style={{
+                order: getProjectColumnOrder('endDate'),
                 width: '16%',
                 borderRight: `1px solid ${colors.border}`
               }}
             >
-              End Date
+              {renderSortLabel('End Date', 'endDate')}
             </div>
             <div
               className="px-3 text-center"
               style={{
+                order: getProjectColumnOrder('duration'),
                 width: '10%',
                 borderRight: `1px solid ${colors.border}`
               }}
             >
-              Days
+              {renderSortLabel('Days', 'duration')}
             </div>
             <div
               className="px-3 text-center"
-              style={{ width: '9%' }}
+              style={{ order: getProjectColumnOrder('status'), width: '9%' }}
             >
-              Status
+              {renderSortLabel('Status', 'status')}
             </div>
           </div>
 
@@ -1148,6 +1285,7 @@ export function ExcelGanttChart({
                     <div
                       className="px-4 truncate font-medium"
                       style={{
+                        order: getProjectColumnOrder('name'),
                         width: '35%',
                         borderRight: `1px solid ${colors.border}`,
                         paddingLeft: isSelected ? '20px' : '16px'
@@ -1161,6 +1299,7 @@ export function ExcelGanttChart({
                     <div
                       className="px-3 truncate"
                       style={{
+                        order: getProjectColumnOrder('owner'),
                         width: '14%',
                         borderRight: `1px solid ${colors.border}`,
                         color: row.owner !== '—' ? colors.text : colors.textMuted,
@@ -1175,6 +1314,7 @@ export function ExcelGanttChart({
                     <div
                       className="px-3 text-center"
                       style={{
+                        order: getProjectColumnOrder('startDate'),
                         width: '16%',
                         borderRight: `1px solid ${colors.border}`,
                         color: row.startDate ? colors.text : colors.textMuted
@@ -1189,6 +1329,7 @@ export function ExcelGanttChart({
                     <div
                       className="px-3 text-center"
                       style={{
+                        order: getProjectColumnOrder('endDate'),
                         width: '16%',
                         borderRight: `1px solid ${colors.border}`,
                         color: row.endDate ? colors.text : colors.textMuted
@@ -1203,6 +1344,7 @@ export function ExcelGanttChart({
                     <div
                       className="px-3 text-center tabular-nums"
                       style={{
+                        order: getProjectColumnOrder('duration'),
                         width: '10%',
                         borderRight: `1px solid ${colors.border}`,
                         color: row.duration > 0 ? colors.text : colors.textMuted
@@ -1212,7 +1354,7 @@ export function ExcelGanttChart({
                     </div>
 
                     {/* Status (colored dot) */}
-                    <div className="px-3 flex justify-center" style={{ width: '9%' }}>
+                    <div className="px-3 flex justify-center" style={{ order: getProjectColumnOrder('status'), width: '9%' }}>
                       <Tooltip title={row.status.replace(/_/g, ' ').toUpperCase()}>
                         <div
                           className="w-2.5 h-2.5 rounded-full"
@@ -1782,6 +1924,93 @@ export function ExcelGanttChart({
           Drag bars to reschedule • Click row to select
         </span>
       </div>
+      <Modal
+        title={editingProject ? `Edit: ${editingProject.name}` : 'Edit Project'}
+        open={projectModalVisible}
+        onOk={handleProjectModalOk}
+        onCancel={() => { setProjectModalVisible(false); setEditingProject(null); }}
+        okText="Save"
+        destroyOnHidden
+      >
+        <Form form={projectForm} layout="vertical">
+          <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Project name is required' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="owner" label="Owner">
+            <Input />
+          </Form.Item>
+          <Form.Item name="status" label="Status">
+            <Select options={[
+              { label: 'Not Started', value: 'not_started' },
+              { label: 'In Progress', value: 'in_progress' },
+              { label: 'Blocked', value: 'blocked' },
+              { label: 'Done', value: 'done' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="dates" label="Start → End Date">
+            <DatePicker.RangePicker style={{ width: '100%' }} format="YYYY-MM-DD" allowEmpty={[true, true]} />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Arrange Columns"
+        open={columnModalVisible}
+        onCancel={() => {
+          setColumnModalVisible(false);
+          setDraggingColumnKey(null);
+          setDragOverColumnKey(null);
+        }}
+        footer={null}
+        destroyOnHidden
+      >
+        <div className="space-y-2">
+          {projectColumnOrder.map((key) => (
+            <div
+              key={key}
+              draggable
+              className="flex items-center justify-between rounded border px-3 py-2 transition-colors"
+              style={{
+                cursor: 'grab',
+                borderColor: dragOverColumnKey === key ? colors.selectedBorder : colors.border,
+                backgroundColor: draggingColumnKey === key ? colors.hover : colors.surface,
+              }}
+              onDragStart={() => {
+                setDraggingColumnKey(key);
+                setDragOverColumnKey(key);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (dragOverColumnKey !== key) setDragOverColumnKey(key);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                if (draggingColumnKey) moveProjectColumn(draggingColumnKey, key);
+                setDraggingColumnKey(null);
+                setDragOverColumnKey(null);
+              }}
+              onDragEnd={() => {
+                setDraggingColumnKey(null);
+                setDragOverColumnKey(null);
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <MenuOutlined style={{ color: colors.textMuted, fontSize: 12 }} />
+                <span>{{
+                name: 'Task Name',
+                owner: 'Owner',
+                startDate: 'Start Date',
+                endDate: 'End Date',
+                duration: 'Days',
+                status: 'Status',
+              }[key]}</span>
+              </div>
+              <span className="text-xs" style={{ color: colors.textMuted }}>
+                Drag to reorder
+              </span>
+            </div>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 }

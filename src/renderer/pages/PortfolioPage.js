@@ -7,13 +7,11 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Typography } from 'antd';
 import { ExcelGanttChart } from '@/components/gantt/ExcelGanttChart';
-import { WorkItemGanttChart } from '@/components/gantt/WorkItemGanttChart';
+import { WorkItemExcelGantt } from '@/components/gantt/WorkItemExcelGantt';
 import { useProjectStore } from '@/stores/useProjectStore';
 import { useWorkItemStore } from '@/stores/useWorkItemStore';
 import { useI18n } from '@/hooks/useI18n';
-const { Title, Text } = Typography;
 function ResizableSplitPane({ left, right, defaultLeftWidth = 40, minLeftWidth = 20, maxLeftWidth = 60, }) {
     const [leftWidth, setLeftWidth] = useState(defaultLeftWidth);
     const [isDragging, setIsDragging] = useState(false);
@@ -105,6 +103,16 @@ export function PortfolioPage() {
         const { updateWorkItem } = useWorkItemStore.getState();
         await updateWorkItem(workItemId, updates);
     };
+    const handleWorkItemCreate = async (dto) => {
+        const { createWorkItem, loadAllWorkItems } = useWorkItemStore.getState();
+        await createWorkItem(dto);
+        await loadAllWorkItems();
+    };
+    const handleWorkItemDelete = async (workItemId) => {
+        const { deleteWorkItem, loadAllWorkItems } = useWorkItemStore.getState();
+        await deleteWorkItem(workItemId);
+        await loadAllWorkItems();
+    };
     const isLoading = projectsLoading || workItemsLoading;
-    return (_jsx("div", { className: "h-full flex flex-col", children: _jsx("div", { className: "flex-1 overflow-hidden bg-theme-bg-layout", children: viewMode === 'projects' ? (_jsx("div", { className: "h-full p-4", children: _jsx(ExcelGanttChart, { projects: projects, workItems: workItems, loading: isLoading, onProjectClick: handleProjectClick, onProjectUpdate: handleProjectUpdate, viewMode: "month" }) })) : selectedProject ? (_jsx(WorkItemGanttChart, { project: selectedProject, workItems: workItems.filter((w) => w.project_id === selectedProject.id), viewMode: "month", loading: isLoading, onBack: handleBack, onWorkItemClick: handleWorkItemClick, onWorkItemUpdate: handleWorkItemUpdate })) : null }) }));
+    return (_jsx("div", { className: "h-full flex flex-col", children: _jsx("div", { className: "flex-1 overflow-hidden bg-theme-bg-layout", children: viewMode === 'projects' ? (_jsx("div", { className: "h-full p-4", children: _jsx(ExcelGanttChart, { projects: projects, workItems: workItems, loading: isLoading, onProjectClick: handleProjectClick, onProjectUpdate: handleProjectUpdate, viewMode: "month" }) })) : selectedProject ? (_jsx(WorkItemExcelGantt, { project: selectedProject, workItems: workItems.filter((w) => w.project_id === selectedProject.id), loading: isLoading, onBack: handleBack, onWorkItemUpdate: handleWorkItemUpdate, onWorkItemCreate: handleWorkItemCreate, onWorkItemDelete: handleWorkItemDelete })) : null }) }));
 }
