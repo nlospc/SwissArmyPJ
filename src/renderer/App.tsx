@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ConfigProvider, theme, Spin, Alert, Button } from 'antd';
+import { ConfigProvider, theme, Spin, Alert, Button, App as AntApp } from 'antd';
 import { Agentation, type Annotation } from 'agentation';
 import { ReloadOutlined } from '@ant-design/icons';
 
@@ -155,7 +155,9 @@ function App() {
 
   return (
     <ConfigProvider theme={getThemeConfig(isDark)}>
-      <AppContent />
+      <AntApp>
+        <AppContent />
+      </AntApp>
     </ConfigProvider>
   );
 }

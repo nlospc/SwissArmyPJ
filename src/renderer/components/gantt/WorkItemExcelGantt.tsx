@@ -19,7 +19,7 @@ import React, {
   useState, useMemo, useRef, useCallback, useEffect,
 } from 'react';
 import {
-  Tag, Select, Button,
+  Tag, Select, Button, App,
 
   Form, Modal, DatePicker, Input, Popconfirm, Tooltip,
 
@@ -31,6 +31,7 @@ import {
   PlusOutlined, EditOutlined, DeleteOutlined,
   CaretUpOutlined,
   SettingOutlined, MenuOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Project, WorkItem, CreateWorkItemDTO } from '@/shared/types';
@@ -45,7 +46,7 @@ const TIMELINE_DEFAULT_PCT = TIMELINE_MIN_PERCENT;   // initial overlay width on
 const LEFT_TABLE_MIN_WIDTH = 860;
 const BUFFER_ROWS          = 4;
 const BUFFER_COLS          = 6;
-const RESIZE_HANDLE_PX     = 8;    // px-wide right-edge resize zone on bars
+const RESIZE_HANDLE_PX     = 14;   // px-wide right-edge resize zone on bars (increased from 8 to 14 for better usability)
 
 const COL = {
   name:     '35%',
@@ -158,21 +159,24 @@ export interface WorkItemExcelGanttProps {
   project: Project;
   workItems: WorkItem[];
   loading?: boolean;
+  isSaving?: boolean;
   onBack: () => void;
-  onWorkItemUpdate?: (id: number, updates: Partial<WorkItem>) => void;
-  onWorkItemCreate?: (dto: CreateWorkItemDTO) => void;
-  onWorkItemDelete?: (id: number) => void;
+  onWorkItemUpdate?: (id: number, updates: Partial<WorkItem>) => Promise<{ success: boolean; error?: string }>;
+  onWorkItemCreate?: (dto: CreateWorkItemDTO) => Promise<{ success: boolean; error?: string }>;
+  onWorkItemDelete?: (id: number) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function WorkItemExcelGantt({
   project,
   workItems,
   loading = false,
+  isSaving = false,
   onBack,
   onWorkItemUpdate,
   onWorkItemCreate,
   onWorkItemDelete,
 }: WorkItemExcelGanttProps) {
+  const { message } = App.useApp();
   const [sortKey, setSortKey]                 = useState<WorkItemSortKey>('start_date');
   const [sortDirection, setSortDirection]     = useState<'asc' | 'desc'>('asc');
   const [columnModalVisible, setColumnModalVisible] = useState(false);
@@ -270,6 +274,7 @@ export function WorkItemExcelGantt({
   // ── bar drag ─────────────────────────────────────────────────────────────
   const [isBarDragging, setIsBarDragging]       = useState(false);
   const [barDragOverride, setBarDragOverride]   = useState<Map<number, { start_date?: string; end_date?: string }>>(new Map());
+  const [dragTooltip, setDragTooltip]           = useState<{ x: number; y: number; text: string } | null>(null);
   const barDragRef                              = useRef<BarDragState | null>(null);
   const barDragResultRef                        = useRef<{ start_date: string; end_date: string } | null>(null);
 
@@ -621,13 +626,24 @@ export function WorkItemExcelGantt({
       };
       barDragResultRef.current = result;
       setBarDragOverride(prev => { const n = new Map(prev); n.set(drag.rowId, result); return n; });
+
+      // Show drag tooltip
+      setDragTooltip({
+        x: e.clientX + 15,
+        y: e.clientY + 15,
+        text: `${result.start_date} → ${result.end_date}`,
+      });
     };
 
-    const onUp = () => {
+    const onUp = async () => {
       const drag   = barDragRef.current;
       const result = barDragResultRef.current;
+      setDragTooltip(null);
       if (result && drag && drag.rowId >= 0) {
-        onWorkItemUpdateRef.current?.(drag.rowId, result);
+        const updateResult = await onWorkItemUpdateRef.current?.(drag.rowId, result);
+        if (updateResult?.error) {
+          message.error(updateResult.error);
+        }
       }
       setBarDragOverride(new Map());
       barDragResultRef.current = null;
@@ -644,6 +660,7 @@ export function WorkItemExcelGantt({
       document.removeEventListener('mouseup',   onUp);
       document.body.style.userSelect = '';
       document.body.style.cursor     = '';
+      setDragTooltip(null);
     };
   }, [isBarDragging]);
 
@@ -725,32 +742,55 @@ export function WorkItemExcelGantt({
   };
 
   const handleModalOk = async () => {
-    const values      = await form.validateFields();
-    const isMilestone = values.type === 'milestone';
-    let start_date: string | undefined, end_date: string | undefined;
-    if (isMilestone) {
-      start_date = values.date ? values.date.format('YYYY-MM-DD') : undefined;
-      end_date   = start_date;
-    } else {
-      const [s, e] = values.dates || [null, null];
-      start_date = s ? s.format('YYYY-MM-DD') : undefined;
-      end_date   = e ? e.format('YYYY-MM-DD') : undefined;
+    try {
+      const values = await form.validateFields();
+      const isMilestone = values.type === 'milestone';
+      let start_date: string | undefined, end_date: string | undefined;
+
+      if (isMilestone) {
+        start_date = values.date ? values.date.format('YYYY-MM-DD') : undefined;
+        end_date = start_date;
+      } else {
+        const [s, e] = values.dates || [null, null];
+        start_date = s ? s.format('YYYY-MM-DD') : undefined;
+        end_date = e ? e.format('YYYY-MM-DD') : undefined;
+
+        // Validate: end date must be after or equal to start date
+        if (start_date && end_date && new Date(end_date) < new Date(start_date)) {
+          message.error('End date must be after or equal to start date');
+          return;
+        }
+      }
+
+      if (editingItem) {
+        const result = await onWorkItemUpdate?.(editingItem.id, {
+          title: values.title, type: values.type, status: values.status,
+          priority: values.priority, owner: values.owner || undefined,
+          notes: values.notes || undefined, start_date, end_date,
+        });
+        if (result?.error) {
+          message.error(result.error);
+          return;
+        }
+        message.success('Work item updated successfully');
+      } else {
+        const result = await onWorkItemCreate?.({
+          project_id: project.id, title: values.title, type: values.type,
+          status: values.status || 'not_started', priority: values.priority,
+          owner: values.owner || undefined, notes: values.notes || undefined,
+          start_date, end_date, parent_id: values.parent_id || undefined,
+        });
+        if (result?.error) {
+          message.error(result.error);
+          return;
+        }
+        message.success('Work item created successfully');
+      }
+      setModalVisible(false);
+    } catch (error) {
+      // Form validation failed
+      console.error('Form validation failed:', error);
     }
-    if (editingItem) {
-      onWorkItemUpdate?.(editingItem.id, {
-        title: values.title, type: values.type, status: values.status,
-        priority: values.priority, owner: values.owner || undefined,
-        notes: values.notes || undefined, start_date, end_date,
-      });
-    } else {
-      onWorkItemCreate?.({
-        project_id: project.id, title: values.title, type: values.type,
-        status: values.status || 'not_started', priority: values.priority,
-        owner: values.owner || undefined, notes: values.notes || undefined,
-        start_date, end_date, parent_id: values.parent_id || undefined,
-      });
-    }
-    setModalVisible(false);
   };
 
   // ─── CSV export ───────────────────────────────────────────────────────────
@@ -785,6 +825,28 @@ export function WorkItemExcelGantt({
   return (
     <div className="h-full flex flex-col" style={{ backgroundColor: colors.bg }}>
 
+      {/* Drag Tooltip */}
+      {dragTooltip && (
+        <div
+          style={{
+            position: 'fixed',
+            left: dragTooltip.x,
+            top: dragTooltip.y,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            color: '#fff',
+            padding: '6px 12px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: 500,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {dragTooltip.text}
+        </div>
+      )}
+
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="border-b flex-shrink-0" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
         <div className="px-6 pt-4 pb-2 flex items-center gap-3">
@@ -803,6 +865,12 @@ export function WorkItemExcelGantt({
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 rounded text-sm font-medium" style={{ backgroundColor: colors.hover, color: colors.text }}>
               {flatRows.length} {flatRows.length === 1 ? 'row' : 'rows'}
+              {(loading || isSaving) && (
+                <span className="ml-2 text-blue-500">
+                  <LoadingOutlined className="mr-1" spin />
+                  {isSaving ? 'Saving...' : 'Loading...'}
+                </span>
+              )}
             </span>
             {onWorkItemCreate && (
               <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>Add Item</Button>
@@ -1030,22 +1098,38 @@ export function WorkItemExcelGantt({
                               <div style={{ width: 4, height: 16, background: '#8c8c8c', flexShrink: 0 }} />
                             </div>
                           ) : (
-                            /* ── Standard bar ── */
-                            <div className="gantt-bar absolute rounded flex items-center overflow-hidden select-none"
-                              style={{
-                                left: pos.left, width: pos.width,
-                                ...bStyle, position: 'absolute',
-                                cursor: isDraggingThis ? 'grabbing' : 'grab',
-                                opacity: isDraggingThis ? 0.75 : 1,
-                              }}
-                              onMouseDown={e => handleBarMouseDown(e, row, 'move')}
-                              onDoubleClick={e => { e.stopPropagation(); openEditModal(row); }}>
-                              {(row.type === 'issue' || row.type === 'clash' || row.type === 'remark') && (
-                                <span className="ml-1 text-xs leading-none flex-shrink-0">{TYPE_ICON[row.type]}</span>
-                              )}
-                              {pos.width > 40 && (
-                                <span className="ml-1 truncate text-white font-medium" style={{ fontSize: 10, lineHeight: '14px' }}>{row.title}</span>
-                              )}
+                            /* ── Standard bar ── */
+
+                            <div className="gantt-bar absolute rounded flex items-center overflow-hidden select-none"
+
+                              style={{
+
+                                left: pos.left, width: pos.width,
+
+                                ...bStyle, position: 'absolute',
+
+                                cursor: isDraggingThis ? 'grabbing' : 'grab',
+
+                                opacity: isDraggingThis ? 0.75 : 1,
+
+                              }}
+
+                              onMouseDown={e => handleBarMouseDown(e, row, 'move')}
+
+                              onDoubleClick={e => { e.stopPropagation(); openEditModal(row); }}>
+
+                              {(row.type === 'issue' || row.type === 'clash' || row.type === 'remark') && (
+
+                                <span className="ml-1 text-xs leading-none flex-shrink-0">{TYPE_ICON[row.type]}</span>
+
+                              )}
+
+                              {pos.width > 40 && (
+
+                                <span className="ml-1 truncate text-white font-medium" style={{ fontSize: 10, lineHeight: '14px' }}>{row.title}</span>
+
+                              )}
+
                               <div
                                 className="absolute top-0 bottom-0 left-0"
                                 style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: 'rgba(255,255,255,0.20)' }}
@@ -1053,12 +1137,17 @@ export function WorkItemExcelGantt({
                               />
 
                               {/* Right-edge resize handle */}
-                              <div
-                                className="absolute top-0 bottom-0 right-0"
-                                style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: 'rgba(255,255,255,0.25)' }}
+                              <div
+
+                                className="absolute top-0 bottom-0 right-0"
+
+                                style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: 'rgba(255,255,255,0.25)' }}
+
                                 onMouseDown={e => { e.stopPropagation(); handleBarMouseDown(e, row, 'resize-end'); }}
-                              />
-                            </div>
+                              />
+
+                            </div>
+
                           )
                         )}
                       </div>
@@ -1105,9 +1194,9 @@ export function WorkItemExcelGantt({
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
-        okText={editingItem ? 'Save' : 'Create'}
-        width={540}
-        destroyOnHidden
+        okText={editingItem ? 'Save' : 'Create'}
+        width={540}
+        forceRender
       >
         <Form form={form} layout="vertical" size="small" style={{ paddingTop: 8 }}>
           <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required' }]}>
@@ -1137,7 +1226,18 @@ export function WorkItemExcelGantt({
                   <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
                 </Form.Item>
               ) : (
-                <Form.Item name="dates" label="Start → End Date">
+                <Form.Item name="dates" label="Start → End Date" rules={[
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (value && value[0] && value[1]) {
+                        if (value[1].isBefore(value[0])) {
+                          return Promise.reject(new Error('End date must be after start date'));
+                        }
+                      }
+                      return Promise.resolve();
+                    },
+                  }),
+                ]}>
                   <DatePicker.RangePicker style={{ width: '100%' }} format="YYYY-MM-DD" allowEmpty={[true, true]} />
                 </Form.Item>
               )
