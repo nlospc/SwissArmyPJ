@@ -354,31 +354,19 @@ export function PortfolioPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Content */}
-
-      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
+      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900 min-h-0">
 
         {viewMode === 'projects' ? (
-
           <div className="h-full p-4">
-
             <ExcelGanttChart
-
               projects={projects}
-
               workItems={workItems}
-
               loading={isLoading}
-
               onProjectClick={handleProjectClick}
-
               onProjectUpdate={handleProjectUpdate}
-
               viewMode="month"
-
             />
-
           </div>
-
         ) : selectedProject ? (
           <div className="h-full">
             <WorkItemExcelGantt

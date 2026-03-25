@@ -98,6 +98,50 @@ function BadComponent() {
 </div>
 ```
 
+**Flex 子元素全高度 (重要!):**
+```tsx
+// ❌ 错误：flex-1 父元素 + h-full 子元素高度失效
+<div className="flex-1 overflow-hidden">
+  <div className="h-full">
+    {/* 这个 h-full 不会正确工作，因为 flex-1 没有显式高度 */}
+  </div>
+</div>
+
+// ✅ 方案1：flex-1 父元素添加 min-h-0
+<div className="flex-1 overflow-hidden min-h-0">
+  <div className="h-full">
+    {/* 现在 h-full 可以正确引用父元素的计算高度 */}
+  </div>
+</div>
+
+// ✅ 方案2：子元素也使用 flex-1
+<div className="flex-1 overflow-hidden">
+  <div className="flex-1">
+    {/* 子元素直接填充父元素 */}
+  </div>
+</div>
+
+// ✅ 方案3：父元素使用 h-0 强制计算高度
+<div className="flex-1 h-0 overflow-hidden">
+  <div className="h-full">
+    {/* h-0 让 flex-1 有计算高度，h-full 子元素可以正确引用 */}
+  </div>
+</div>
+```
+
+**Ant Design 包装器高度问题:**
+```tsx
+// ❌ ConfigProvider/AntApp 会创建没有高度的 div，导致 h-full 失效
+
+// ✅ 解决方案：在全局 CSS 中添加（见 src/renderer/styles/layout-fixes.css）
+// #root > div,
+// #root [class^="css-dev-only-do-not-override"],
+// .ant-app,
+// .ant-app > div {
+//   height: 100% !important;
+// }
+```
+
 ### 4. 颜色使用规范
 
 **状态颜色:**
@@ -156,6 +200,7 @@ boxShadow: token.boxShadow
 - [ ] 不硬编码任何颜色值 (除了透明度 `rgba(0,0,0,0.X)`)
 - [ ] 深色/浅色模式都测试过
 - [ ] 布局使用 `h-full` 和 `flex` 正确处理高度
+- [ ] **flex-1 父元素的 h-full 子元素: 添加 `min-h-0` 到父元素**
 - [ ] 滚动区域正确配置 (`overflow-auto` 或 `overflow-hidden`)
 - [ ] 边框使用 `token.colorBorder` 系列
 - [ ] 文字使用 `token.colorText` 系列
