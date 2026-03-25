@@ -25,7 +25,9 @@ import {
   MenuOutlined,
 } from '@ant-design/icons';
 import type { Project, WorkItem } from '@/shared/types';
+
 import { getStatusColor } from './timeline-adapter';
+
 import dayjs from 'dayjs';
 
 interface ExcelGanttChartProps {
@@ -98,11 +100,19 @@ export function ExcelGanttChart({
   const [columnModalVisible, setColumnModalVisible] = useState(false);
   const [projectColumnOrder, setProjectColumnOrder] = useState<ProjectColumnKey[]>(['name', 'owner', 'startDate', 'endDate', 'duration', 'status']);
   const [draggingColumnKey, setDraggingColumnKey] = useState<ProjectColumnKey | null>(null);
+
   const [dragOverColumnKey, setDragOverColumnKey] = useState<ProjectColumnKey | null>(null);
 
+
+
+
+
   // Timeline overlay state (percentage of page width)
+
   // Always start at minimum width, ignore localStorage
+
   const [timelineWidthPercent, setTimelineWidthPercent] = useState<number>(TIMELINE_MIN_PERCENT);
+
   const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
 
   // Dynamic header height based on view mode
@@ -732,14 +742,45 @@ export function ExcelGanttChart({
     };
   }, [isPanningTimeline, panStartX, panStartScrollLeft, handleTimelineScroll]);
 
-  // Handle row click
-  const handleRowClick = (row: GanttRow) => {
-    setSelectedRowId(row.id);
-    const project = projects.find((p) => p.id === row.id);
-    if (project && onProjectClick) {
-      onProjectClick(project);
-    }
-  };
+  // Handle row click
+  const handleRowClick = (row: GanttRow) => {
+    setSelectedRowId(row.id);
+    const project = projects.find((p) => p.id === row.id);
+    if (project && onProjectClick) {
+      onProjectClick(project);
+    }
+  };
+
+  // Keyboard shortcut: Press 'E' or 'Enter' to edit selected project
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedRowId || projectModalVisible || columnModalVisible) return;
+      
+      // 'E' key or 'Enter' key to edit
+      if (e.key === 'e' || e.key === 'E' || e.key === 'Enter') {
+        e.preventDefault();
+        const project = projects.find((p) => p.id === selectedRowId);
+        if (project) {
+          setEditingProject(project);
+          projectForm.setFieldsValue({
+            name: project.name,
+            owner: project.owner || '',
+            status: project.status,
+            dates: project.start_date || project.end_date
+              ? [project.start_date ? dayjs(project.start_date) : null, project.end_date ? dayjs(project.end_date) : null]
+              : null,
+            description: project.description || '',
+            tags: project.tags || [],
+            portfolio_id: project.portfolio_id || null,
+          });
+          setProjectModalVisible(true);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedRowId, projects, projectModalVisible, columnModalVisible, projectForm]);
 
   const handleSort = (key: ProjectSortKey) => {
     if (sortKey === key) {
@@ -780,36 +821,77 @@ export function ExcelGanttChart({
   };
 
   const handleOpenProjectEdit = useCallback(() => {
+
     const project = selectedRowId ? projects.find((p) => p.id === selectedRowId) ?? null : null;
+
     if (!project) return;
+
     setEditingProject(project);
+
     projectForm.setFieldsValue({
+
       name: project.name,
+
       owner: project.owner || '',
+
       status: project.status,
+
       dates: project.start_date || project.end_date
+
         ? [project.start_date ? dayjs(project.start_date) : null, project.end_date ? dayjs(project.end_date) : null]
+
         : null,
+
+      description: project.description || '',
+
+      tags: project.tags || [],
+
+      portfolio_id: project.portfolio_id || null,
+
     });
+
     setProjectModalVisible(true);
+
   }, [projectForm, projects, selectedRowId]);
 
   const handleProjectModalOk = async () => {
+
     if (!editingProject || !onProjectUpdate) {
+
       setProjectModalVisible(false);
+
       return;
+
     }
+
     const values = await projectForm.validateFields();
+
     const [start, end] = values.dates || [null, null];
+
     onProjectUpdate(editingProject.id, {
+
       name: values.name,
+
       owner: values.owner || undefined,
+
       status: values.status,
+
       start_date: start ? start.format('YYYY-MM-DD') : undefined,
+
       end_date: end ? end.format('YYYY-MM-DD') : undefined,
+
+      description: values.description || undefined,
+
+      tags: values.tags && values.tags.length > 0 ? values.tags : undefined,
+
+      portfolio_id: values.portfolio_id || undefined,
+
     });
+
     setProjectModalVisible(false);
+
     setEditingProject(null);
+
   };
 
   // Handle timeline overlay resize drag
@@ -1267,11 +1349,52 @@ export function ExcelGanttChart({
                         }
                       }}
                       onMouseLeave={(e) => {
+
                         if (!isSelected) {
+
                           e.currentTarget.style.backgroundColor = 'transparent';
+
                         }
+
                       }}
+
                       onClick={() => handleRowClick(row)}
+
+                      onDoubleClick={() => {
+
+                        const project = projects.find((p) => p.id === row.id);
+
+                        if (project) {
+
+                          setEditingProject(project);
+
+                          projectForm.setFieldsValue({
+
+                            name: project.name,
+
+                            owner: project.owner || '',
+
+                            status: project.status,
+
+                            dates: project.start_date || project.end_date
+
+                              ? [project.start_date ? dayjs(project.start_date) : null, project.end_date ? dayjs(project.end_date) : null]
+
+                              : null,
+
+                            description: project.description || '',
+
+                            tags: project.tags || [],
+
+                            portfolio_id: project.portfolio_id || null,
+
+                          });
+
+                          setProjectModalVisible(true);
+
+                        }
+
+                      }}
                     >
                     {/* Left selection indicator */}
                     {isSelected && (
@@ -1803,10 +1926,53 @@ export function ExcelGanttChart({
                                 }
                               }}
                               onMouseLeave={(e) => {
+
                                 if (draggedItem?.id !== row.id) {
+
                                   e.currentTarget.style.opacity = '1';
+
                                 }
+
                               }}
+
+                              onDoubleClick={(e) => {
+
+                                e.stopPropagation();
+
+                                const project = projects.find((p) => p.id === row.id);
+
+                                if (project) {
+
+                                  setEditingProject(project);
+
+                                  projectForm.setFieldsValue({
+
+                                    name: project.name,
+
+                                    owner: project.owner || '',
+
+                                    status: project.status,
+
+                                    dates: project.start_date || project.end_date
+
+                                      ? [project.start_date ? dayjs(project.start_date) : null, project.end_date ? dayjs(project.end_date) : null]
+
+                                      : null,
+
+                                    description: project.description || '',
+
+                                    tags: project.tags || [],
+
+                                    portfolio_id: project.portfolio_id || null,
+
+                                  });
+
+                                  setProjectModalVisible(true);
+
+                                }
+
+                              }}
+
                             >
                               {/* Label INSIDE bar (dark text on light fill) */}
                               {barPos.width > 60 && (
@@ -1921,7 +2087,7 @@ export function ExcelGanttChart({
 
         {/* Right: Interaction Hints */}
         <span className="text-xs" style={{ color: colors.textMuted }}>
-          Drag bars to reschedule • Click row to select
+          Double-click row/bar to edit • Press E or Enter to edit selected • Drag bars to reschedule
         </span>
       </div>
       <Modal
@@ -1933,23 +2099,75 @@ export function ExcelGanttChart({
         destroyOnHidden
       >
         <Form form={projectForm} layout="vertical">
+
           <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Project name is required' }]}>
+
             <Input />
+
           </Form.Item>
-          <Form.Item name="owner" label="Owner">
-            <Input />
+
+          
+
+          <Form.Item name="description" label="Description">
+
+            <Input.TextArea rows={3} placeholder="Project description..." />
+
           </Form.Item>
-          <Form.Item name="status" label="Status">
-            <Select options={[
-              { label: 'Not Started', value: 'not_started' },
-              { label: 'In Progress', value: 'in_progress' },
-              { label: 'Blocked', value: 'blocked' },
-              { label: 'Done', value: 'done' },
-            ]} />
-          </Form.Item>
+
+
+
+          <div style={{ display: 'flex', gap: 12 }}>
+
+            <Form.Item name="owner" label="Owner" style={{ flex: 1 }}>
+
+              <Input placeholder="Owner name" />
+
+            </Form.Item>
+
+            <Form.Item name="status" label="Status" style={{ flex: 1 }}>
+
+              <Select options={[
+
+                { label: 'Not Started', value: 'not_started' },
+
+                { label: 'In Progress', value: 'in_progress' },
+
+                { label: 'Blocked', value: 'blocked' },
+
+                { label: 'Done', value: 'done' },
+
+              ]} />
+
+            </Form.Item>
+
+          </div>
+
+
+
           <Form.Item name="dates" label="Start → End Date">
+
             <DatePicker.RangePicker style={{ width: '100%' }} format="YYYY-MM-DD" allowEmpty={[true, true]} />
+
           </Form.Item>
+
+
+
+          <Form.Item name="tags" label="Tags">
+
+            <Select
+
+              mode="tags"
+
+              style={{ width: '100%' }}
+
+              placeholder="Add tags..."
+
+              tokenSeparators={[',']}
+
+            />
+
+          </Form.Item>
+
         </Form>
       </Modal>
       <Modal

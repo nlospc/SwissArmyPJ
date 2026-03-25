@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron';
+import * as crypto from 'node:crypto';
 
 import { getDatabase } from '../database/schema';
 
@@ -26,6 +27,46 @@ import type {
   PortfolioSummary,
   SearchResult,
 } from '../../shared/types';
+
+// ============================================================================
+// Audit Log Helper
+// ============================================================================
+
+interface AuditLogEntry {
+  entity_type: string;
+  entity_id: string;
+  action: 'create' | 'update' | 'delete';
+  user_id?: string;
+  source?: string;
+  old_values_json?: string;
+  new_values_json?: string;
+}
+
+function writeAuditLog(entry: AuditLogEntry): void {
+  try {
+    const db = getDatabase();
+    const uuid = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    db.prepare(`
+      INSERT INTO audit_log (uuid, entity_type, entity_id, action, user_id, source, old_values_json, new_values_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      uuid,
+      entry.entity_type,
+      entry.entity_id,
+      entry.action,
+      entry.user_id || null,
+      entry.source || null,
+      entry.old_values_json || null,
+      entry.new_values_json || null,
+      now
+    );
+  } catch (error) {
+    console.error('Failed to write audit log:', error);
+    // Don't throw - audit log failures shouldn't break the main operation
+  }
+}
 
 export function registerIPCHandlers(): void {
   // Register My Work handlers
@@ -537,6 +578,16 @@ function handleCreateWorkItem(_event: any, data: CreateWorkItemDTO): IPCResponse
     );
 
     const workItem = db.prepare('SELECT * FROM work_items WHERE id = ?').get(result.lastInsertRowid) as WorkItem;
+
+    // Write audit log
+    writeAuditLog({
+      entity_type: 'work_item',
+      entity_id: String(workItem.id),
+      action: 'create',
+      source: 'gantt',
+      new_values_json: JSON.stringify(workItem),
+    });
+
     return { success: true, data: workItem };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -547,6 +598,9 @@ function handleUpdateWorkItem(_event: any, id: number, data: UpdateWorkItemDTO):
   try {
     const db = getDatabase();
     const now = new Date().toISOString();
+
+    // Get old values for audit log before updating
+    const oldWorkItem = db.prepare('SELECT * FROM work_items WHERE id = ?').get(id) as WorkItem | undefined;
 
     const updates: string[] = [];
     const values: any[] = [];
@@ -591,17 +645,62 @@ function handleUpdateWorkItem(_event: any, id: number, data: UpdateWorkItemDTO):
     db.prepare(`UPDATE work_items SET ${updates.join(', ')} WHERE id = ?`).run(...values);
 
     const workItem = db.prepare('SELECT * FROM work_items WHERE id = ?').get(id) as WorkItem;
+
+    // Write audit log
+    if (oldWorkItem) {
+      writeAuditLog({
+        entity_type: 'work_item',
+        entity_id: String(id),
+        action: 'update',
+        source: 'gantt',
+        old_values_json: JSON.stringify(oldWorkItem),
+        new_values_json: JSON.stringify(workItem),
+      });
+    }
+
     return { success: true, data: workItem };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-function handleDeleteWorkItem(_event: any, id: number): IPCResponse<void> {
+function handleDeleteWorkItem(_event: any, id: number): IPCResponse<{ deletedIds: number[] }> {
   try {
     const db = getDatabase();
+
+    // Get the item being deleted for audit log
+    const workItem = db.prepare('SELECT * FROM work_items WHERE id = ?').get(id) as WorkItem | undefined;
+
+    // Get child items that will be cascade deleted
+    const childItems = db.prepare('SELECT * FROM work_items WHERE parent_id = ?').all(id) as WorkItem[];
+
+    // Delete the item (CASCADE will delete children)
     db.prepare('DELETE FROM work_items WHERE id = ?').run(id);
-    return { success: true };
+
+    // Write audit log for the deleted item
+    if (workItem) {
+      writeAuditLog({
+        entity_type: 'work_item',
+        entity_id: String(id),
+        action: 'delete',
+        source: 'gantt',
+        old_values_json: JSON.stringify(workItem),
+      });
+    }
+
+    // Write audit logs for cascade-deleted children
+    for (const child of childItems) {
+      writeAuditLog({
+        entity_type: 'work_item',
+        entity_id: String(child.id),
+        action: 'delete',
+        source: 'gantt',
+        old_values_json: JSON.stringify(child),
+      });
+    }
+
+    const deletedIds = [id, ...childItems.map(c => c.id)];
+    return { success: true, data: { deletedIds } };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

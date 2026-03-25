@@ -270,7 +270,7 @@ export function PortfolioPage() {
 
   const { projects, loadProjects, isLoading: projectsLoading } = useProjectStore();
 
-  const { workItems, loadAllWorkItems, isLoading: workItemsLoading, isSaving } = useWorkItemStore();
+  const { workItems = [], loadAllWorkItems, isLoading: workItemsLoading, isSaving } = useWorkItemStore();
 
   const { t } = useI18n();
 
