@@ -19,10 +19,7 @@ import React, {
   useState, useMemo, useRef, useCallback, useEffect,
 } from 'react';
 import {
-  Tag, Select, Button, App,
-
-  Form, Modal, DatePicker, Input, Popconfirm, Tooltip,
-
+  Tag, Select, Button, App, Form, Modal, DatePicker, Input, Popconfirm, Tooltip, theme,
 } from 'antd';
 import {
   ArrowLeftOutlined, CalendarOutlined, DownloadOutlined,
@@ -80,19 +77,7 @@ interface BarDragState {
   originalDurationMs: number;
 }
 
-// ─── color palette ────────────────────────────────────────────────────────────
-
-const colors = {
-  bg:             '#FAFAFA',
-  surface:        '#FFFFFF',
-  border:         '#F0F0F0',
-  borderMedium:   '#D9D9D9',
-  borderStrong:   '#BFBFBF',
-  text:           '#262626',
-  textMuted:      '#8C8C8C',
-  hover:          '#FAFAFA',
-  selected:       '#E6F7FF',
-};
+// ─── visual config ────────────────────────────────────────────────────────────
 
 // ─── visual config ────────────────────────────────────────────────────────────
 
@@ -109,14 +94,22 @@ const TYPE_COLOR: Record<WorkItemType, string> = {
   remark:    '#fadb14',
 };
 
-function barStyle(type: WorkItemType, status: WorkItemStatus, isChild: boolean): React.CSSProperties {
-  const base   = TYPE_COLOR[type];
+// Status colors for UI (using Ant Design tag colors)
+const STATUS_UI_COLOR: Record<WorkItemStatus, { color: string; bg: string }> = {
+  not_started: { color: '#8c8c8c', bg: '#f5f5f5' },
+  in_progress: { color: '#1677ff', bg: '#e6f4ff' },
+  done:        { color: '#52c41a', bg: '#f6ffed' },
+  blocked:     { color: '#ff4d4f', bg: '#fff1f0' },
+};
+
+function barStyle(type: WorkItemType, status: WorkItemStatus, isChild: boolean, colors: any): React.CSSProperties {
+  const base = TYPE_COLOR[type];
   const height = isChild ? 10 : 14;
-  const top    = isChild ? (ROW_HEIGHT - 10) / 2 : (ROW_HEIGHT - 14) / 2;
+  const top = isChild ? (ROW_HEIGHT - 10) / 2 : (ROW_HEIGHT - 14) / 2;
   if (status === 'done')
     return { background: '#52c41a', height, top, opacity: 0.9 };
   if (status === 'blocked')
-    return { background: `repeating-linear-gradient(45deg,${base},${base} 4px,#fff0 4px,#fff0 8px)`, backgroundColor: '#ffa39e', height, top, opacity: 0.95 };
+    return { background: `repeating-linear-gradient(45deg,${base},${base} 4px,${colors.surface} 4px,${colors.surface} 8px)`, backgroundColor: '#ffa39e', height, top, opacity: 0.95 };
   if (status === 'not_started')
     return { background: 'transparent', border: `2px solid ${base}`, height, top, opacity: 0.7 };
   return { background: base, height, top };
@@ -177,7 +170,23 @@ export function WorkItemExcelGantt({
   onWorkItemDelete,
 }: WorkItemExcelGanttProps) {
   const { message } = App.useApp();
-  const [sortKey, setSortKey]                 = useState<WorkItemSortKey>('start_date');
+  const { token } = theme.useToken();
+
+  // Theme-aware colors using Ant Design v5 tokens
+  const colors = useMemo(() => ({
+    bg: token.colorBgContainer,
+    surface: token.colorBgElevated,
+    border: token.colorBorderSecondary,
+    borderMedium: token.colorBorder,
+    borderStrong: token.colorBorder,
+    text: token.colorText,
+    textMuted: token.colorTextSecondary,
+    hover: token.colorFillAlter,
+    selected: token.colorPrimaryBg,
+    selectedBorder: token.colorPrimary,
+  }), [token]);
+
+  const [sortKey, setSortKey] = useState<WorkItemSortKey>('start_date');
   const [sortDirection, setSortDirection]     = useState<'asc' | 'desc'>('asc');
   const [columnModalVisible, setColumnModalVisible] = useState(false);
   const [columnOrder, setColumnOrder]         = useState<WorkItemColumnKey[]>(['title', 'owner', 'priority', 'status', 'start_date', 'end_date']);
@@ -832,15 +841,17 @@ export function WorkItemExcelGantt({
             position: 'fixed',
             left: dragTooltip.x,
             top: dragTooltip.y,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            color: '#fff',
+            backgroundColor: token.colorBgSpotlight,
+            color: token.colorText,
+            border: `1px solid ${token.colorBorder}`,
             padding: '6px 12px',
-            borderRadius: '4px',
+            borderRadius: `${token.borderRadius}px`,
             fontSize: '12px',
             fontWeight: 500,
             zIndex: 9999,
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
+            boxShadow: token.boxShadow,
           }}
         >
           {dragTooltip.text}
@@ -856,7 +867,7 @@ export function WorkItemExcelGantt({
             <h1 className="text-xl font-semibold leading-tight" style={{ color: colors.text }}>{project.name}</h1>
             <p className="text-sm leading-snug" style={{ color: colors.textMuted }}>
               {stats.total} items · {stats.done} done · {stats.in_progress} in progress
-              {stats.blocked > 0 && <span style={{ color: '#F5222D' }}> · {stats.blocked} blocked</span>}
+              {stats.blocked > 0 && <span style={{ color: token.colorError }}> · {stats.blocked} blocked</span>}
             </p>
           </div>
         </div>
@@ -948,7 +959,8 @@ export function WorkItemExcelGantt({
               visibleRows.map(row => (
                 <LeftRow key={row.id} row={row} onToggle={toggleCollapse} onEdit={openEditModal}
                   getColumnOrder={getColumnOrder}
-                  onDelete={onWorkItemDelete ? (id => onWorkItemDelete(id)) : undefined} />
+                  onDelete={onWorkItemDelete ? (id => onWorkItemDelete(id)) : undefined}
+                  colors={colors} token={token} />
               ))
             )}
             <div style={{ height: Math.max(0, (flatRows.length - visRows.end) * ROW_HEIGHT) }} />
@@ -970,7 +982,7 @@ export function WorkItemExcelGantt({
 
           {/* Drag splitter */}
           <div className="absolute top-0 bottom-0 left-0 flex items-center justify-center cursor-col-resize z-[100]"
-            style={{ width: 16, backgroundColor: isDraggingTimeline ? '#3B82F6' : colors.borderStrong, marginLeft: -2, transition: 'background-color 0.15s' }}
+            style={{ width: 16, backgroundColor: isDraggingTimeline ? token.colorPrimary : colors.borderStrong, marginLeft: -2, transition: 'background-color 0.15s' }}
             onMouseDown={handleTimelineDragStart}>
             <div className="w-1 h-12 rounded-full bg-white opacity-60" style={{ pointerEvents: 'none' }} />
           </div>
@@ -984,46 +996,46 @@ export function WorkItemExcelGantt({
                 onMouseDown={handleTimelinePanStart}>
                 <div style={{ width: timelineWidth, minWidth: '100%' }}>
                   {scale === 'day' ? (
-                    <div className="flex flex-col" style={{ width: timelineWidth, backgroundColor: '#FFF' }}>
-                      <div className="flex" style={{ height: 24, backgroundColor: '#F7F7F7', borderBottom: '1px solid #DDD' }}>
+                    <div className="flex flex-col" style={{ width: timelineWidth, backgroundColor: colors.surface }}>
+                      <div className="flex" style={{ height: 24, backgroundColor: colors.bg, borderBottom: `1px solid ${colors.borderMedium}` }}>
                         {yearBands.map((b, i) => (
                           <div key={i} className="flex items-center justify-center text-xs font-bold"
-                            style={{ width: b.span * colWidth, minWidth: b.span * colWidth, flexShrink: 0, borderRight: '3px solid #999', color: '#222', boxSizing: 'border-box' }}>
+                            style={{ width: b.span * colWidth, minWidth: b.span * colWidth, flexShrink: 0, borderRight: `3px solid ${colors.borderStrong}`, color: colors.text, boxSizing: 'border-box' }}>
                             {b.year}
                           </div>
                         ))}
                       </div>
-                      <div className="flex" style={{ height: 24, backgroundColor: '#FAFAFA', borderBottom: '1px solid #DDD' }}>
+                      <div className="flex" style={{ height: 24, backgroundColor: colors.hover, borderBottom: `1px solid ${colors.borderMedium}` }}>
                         {monthBands.map((b, i) => (
                           <div key={i} className="flex items-center justify-center text-xs font-semibold"
-                            style={{ width: b.span * colWidth, minWidth: b.span * colWidth, flexShrink: 0, borderRight: '2px solid #BBB', color: '#333', boxSizing: 'border-box' }}>
+                            style={{ width: b.span * colWidth, minWidth: b.span * colWidth, flexShrink: 0, borderRight: `2px solid ${colors.border}`, color: colors.text, boxSizing: 'border-box' }}>
                             {b.label}
                           </div>
                         ))}
                       </div>
-                      <div className="flex" style={{ height: 24, backgroundColor: '#FFF' }}>
+                      <div className="flex" style={{ height: 24, backgroundColor: colors.surface }}>
                         {columns.map((col, idx) => (
                           <div key={idx} className="flex items-center justify-center text-[10px]"
-                            style={{ width: colWidth, minWidth: colWidth, flexShrink: 0, borderRight: '1px solid #E5E5E5', color: '#666', boxSizing: 'border-box', backgroundColor: (col as any).isWeekend ? '#F9F9F9' : 'transparent' }}>
+                            style={{ width: colWidth, minWidth: colWidth, flexShrink: 0, borderRight: `1px solid ${colors.border}`, color: colors.textMuted, boxSizing: 'border-box', backgroundColor: (col as any).isWeekend ? colors.hover : 'transparent' }}>
                             {col.label}
                           </div>
                         ))}
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col" style={{ width: timelineWidth, backgroundColor: '#FFF' }}>
-                      <div className="flex" style={{ height: 30, backgroundColor: '#F7F7F7', borderBottom: '1px solid #DDD' }}>
+                    <div className="flex flex-col" style={{ width: timelineWidth, backgroundColor: colors.surface }}>
+                      <div className="flex" style={{ height: 30, backgroundColor: colors.bg, borderBottom: `1px solid ${colors.borderMedium}` }}>
                         {yearBands.map((b, i) => (
                           <div key={i} className="flex items-center justify-center text-sm font-bold"
-                            style={{ width: b.span * colWidth, minWidth: b.span * colWidth, flexShrink: 0, borderRight: '3px solid #999', color: '#222', boxSizing: 'border-box' }}>
+                            style={{ width: b.span * colWidth, minWidth: b.span * colWidth, flexShrink: 0, borderRight: `3px solid ${colors.borderStrong}`, color: colors.text, boxSizing: 'border-box' }}>
                             {b.year}
                           </div>
                         ))}
                       </div>
-                      <div className="flex" style={{ height: 30, backgroundColor: '#FFF', borderBottom: '1px solid #DDD' }}>
+                      <div className="flex" style={{ height: 30, backgroundColor: colors.surface, borderBottom: `1px solid ${colors.borderMedium}` }}>
                         {columns.map((col, idx) => (
                           <div key={idx} className="flex items-center justify-center text-xs font-medium"
-                            style={{ width: colWidth, minWidth: colWidth, flexShrink: 0, borderRight: '1px solid #DDD', color: '#555', boxSizing: 'border-box' }}>
+                            style={{ width: colWidth, minWidth: colWidth, flexShrink: 0, borderRight: `1px solid ${colors.border}`, color: colors.textMuted, boxSizing: 'border-box' }}>
                             {col.label}
                           </div>
                         ))}
@@ -1046,7 +1058,7 @@ export function WorkItemExcelGantt({
 
                   {visibleRows.map(row => {
                     const pos            = getBarPos(row);
-                    const bStyle         = barStyle(row.type, row.status, row.depth === 1);
+                    const bStyle         = barStyle(row.type, row.status, row.depth === 1, colors);
                     const isDraggingThis = isBarDragging && barDragRef.current?.rowId === row.id;
 
                     return (
@@ -1132,7 +1144,7 @@ export function WorkItemExcelGantt({
 
                               <div
                                 className="absolute top-0 bottom-0 left-0"
-                                style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: 'rgba(255,255,255,0.20)' }}
+                                style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: token.colorBgTextDisabled }}
                                 onMouseDown={e => { e.stopPropagation(); handleBarMouseDown(e, row, 'resize-start'); }}
                               />
 
@@ -1141,7 +1153,7 @@ export function WorkItemExcelGantt({
 
                                 className="absolute top-0 bottom-0 right-0"
 
-                                style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: 'rgba(255,255,255,0.25)' }}
+                                style={{ width: RESIZE_HANDLE_PX, cursor: 'ew-resize', backgroundColor: token.colorBgTextDisabled }}
 
                                 onMouseDown={e => { e.stopPropagation(); handleBarMouseDown(e, row, 'resize-end'); }}
                               />
@@ -1159,7 +1171,7 @@ export function WorkItemExcelGantt({
                   {/* Today line */}
                   {todayLineLeft >= 0 && (
                     <div className="absolute top-0 pointer-events-none z-20"
-                      style={{ left: todayLineLeft, width: 1, bottom: 0, borderLeft: '2px dashed #FA8C16', opacity: 0.65 }} />
+                      style={{ left: todayLineLeft, width: 1, bottom: 0, borderLeft: `2px dashed ${token.colorWarning}`, opacity: 0.65 }} />
                   )}
                 </div>
               </div>
@@ -1326,12 +1338,14 @@ interface LeftRowProps {
   onEdit:    (row: FlatRow) => void;
   getColumnOrder: (key: WorkItemColumnKey) => number;
   onDelete?: (id: number) => void;
+  colors:    ReturnType<typeof useMemo<any, any>>; // Theme colors
+  token:     any; // Ant Design tokens
 }
 
-function LeftRow({ row, onToggle, onEdit, getColumnOrder, onDelete }: LeftRowProps) {
+function LeftRow({ row, onToggle, onEdit, getColumnOrder, onDelete, colors, token }: LeftRowProps) {
   const [hovered, setHovered] = useState(false);
   const isChild   = row.depth === 1;
-  const bgDefault = isChild ? '#F7F9FC' : 'transparent';
+  const bgDefault = isChild ? colors.hover : 'transparent';
 
   return (
     <div
@@ -1341,7 +1355,7 @@ function LeftRow({ row, onToggle, onEdit, getColumnOrder, onDelete }: LeftRowPro
         height: ROW_HEIGHT,
         borderBottom: `1px solid ${colors.border}`,
         borderLeft: isChild ? `3px solid ${colors.borderMedium}` : '3px solid transparent',
-        backgroundColor: hovered ? (isChild ? '#E8F0FE' : colors.selected) : bgDefault,
+        backgroundColor: hovered ? colors.selected : bgDefault,
         color: colors.text,
         cursor: 'default',
       }}
@@ -1403,7 +1417,7 @@ function LeftRow({ row, onToggle, onEdit, getColumnOrder, onDelete }: LeftRowPro
           className="absolute right-0 top-0 h-full flex items-center gap-0.5 z-10 pointer-events-auto"
           style={{
             paddingRight: 6, paddingLeft: 20,
-            background: `linear-gradient(to right, transparent, ${isChild ? '#E8F0FE' : colors.selected} 30%)`,
+            background: `linear-gradient(to right, transparent, ${colors.selected} 30%)`,
           }}
           onClick={e => e.stopPropagation()}
         >
@@ -1421,7 +1435,7 @@ function LeftRow({ row, onToggle, onEdit, getColumnOrder, onDelete }: LeftRowPro
             >
               <Tooltip title="Delete">
                 <Button type="text" size="small" icon={<DeleteOutlined />}
-                  style={{ color: '#f5222d', padding: '0 4px' }} />
+                  style={{ color: token.colorError, padding: '0 4px' }} />
               </Tooltip>
             </Popconfirm>
           )}

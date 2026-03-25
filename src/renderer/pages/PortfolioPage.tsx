@@ -380,27 +380,18 @@ export function PortfolioPage() {
           </div>
 
         ) : selectedProject ? (
-
-          <WorkItemExcelGantt
-
-            project={selectedProject}
-
-            workItems={workItems.filter((w) => w.project_id === selectedProject.id)}
-
-            loading={isLoading}
-
-            isSaving={isSaving}
-
-            onBack={handleBack}
-
-            onWorkItemUpdate={handleWorkItemUpdate}
-
-            onWorkItemCreate={handleWorkItemCreate}
-
-            onWorkItemDelete={handleWorkItemDelete}
-
-          />
-
+          <div className="h-full">
+            <WorkItemExcelGantt
+              project={selectedProject}
+              workItems={workItems.filter((w) => w.project_id === selectedProject.id)}
+              loading={isLoading}
+              isSaving={isSaving}
+              onBack={handleBack}
+              onWorkItemUpdate={handleWorkItemUpdate}
+              onWorkItemCreate={handleWorkItemCreate}
+              onWorkItemDelete={handleWorkItemDelete}
+            />
+          </div>
         ) : null}
 
       </div>
