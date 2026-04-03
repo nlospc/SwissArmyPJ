@@ -4,15 +4,69 @@
  * Provides a React-friendly interface to vis-timeline with:
  * - Lifecycle management (mount, update, unmount)
  * - Event handling (drag, click, zoom)
- * - TypeScript support
  * - Data synchronization between React state and vis-timeline DataSet
  */
 
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+
 import { Timeline } from 'vis-timeline/standalone';
+
 import { DataSet } from 'vis-data';
+
 import type { TimelineOptions, TimelineItem, TimelineGroup } from 'vis-timeline/types';
+
 import 'vis-timeline/styles/vis-timeline-graph2d.css';
+
+
+
+function normalizeTimelineValue(value: unknown): unknown {
+
+  if (value instanceof Date) {
+
+    return value.toISOString();
+
+  }
+
+
+
+  if (Array.isArray(value)) {
+
+    return value.map(normalizeTimelineValue);
+
+  }
+
+
+
+  if (value && typeof value === 'object') {
+
+    return Object.keys(value as Record<string, unknown>)
+
+      .sort()
+
+      .reduce<Record<string, unknown>>((accumulator, key) => {
+
+        accumulator[key] = normalizeTimelineValue((value as Record<string, unknown>)[key]);
+
+        return accumulator;
+
+      }, {});
+
+  }
+
+
+
+  return value;
+
+}
+
+
+
+function isSameTimelineRecord(current: unknown, next: unknown): boolean {
+
+  return JSON.stringify(normalizeTimelineValue(current)) === JSON.stringify(normalizeTimelineValue(next));
+
+}
+
 
 export interface VisTimelineItem {
   id: string | number;
@@ -49,7 +103,15 @@ export interface VisTimelineWrapperProps {
   onSelect?: (properties: { items: Array<string | number>; event: any }) => void;
 }
 
-export const VisTimelineWrapper: React.FC<VisTimelineWrapperProps> = ({
+export interface VisTimelineHandle {
+  zoomIn: (percentage?: number) => void;
+  zoomOut: (percentage?: number) => void;
+  moveTo: (date: Date) => void;
+  fit: () => void;
+  setWindow: (start: Date, end: Date) => void;
+}
+
+export const VisTimelineWrapper = forwardRef<VisTimelineHandle, VisTimelineWrapperProps>(({
   items,
   groups,
   options,
@@ -63,35 +125,89 @@ export const VisTimelineWrapper: React.FC<VisTimelineWrapperProps> = ({
   onItemRemove,
   onRangeChange,
   onSelect,
-}) => {
+}, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<Timeline | null>(null);
-  const itemsDataSetRef = useRef<DataSet<TimelineItem> | null>(null);
-  const groupsDataSetRef = useRef<DataSet<TimelineGroup> | null>(null);
+  const itemsDataSetRef = useRef<DataSet<TimelineItem>>(new DataSet<TimelineItem>());
+  const groupsDataSetRef = useRef<DataSet<TimelineGroup>>(new DataSet<TimelineGroup>());
+
+  // Latest handlers ref to avoid re-initializing timeline when handlers change
+  const handlersRef = useRef({
+    onItemUpdate,
+    onItemMove,
+    onItemAdd,
+    onItemRemove,
+    onItemClick,
+    onItemDoubleClick,
+    onSelect,
+    onRangeChange
+  });
+
+  useEffect(() => {
+    handlersRef.current = {
+      onItemUpdate,
+      onItemMove,
+      onItemAdd,
+      onItemRemove,
+      onItemClick,
+      onItemDoubleClick,
+      onSelect,
+      onRangeChange
+    };
+  }, [onItemUpdate, onItemMove, onItemAdd, onItemRemove, onItemClick, onItemDoubleClick, onSelect, onRangeChange]);
 
   // Initialize timeline on mount
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Create DataSets
-    itemsDataSetRef.current = new DataSet<TimelineItem>(items as any);
-    groupsDataSetRef.current = groups ? new DataSet<TimelineGroup>(groups) : undefined;
-
-    // Default options
-    const defaultOptions: TimelineOptions = {
+    // Default options with CRUD callbacks integrated
+    const mergedOptions: TimelineOptions = {
+      width: '100%',
+      height: '100%',
       editable: {
         updateTime: true,
         updateGroup: false,
         add: false,
         remove: false,
       },
-      stack: true,
+      stack: false,
       orientation: 'top',
-      zoomMin: 86400000, // 1 day in milliseconds
-      zoomMax: 31536000000, // 1 year in milliseconds
+      zoomMin: 1000 * 60 * 60 * 24 * 3, // 3 days
+      zoomMax: 1000 * 60 * 60 * 24 * 365 * 5, // 5 years
       margin: {
-        item: 10,
+        item: { horizontal: 0, vertical: 8 },
         axis: 5,
+      },
+      // Bridge vis-timeline callbacks to React props
+      onUpdate: (item: any, callback: any) => {
+        if (handlersRef.current.onItemUpdate) {
+          handlersRef.current.onItemUpdate(item as VisTimelineItem, callback);
+        } else {
+          callback(item);
+        }
+      },
+      onMove: (item: any, callback: any) => {
+        if (handlersRef.current.onItemMove) {
+          handlersRef.current.onItemMove(item as VisTimelineItem, callback);
+        } else if (handlersRef.current.onItemUpdate) {
+          handlersRef.current.onItemUpdate(item as VisTimelineItem, callback);
+        } else {
+          callback(item);
+        }
+      },
+      onAdd: (item: any, callback: any) => {
+        if (handlersRef.current.onItemAdd) {
+          handlersRef.current.onItemAdd(item as VisTimelineItem, callback);
+        } else {
+          callback(null);
+        }
+      },
+      onRemove: (item: any, callback: any) => {
+        if (handlersRef.current.onItemRemove) {
+          handlersRef.current.onItemRemove(item as VisTimelineItem, callback);
+        } else {
+          callback(null);
+        }
       },
       ...options,
     };
@@ -100,197 +216,125 @@ export const VisTimelineWrapper: React.FC<VisTimelineWrapperProps> = ({
     timelineRef.current = new Timeline(
       containerRef.current,
       itemsDataSetRef.current as any,
-      groupsDataSetRef.current as any,
-      defaultOptions
+      groups ? (groupsDataSetRef.current as any) : undefined,
+      mergedOptions
     );
 
-    // Cleanup on unmount
+    // Event listeners for non-CRUD events
+    timelineRef.current.on('click', (props) => {
+      if (props.item && handlersRef.current.onItemClick) {
+        const item = itemsDataSetRef.current.get(props.item);
+        if (item) handlersRef.current.onItemClick(item as any);
+      }
+    });
+
+    timelineRef.current.on('doubleClick', (props) => {
+      if (props.item && handlersRef.current.onItemDoubleClick) {
+        const item = itemsDataSetRef.current.get(props.item);
+        if (item) handlersRef.current.onItemDoubleClick(item as any);
+      }
+    });
+
+    timelineRef.current.on('select', (props) => {
+      if (handlersRef.current.onSelect) handlersRef.current.onSelect(props);
+    });
+
+    timelineRef.current.on('rangechanged', (props) => {
+      if (handlersRef.current.onRangeChange) {
+        handlersRef.current.onRangeChange({
+          start: props.start,
+          end: props.end,
+          byUser: props.byUser
+        });
+      }
+    });
+
+    // Cleanup
     return () => {
       if (timelineRef.current) {
         timelineRef.current.destroy();
         timelineRef.current = null;
       }
     };
-  }, []); // Only run once on mount
+  }, []); // Run once
 
-  // Update items when they change
+  // Update DataSets when items/groups change
+  useEffect(() => {
+    const itemsDataSet = itemsDataSetRef.current;
+    if (!itemsDataSet) return;
+
+    const nextItemsById = new Map(items.map((item) => [item.id, item]));
+    const currentIds = itemsDataSet.getIds();
+    const idsToRemove = currentIds.filter((id) => !nextItemsById.has(id));
+
+    if (idsToRemove.length > 0) {
+      itemsDataSet.remove(idsToRemove);
+    }
+
+    const itemsToUpsert = items.filter((item) => {
+      const currentItem = itemsDataSet.get(item.id);
+      return !currentItem || !isSameTimelineRecord(currentItem, item);
+    });
+
+    if (itemsToUpsert.length > 0) {
+      itemsDataSet.update(itemsToUpsert as any);
+    }
+  }, [items]);
+
+  useEffect(() => {
+    const groupsDataSet = groupsDataSetRef.current;
+    if (!groupsDataSet) return;
+
+    if (!groups || groups.length === 0) {
+      const currentIds = groupsDataSet.getIds();
+      if (currentIds.length > 0) {
+        groupsDataSet.remove(currentIds);
+      }
+      return;
+    }
+
+    const nextGroupsById = new Map(groups.map((group) => [group.id, group]));
+    const currentIds = groupsDataSet.getIds();
+    const idsToRemove = currentIds.filter((id) => !nextGroupsById.has(id));
+
+    if (idsToRemove.length > 0) {
+      groupsDataSet.remove(idsToRemove);
+    }
+
+    const groupsToUpsert = groups.filter((group) => {
+      const currentGroup = groupsDataSet.get(group.id);
+      return !currentGroup || !isSameTimelineRecord(currentGroup, group);
+    });
+
+    if (groupsToUpsert.length > 0) {
+      groupsDataSet.update(groupsToUpsert as any);
+    }
+  }, [groups]);
+
+  // Update options dynamically
   useEffect(() => {
-    if (!itemsDataSetRef.current) return;
-
-    const currentIds = itemsDataSetRef.current.getIds();
-    const newIds = items.map(item => item.id);
-
-    // Remove items that no longer exist
-    const idsToRemove = currentIds.filter(id => !newIds.includes(id));
-    if (idsToRemove.length > 0) {
-      itemsDataSetRef.current.remove(idsToRemove);
+    if (timelineRef.current && options) {
+      timelineRef.current.setOptions(options);
     }
-
-    // Update or add items
-    items.forEach(item => {
-      const existing = itemsDataSetRef.current!.get(item.id);
-      if (existing) {
-        // Update existing item
-        itemsDataSetRef.current!.update(item as any);
-      } else {
-        // Add new item
-        itemsDataSetRef.current!.add(item as any);
-      }
-    });
-  }, [items]);
-
-  // Update groups when they change
-  useEffect(() => {
-    if (!groups || !groupsDataSetRef.current || !timelineRef.current) return;
-
-    const currentIds = groupsDataSetRef.current.getIds();
-    const newIds = groups.map(group => group.id);
-
-    // Remove groups that no longer exist
-    const idsToRemove = currentIds.filter(id => !newIds.includes(id));
-    if (idsToRemove.length > 0) {
-      groupsDataSetRef.current.remove(idsToRemove);
-    }
-
-    // Update or add groups
-    groups.forEach(group => {
-      const existing = groupsDataSetRef.current!.get(group.id);
-      if (existing) {
-        groupsDataSetRef.current!.update(group);
-      } else {
-        groupsDataSetRef.current!.add(group);
-      }
-    });
-  }, [groups]);
-
-  // Update options when they change
-  useEffect(() => {
-    if (!timelineRef.current || !options) return;
-    timelineRef.current.setOptions(options);
   }, [options]);
 
-  // Event handlers setup
-  useEffect(() => {
-    const timeline = timelineRef.current;
-    if (!timeline) return;
-
-    // Click event
-    const handleClick = (properties: any) => {
-      if (properties.item && onItemClick) {
-        const item = itemsDataSetRef.current?.get(properties.item);
-        if (item) {
-          onItemClick(item as VisTimelineItem);
-        }
-      }
-    };
-
-    // Double-click event
-    const handleDoubleClick = (properties: any) => {
-      if (properties.item && onItemDoubleClick) {
-        const item = itemsDataSetRef.current?.get(properties.item);
-        if (item) {
-          onItemDoubleClick(item as VisTimelineItem);
-        }
-      }
-    };
-
-    // Item updated event (drag to change time)
-    const handleItemUpdate = (item: any, callback: any) => {
-      if (onItemUpdate) {
-        onItemUpdate(item as VisTimelineItem, callback);
-      } else {
-        callback(item); // Accept change by default
-      }
-    };
-
-    // Item moved event (drag to different position/group)
-    const handleItemMove = (item: any, callback: any) => {
-      if (onItemMove) {
-        onItemMove(item as VisTimelineItem, callback);
-      } else {
-        callback(item); // Accept change by default
-      }
-    };
-
-    // Item added event
-    const handleItemAdd = (item: any, callback: any) => {
-      if (onItemAdd) {
-        onItemAdd(item as VisTimelineItem, callback);
-      } else {
-        callback(null); // Cancel by default (we don't allow adding from timeline)
-      }
-    };
-
-    // Item removed event
-    const handleItemRemove = (item: any, callback: any) => {
-      if (onItemRemove) {
-        onItemRemove(item as VisTimelineItem, callback);
-      } else {
-        callback(null); // Cancel by default
-      }
-    };
-
-    // Range changed event (zoom/pan)
-    const handleRangeChanged = (properties: any) => {
-      if (onRangeChange) {
-        onRangeChange({
-          start: new Date(properties.start),
-          end: new Date(properties.end),
-          byUser: properties.byUser,
-        });
-      }
-    };
-
-    // Select event
-    const handleSelect = (properties: any) => {
-      if (onSelect) {
-        onSelect(properties);
-      }
-    };
-
-    // Register event listeners
-    timeline.on('click', handleClick);
-    timeline.on('doubleClick', handleDoubleClick);
-    timeline.on('rangechanged', handleRangeChanged);
-    timeline.on('select', handleSelect);
-
-    // Editable events (only if editable is enabled)
-    if (options?.editable) {
-      if (typeof options.editable === 'boolean' || options.editable.updateTime) {
-        timeline.on('timechange', handleItemUpdate);
-      }
-      if (typeof options.editable === 'boolean' || options.editable.updateGroup) {
-        timeline.on('itemover', handleItemMove);
-      }
-      if (typeof options.editable === 'boolean' || options.editable.add) {
-        timeline.on('add', handleItemAdd);
-      }
-      if (typeof options.editable === 'boolean' || options.editable.remove) {
-        timeline.on('remove', handleItemRemove);
-      }
-    }
-
-    // Cleanup listeners on unmount or when handlers change
-    return () => {
-      timeline.off('click', handleClick);
-      timeline.off('doubleClick', handleDoubleClick);
-      timeline.off('rangechanged', handleRangeChanged);
-      timeline.off('select', handleSelect);
-      timeline.off('timechange', handleItemUpdate);
-      timeline.off('itemover', handleItemMove);
-      timeline.off('add', handleItemAdd);
-      timeline.off('remove', handleItemRemove);
-    };
-  }, [onItemClick, onItemDoubleClick, onItemUpdate, onItemMove, onItemAdd, onItemRemove, onRangeChange, onSelect, options?.editable]);
-
-  // Expose timeline methods via ref callback
-  const getTimeline = useCallback(() => timelineRef.current, []);
-
-  // Public methods that can be called from parent
-  useEffect(() => {
-    // Attach public methods to component instance
-    (containerRef.current as any)?.setAttribute('data-timeline-ready', 'true');
-  }, []);
+  useImperativeHandle(ref, () => ({
+    zoomIn: (percentage = 0.2) => {
+      timelineRef.current?.zoomIn(percentage);
+    },
+    zoomOut: (percentage = 0.2) => {
+      timelineRef.current?.zoomOut(percentage);
+    },
+    moveTo: (date: Date) => {
+      timelineRef.current?.moveTo(date);
+    },
+    fit: () => {
+      timelineRef.current?.fit();
+    },
+    setWindow: (start: Date, end: Date) => {
+      timelineRef.current?.setWindow(start, end, { animation: true });
+    },
+  }), []);
 
   return (
     <div
@@ -299,15 +343,11 @@ export const VisTimelineWrapper: React.FC<VisTimelineWrapperProps> = ({
       style={{
         width: '100%',
         height: '100%',
+        minHeight: '200px', // Ensure visibility
         ...style,
       }}
     />
   );
-};
+});
 
-// Export helper function to get timeline instance from ref
-export const getTimelineFromRef = (ref: React.RefObject<HTMLDivElement>): Timeline | null => {
-  // This is a workaround since we can't expose the timeline ref directly
-  // In practice, you'd use a custom ref or imperative handle
-  return null;
-};
+VisTimelineWrapper.displayName = 'VisTimelineWrapper';
