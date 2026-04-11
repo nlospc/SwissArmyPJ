@@ -1,47 +1,50 @@
 # SwissArmyPM
 
-A lightweight desktop project management tool with AI integration.
+面向**项目经理**的桌面工作台。
 
-## 🚀 Getting Started
+当前明确方向：先做一个可独立使用的 PM Workspace，让项目经理能快速维护和查看项目关键事实，而不是继续扩展成组合治理平台或个人效率工具。
+
+## 当前产品中心
+
+- 项目画布
+- 干系人
+- 时间规划表
+- 风险登记册
+- 工作包
+- 资料/证据
+
+## 当前原则
+
+- **项目经理唯一核心用户**
+- **桌面独立可用**，不依赖外部系统才能成立
+- **手工 CRUD 优先**，AI/Agent 先做建议，不先做自动改写
+- **证据可追溯**，未来回答关键问题时要能给来源
+
+## 仓库现状提醒
+
+仓库里仍有大量旧方向内容，包括：
+
+- Portfolio Dashboard
+- Inbox
+- My Work / Pomodoro
+- 通用 work item / todo 结构
+
+这些是历史实现资产，不再代表当前产品定义。
+
+## 关键文档
+
+- `CLAUDE.md`：当前最高优先级工作说明
+- `docs/MEMORY.md`：已确认产品事实与废弃假设
+- `docs/PRD/PRD-001-Master.md`：新的主 PRD
+- `docs/overview.md`：面向项目本身的概览
+
+## 开发
 
 ```bash
 npm install
 npm run dev
 ```
 
-## 🎨 Tech Stack
+## 备注
 
-- **Electron** - Cross-platform desktop framework
-- **React 19** - UI library
-- **Ant Design v5** - Enterprise UI component library
-- **TypeScript** - Type-safe development
-- **Vite** - Fast build tool
-- **Zustand** - State management
-- **SQLite + FTS5** - Local database with full-text search
-
-> 📖 **正在迁移中**: 项目正在从 Radix UI 迁移到 Ant Design v5。详见 [迁移指南](./docs/migration-guide.md)
-
-## 📁 Project Structure
-
-```
-SwissArmyPM/
-├── docs/              # Documentation
-├── design/            # Design system
-├── src/
-│   ├── main/         # Electron main process
-│   ├── renderer/     # React frontend
-│   └── shared/       # Shared types
-└── templates/        # App templates
-```
-
-## 📚 Documentation
-
-- [项目概述](./docs/overview.md) - Project overview
-- [快速开始](./docs/getting-started.md) - Getting started guide
-- [技术栈](./docs/tech-stack.md) - Technology stack details
-- [组件库指南](./docs/component-library.md) - Ant Design v5 integration guide
-- [迁移指南](./docs/migration-guide.md) - Migration from Radix UI to Ant Design v5
-
-## 📝 License
-
-MIT
+如果文档之间有冲突，以 `CLAUDE.md` 为准。

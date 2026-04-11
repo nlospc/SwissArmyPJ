@@ -1,136 +1,99 @@
-# PRD-001: SwissArmyPM Overview
+# PRD-001: SwissArmyPM 概述
 
-## 📋 Product Description
-SwissArmyPM is a lightweight desktop project management tool designed for developers and small teams. It combines essential PM features with AI-powered insights in a clean, fast, and intuitive interface.
+> **注意**: 本文档是 [PRD-001-Master.md](./PRD-001-Master.md) 的概述版本。完整 PRD 请参阅 Master PRD。
 
-## 🎯 Target Users
-- **Developers**: Need simple PM tools without enterprise complexity
-- **Freelancers**: Manage multiple projects efficiently
-- **Small Teams**: Collaborate without heavy infrastructure
-- **Project Managers**: Want powerful tools in a simple package
+---
 
-## ✨ Core Value Propositions
+## 产品定义
 
-### 1. Speed & Performance
-- Instant launch (< 1s)
-- Fast data operations
-- No cloud dependency delays
+SwissArmyPM 是一个**只服务项目经理的桌面工作台**。
 
-### 2. Simplicity
-- Clean, minimal interface
-- Intuitive workflows
-- Low learning curve
+核心目标：让项目经理在一个独立桌面应用中快速维护、查看、校正和追溯项目关键事实。
 
-### 3. Flexibility
-- Local data storage
-- Customizable views
-- Export capabilities
+---
 
-### 4. AI-Powered
-- Smart task suggestions
-- Automated reporting
-- Natural language interactions
+## 核心用户
 
-## 🔧 Key Features
+| 用户 | 说明 |
+|------|------|
+| **项目经理**（唯一核心用户） | 在桌面工作台中维护项目关键事实，逐步让系统基于证据辅助更新与回答 |
 
-### Project Management
-- Create and manage multiple projects
-- Track work packages and milestones
-- View project progress and status
+当前阶段不以 PMO、管理层、技术负责人为核心用户。
 
-### Gantt Charts
-- Visual task scheduling
-- Dependency management
-- Critical path analysis
-- Timeline zoom and pan
+---
 
-### Inbox
-- Drag-and-drop file processing
-- Parse tasks from documents
-- Quick task creation
+## 产品定位
 
-### Reports
-- Generate reports from templates
-- Export to PDF/CSV
-- Custom report parameters
+不是协同工具，不是 PMO 平台，不是个人效率工具。
 
-### Import/Export
-- CSV import/export
-- Backup and restore projects
-- Data portability
+它是项目经理的**独立工作台**——即使不接入 Jira / MSP / Outlook / 飞书，也能独立使用。后续会考虑像openclaw那样接入tg、飞书bot
 
-## 📊 Success Metrics
+---
 
-### User Engagement
-- Daily active users (DAU)
-- Session duration
-- Feature adoption rates
+## 核心对象
 
-### Performance
-- App launch time
-- Task creation time
-- Report generation speed
+产品围绕以下一等对象构建：
 
-### Satisfaction
-- User feedback scores
-- Bug report rates
-- Feature request trends
+| 对象 | 说明 | MVP 优先级 |
+|------|------|-----------|
+| 项目画布 (Canvas) | 项目基本信息、目标、范围、约束 | P0 |
+| 干系人 (Stakeholder) | 项目相关干系人及其角色、影响 | P0 |
+| 时间规划表 (Timeline) | 项目里程碑、阶段、交付节点 | P0 |
+| 风险登记册 (Risk Register) | 项目风险、影响、应对措施 | P0 |
+| 工作包 (Work Package) | 项目工作分解与跟踪 | P0 |
+| 证据 (Evidence) | 会议纪要、邮件、IM 摘录等来源材料 | P1 |
 
-## 🚀 Phase 1 MVP
+---
 
-### Must-Have Features
-- ✅ Project CRUD operations
-- ✅ Work package management
-- ✅ Basic Gantt chart
-- ✅ SQLite database
-- ✅ File inbox processing
-- ✅ Simple report generation
+## 产品原则
 
-### Future Roadmap
-- AI task recommendations
-- Advanced reporting
-- Team collaboration
-- Cloud sync option
-- Mobile companion app
+1. **项目经理唯一核心用户** — 优化 PM 的日常操作面
+2. **桌面独立可用优先** — 不依赖外部集成即可使用
+3. **手工 CRUD 优先于自主代理** — AI 建议，不定义数据
+4. **证据先沉淀，再自动化** — 先收证据，后做抽取
+5. **关键答案必须可追溯** — 答案 + 来源
+6. **快速更新优先于复杂流程** — 减少摩擦，不要增加仪式
 
-## 🎨 Design Philosophy
+---
 
-### Core Principles
-- **Clean**: Minimal interface, focus on content
-- **Fast**: Instant responses, no waiting
-- **Familiar**: Standard PM patterns
-- **Extensible**: Plugin architecture for growth
+## 信息架构
 
-### Visual Style
-- Light theme by default
-- High contrast for readability
-- Subtle animations
-- Professional color palette
+```
+Project List
+  └── Project Workspace
+      ├── Canvas
+      ├── Stakeholders
+      ├── Timeline
+      ├── Risks
+      ├── Work Packages
+      └── Evidence
+```
 
-## 🔐 Technical Requirements
+---
 
-### Platform Support
-- Windows 10+
-- macOS 10.15+
-- Linux (Ubuntu 18.04+)
+## 技术栈
 
-### Dependencies
-- Electron 29+
-- React 18+
-- SQLite 3
-- Node.js 20+
+| 层 | 技术 |
+|---|---|
+| 桌面框架 | Electron 29 |
+| 前端 | React 19 + TypeScript 5.7 + Vite 6 |
+| UI | Ant Design 5 + Tailwind CSS 3 |
+| 状态管理 | Zustand 5 |
+| 本地存储 | SQLite (better-sqlite3) |
 
-### Performance Targets
-- Launch time: < 1s
-- Task creation: < 100ms
-- Gantt render: < 500ms
-- Report generation: < 2s
+---
 
-## 📝 Documentation
+## 当前阶段
 
-See related PRDs for detailed feature specifications:
-- [PRD-002: Gantt Chart](./PRD-002-gantt.md)
-- [PRD-003: Inbox](./PRD-003-inbox.md)
-- [PRD-004: Reports](./PRD-004-reports.md)
-- [PRD-005: Import](./PRD-005-import.md)
-- [PRD-006: Dashboard](./PRD-006-dashboard.md)
+仓库已有可复用底座（Electron + React + SQLite），但现有实现与 PM Workspace 方向存在偏差。
+
+策略：**不是推倒重来**，而是复用底座 + 调整信息架构 + 重构领域模型 + 围绕 PM Workspace 重建上层。
+
+---
+
+## 文档关系
+
+- 本文件：概述版本（你正在看的）
+- [PRD-001-Master.md](./PRD-001-Master.md)：完整 PRD（权威来源）
+- `CLAUDE.md`（根目录）：AI 编码指令
+- `docs/MEMORY.md`：项目记忆与偏差记录

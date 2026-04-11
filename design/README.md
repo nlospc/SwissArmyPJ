@@ -1,188 +1,90 @@
-# SwissArmyPM - Local-First Project Management
+# Design README
 
-A web-based, local-first project management application built for IT project managers. All data is stored in your browser using IndexedDB - no cloud, no servers, no sign-up required.
+这个目录现在的使命，不再是延续旧的 Portfolio / My Work 叙事，而是为新的 **PM Workspace** 提供可视化设计基线。
 
-## Product Principles
+## 当前设计目标
 
-- **Local-First**: All data lives in browser storage (IndexedDB). Works completely offline.
-- **AI-Optional**: Fully functional without any AI integration. AI suggestions are optional enhancements.
-- **MSP-First**: Portfolio view for multi-project governance.
-- **Low Cognitive Load**: Designed for 30-60 second context recovery.
+SwissArmyPM 的设计应围绕一个问题展开：
 
-## Features
+**项目经理如何在最短时间内维护和理解一个项目的当前事实。**
 
-### ✅ Fully Interactive
-- **Inbox** - Convert raw input (text, links, files) into structured Projects or Work Items
-  - 3-step wizard: Classify → Extract → Review → Commit
-  - Heuristic-based auto-suggestions (no AI required)
-  - Full validation and error handling
-  
-- **Portfolio** - Multi-project governance dashboard
-  - Summary metrics across all projects
-  - Status distribution charts
-  - Upcoming milestones and risk tracking
-  
-- **Projects** - Project list and detail views
-  - Hierarchical work items (2-level support)
-  - Quick add work items
-  - Collapsible parent/child structure
-  
-- **Timeline** - Visual Gantt-style schedule
-  - Excel-inspired layout (table + bars)
-  - Milestones as diamonds, phases as brackets
-  - Today marker and zoom controls
-  
-- **Search** - Cross-entity search
-  - Search across portfolios, projects, work items, and inbox
-  - Results grouped by entity type
-  - Real-time search with debouncing
-  
-- **Settings** - Data management and preferences
-  - Export/Import data as JSON
-  - Reset to sample data
-  - Theme preferences (visual demo)
-  - AI provider placeholders
+## 设计中心
 
-## Data Model
+新的核心设计对象不是 Dashboard、Portfolio、My Work，而是：
 
-All entities are stored in IndexedDB with the following schema:
+- 项目列表
+- 项目工作台
+- 项目画布
+- 干系人
+- 时间规划表
+- 风险登记册
+- 工作包
+- 资料/证据
 
-- **Workspace**: `{ id, name }`
-- **Portfolio**: `{ id, name, description, projectIds[] }`
-- **Project**: `{ id, name, owner, status, startDate?, endDate?, portfolioId?, tags[] }`
-- **WorkItem**: `{ id, projectId, type, title, status, startDate?, endDate?, parentId?, level, notes?, createdAt }`
-  - Types: `task | issue | milestone | remark | clash | phase`
-  - Status: `not_started | in_progress | done | blocked`
-- **InboxItem**: `{ id, sourceType, rawText, createdAt, processed }`
+## 推荐页面结构
 
-## Sample Data
+### 1. 项目列表页
 
-The application comes preloaded with:
-- 2 Portfolios
-- 4 Projects
-- 20 Work Items
-- 6 Inbox Items
+用于进入某个项目，不强调 PMO 风格组合治理。
 
-## Running Locally
+### 2. 项目工作台首页
 
-This is a standard React + TypeScript application built with Vite.
+展示该项目最关键的当前信息：
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
+- 当前阶段
+- 关键交付时间
+- top 风险
+- 最近更新
+- 关键干系人
+- 最近证据
 
-### Installation
+### 3. 标签式核心页
 
-```bash
-# Install dependencies
-npm install
+每个项目下至少包含：
 
-# Start development server
-npm run dev
-```
+- Canvas
+- Stakeholders
+- Timeline
+- Risks
+- Work Packages
+- Evidence
 
-The application will be available at `http://localhost:5173`
+### 4. 快速录入 / 快速编辑区
 
-### Build for Production
+设计必须支持：
 
-```bash
-npm run build
-npm run preview
-```
+- 快速新增
+- 快速改字段
+- 快速查看上下文
 
-## Browser Compatibility
+不要把 PM 逼进复杂企业表单里。
 
-Works in all modern browsers that support IndexedDB:
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
+## 设计原则
 
-## Data Persistence
+### 快速理解优先
 
-All data is stored locally in IndexedDB under the database name `SwissArmyPM`. 
+项目经理打开页面后，应在几十秒内理解项目当前状态。
 
-**Important Notes:**
-- Data persists across browser sessions
-- Clearing browser data will delete all projects and work items
-- Use Settings → Export to backup your data regularly
-- Incognito/Private mode may not persist data
+### 编辑成本低
 
-## Architecture
+录入和更新必须足够轻。
 
-```
-/lib
-  /storage.ts         - IndexedDB abstraction layer
-  /sampleData.ts      - Demo data initialization
+### 结构清晰
 
-/pages
-  /InboxPage.tsx      - Inbox processing workflow (FULLY INTERACTIVE)
-  /PortfolioPage.tsx  - Portfolio governance view
-  /ProjectsPage.tsx   - Project list and detail
-  /TimelinePage.tsx   - Visual timeline/Gantt
-  /SearchPage.tsx     - Cross-entity search
-  /SettingsPage.tsx   - Settings and data management
+每类信息都要有清晰落点，避免继续依赖碎片文档或聊天记录。
 
-/App.tsx              - Main layout and navigation
-/styles/globals.css   - Global styles (8px grid)
-```
+### 证据可关联
 
-## Design System
+后续涉及关键结论时，设计上必须预留来源展示位。
 
-- **Spacing**: 8px base grid (0.5rem increments via Tailwind)
-- **Typography**: System font stack for maximum compatibility
-- **Colors**: Neutral slate base with semantic status colors
-  - Green: Success, Done, On Track
-  - Blue: In Progress, Info
-  - Yellow: Warning, At Risk
-  - Red: Error, Blocked, Critical
-- **Layout**: Left navigation + main content area (desktop-first)
+## 历史设计说明
 
-## Key Implementation Details
+当前目录下如果仍有这些页面/稿件：
 
-### Inbox Workflow (Core Demo)
+- dashboard redesign
+- portfolio dashboard
+- my work
 
-The Inbox feature demonstrates the complete user flow:
+它们应被理解为历史设计资产，而不是当前产品中心。
 
-1. **Classify**: User selects entity type (Project or WorkItem)
-2. **Extract**: Form fields auto-populate using heuristics:
-   - Date detection via regex
-   - Status keyword matching
-   - Project name matching
-3. **Review**: Summary diff showing what will be created
-4. **Commit**: Write to IndexedDB and mark inbox item as processed
-
-All fields are editable. AI suggestions are simulated via simple pattern matching.
-
-### Storage Layer
-
-The storage layer (`lib/storage.ts`) provides:
-- Type-safe CRUD operations
-- Index-based queries (e.g., get all work items by projectId)
-- Schema versioning (v1)
-- Export/Import as JSON
-- Graceful error handling
-
-### State Management
-
-No external state library. Component-local state using React hooks:
-- `useState` for UI state
-- `useEffect` for data loading
-- Props for parent-child communication
-
-## Non-Goals (Intentionally Not Implemented)
-
-- Authentication or user accounts
-- Server-side APIs or sync
-- Real-time collaboration
-- Native desktop application
-- Mobile responsive design (desktop-first only)
-- Actual AI integration (placeholders only)
-
-## License
-
-Demo/Prototype - Not for production use
-
-## Support
-
-This is a demonstration prototype built to showcase the SwissArmyPM concept. It is not production-ready and should not be used for actual project management without further development.
+未来继续做设计时，优先新增或改造围绕 PM Workspace 的页面与组件。

@@ -1,3 +1,7 @@
+> ⚠️ **历史文档** — 本文档记录的是旧产品方向（Portfolio Dashboard / My Work）下的实现记录。
+> 当前产品方向为 **PM Workspace**，请以 `CLAUDE.md` 和 `docs/PRD/PRD-001-Master.md` 为准。
+> 本文档仅供历史参考。
+
 # 深色模式UI问题系统性解决方案
 
 ## 📋 概述

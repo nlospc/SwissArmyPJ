@@ -1,3 +1,7 @@
+> ⚠️ **历史文档** — 本文档记录的是旧产品方向（Portfolio Dashboard / My Work）下的实现记录。
+> 当前产品方向为 **PM Workspace**，请以 `CLAUDE.md` 和 `docs/PRD/PRD-001-Master.md` 为准。
+> 本文档仅供历史参考。
+
 # Gantt Chart 项目属性 CRUD 功能完善
 
 ## 问题描述

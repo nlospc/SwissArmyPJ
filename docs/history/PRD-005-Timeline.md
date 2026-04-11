@@ -1,3 +1,7 @@
+> ⚠️ **已取代** — 本 PRD 已被 [PRD-001-Master.md](./PRD-001-Master.md) 取代。
+> 当前产品方向为 **PM Workspace**，请以 Master PRD 为准。
+> 本文档仅供历史参考。
+
 # PRD-005: Timeline / Gantt Specification
 
 | Field | Value |

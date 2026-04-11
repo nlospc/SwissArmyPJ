@@ -1,61 +1,163 @@
-**Add your own guidelines here**
-<!--
+# 设计规范 — SwissArmyPM
 
-System Guidelines
+最后更新：2026-04-11
 
-Use this file to provide the AI with rules and guidelines you want it to follow.
-This template outlines a few examples of things you can add. You can add your own sections and format it to suit your needs
+---
 
-TIP: More context isn't always better. It can confuse the LLM. Try and add the most important rules you need
+## 一、全局设计原则
 
-# General guidelines
+### 1.1 产品定位
 
-Any general rules you want the AI to follow.
-For example:
+SwissArmyPM 是**只服务项目经理**的桌面工作台。所有设计决策以此为中心。
 
-* Only use absolute positioning when necessary. Opt for responsive and well structured layouts that use flexbox and grid by default
-* Refactor code as you go to keep code clean
-* Keep file sizes small and put helper functions and components in their own files.
+### 1.2 核心设计原则
 
---------------
+| 原则 | 含义 | 实践指引 |
+|------|------|----------|
+| **快速录入** | 项目经理的日常是频繁更新，不是悠闲浏览 | 所有表单默认 inline 编辑；减少弹窗层级；支持键盘快捷键 |
+| **信息密度** | 项目经理需要在有限屏幕面积内同时掌握多个维度 | 合理使用表格和紧凑布局；允许折叠/展开次要信息；关键指标常驻 |
+| **证据可追溯** | 项目事实需要能回溯到来源 | 所有结构化数据支持"来源"字段；证据链接可点击跳转；变更历史可查 |
+| **手工优先** | 第一阶段不强依赖 AI 自动化 | CRUD 操作必须完整可用；不依赖自动填充才能完成任务 |
+| **桌面独立** | 单机即可完成所有核心操作 | 不假设网络可用；数据全部存本地 SQLite；无云依赖 |
 
-# Design system guidelines
-Rules for how the AI should make generations look like your company's design system
+### 1.3 视觉风格
 
-Additionally, if you select a design system to use in the prompt box, you can reference
-your design system's components, tokens, variables and components.
-For example:
+- 主题：亮色默认，暗色可选（Ant Design ConfigProvider + Tailwind dark mode）
+- 色彩：专业、克制，以 Ant Design 默认色板为基础
+- 字号：基础 14px，表格 13px，辅助信息 12px
+- 间距：紧凑但不拥挤，使用 Ant Design 默认 spacing token
 
-* Use a base font-size of 14px
-* Date formats should always be in the format “Jun 10”
-* The bottom toolbar should only ever have a maximum of 4 items
-* Never use the floating action button with the bottom toolbar
-* Chips should always come in sets of 3 or more
-* Don't use a dropdown if there are 2 or fewer options
+---
 
-You can also create sub sections and add more specific details
-For example:
+## 二、Ant Design 使用规范
 
+### 2.1 组件选择
 
-## Button
-The Button component is a fundamental interactive element in our design system, designed to trigger actions or navigate
-users through the application. It provides visual feedback and clear affordances to enhance user experience.
+- 表格数据 → `Table`（带行选择、排序、筛选）
+- 表单录入 → `Form` + `Input` / `Select` / `DatePicker`
+- 确认操作 → `Popconfirm`（轻量）或 `Modal.confirm`（重大操作）
+- 信息展示 → `Descriptions` / `Statistic` / `Tag`
+- 导航 → `Menu`（侧边栏）+ `Tabs`（页面内切换）
+- 反馈 → `message`（轻提示） / `notification`（重要通知）
 
-### Usage
-Buttons should be used for important actions that users need to take, such as form submissions, confirming choices,
-or initiating processes. They communicate interactivity and should have clear, action-oriented labels.
+### 2.2 一致性要求
 
-### Variants
-* Primary Button
-  * Purpose : Used for the main action in a section or page
-  * Visual Style : Bold, filled with the primary brand color
-  * Usage : One primary button per section to guide users toward the most important action
-* Secondary Button
-  * Purpose : Used for alternative or supporting actions
-  * Visual Style : Outlined with the primary color, transparent background
-  * Usage : Can appear alongside a primary button for less important actions
-* Tertiary Button
-  * Purpose : Used for the least important actions
-  * Visual Style : Text-only with no border, using primary color
-  * Usage : For actions that should be available but not emphasized
--->
+- 所有页面使用统一的 `ConfigProvider` 主题配置（`src/renderer/config/theme.ts`）
+- 颜色、圆角、间距统一走 Ant Design token，不随意硬编码
+- 图标统一使用 `@ant-design/icons`，补充使用 `lucide-react`
+
+---
+
+## 三、PM Workspace 核心模块设计指导
+
+### 3.1 项目画布（Project Canvas）
+
+**定位**：项目的"一页纸总览"，让项目经理一眼看清项目全貌。
+
+**设计要点**：
+- 使用 `Descriptions` 或卡片网格布局，分区展示项目关键属性
+- 分区建议：基本信息 / 目标与范围 / 关键里程碑 / 核心干系人 / 当前状态 / 备注
+- 支持 inline 编辑（点击即编辑），减少弹窗
+- 画布内容变更需要记录变更日志
+- 画布支持"来源"标注（某条信息来自哪个证据）
+
+**组件参考**：`Descriptions` + `Typography.Text`（editable）+ `Tag`（状态标签）
+
+### 3.2 干系人（Stakeholders）
+
+**定位**：管理项目所有干系人的关键信息与影响分析。
+
+**设计要点**：
+- 使用 `Table` 展示干系人列表，列：姓名 / 角色 / 影响力 / 态度 / 联系方式 / 备注
+- 新增/编辑使用 `Drawer`（右侧滑出），不使用弹窗，保持上下文可见
+- 支持按影响力-态度矩阵视图切换（权力-利益方格）
+- 支持分组/筛选（按角色、按项目阶段）
+- 每个干系人条目支持挂接证据来源
+
+**组件参考**：`Table` + `Drawer` + `Select` + `Tag` + 自定义矩阵图
+
+### 3.3 时间规划表（Timeline）
+
+**定位**：项目关键时间节点的可视化与维护。
+
+**设计要点**：
+- 默认使用表格视图（类似 Excel 甘特），当前已有 `ExcelGanttChart` 可复用
+- 支持甘特图视图切换（当前已有 `VisTimelineWrapper` / `GanttChart`）
+- 关键信息：任务名 / 开始日期 / 结束日期 / 负责人 / 状态 / 依赖关系
+- 支持拖拽调整时间
+- 里程碑用醒目标记（如菱形图标 + 高亮色）
+- 时间规划条目支持挂接证据
+
+**组件参考**：现有甘特组件群（`ExcelGanttChart`、`GanttChart`、`VisTimelineWrapper`）
+
+### 3.4 风险登记册（Risk Register）
+
+**定位**：集中管理项目风险，支持快速评估和跟踪。
+
+**设计要点**：
+- 使用 `Table` 展示风险列表，列：风险描述 / 类别 / 概率 / 影响 / 风险等级 / 应对策略 / 责任人 / 状态
+- 支持概率-影响矩阵热力图视图
+- 风险等级自动计算（概率 × 影响），用颜色 Tag 标示（红/黄/绿）
+- 新增/编辑使用 `Drawer` 或 inline 编辑
+- 风险条目支持关联工作包和证据
+
+**组件参考**：`Table` + `Tag` + `Drawer` + 自定义热力图
+
+### 3.5 工作包（Work Packages）
+
+**定位**：项目的最小可管理工作单元。
+
+**设计要点**：
+- 使用 `Table` 展示工作包列表，列：名称 / 描述 / 负责人 / 状态 / 开始 / 结束 / 关联里程碑
+- 支持状态流转看板视图（待开始 → 进行中 → 已完成）
+- 工作包可关联到时间规划条目和风险
+- 支持批量状态更新
+- 工作包支持挂接证据
+
+**组件参考**：`Table` + `Tag` + `Select` + 看板布局（`Steps` 或自定义）
+
+---
+
+## 四、布局与导航
+
+### 4.1 主布局
+
+```
+┌──────────────────────────────────────────┐
+│  顶栏（项目名 + 全局操作）                 │
+├────────┬─────────────────────────────────┤
+│        │                                 │
+│ 侧边栏  │       主内容区                  │
+│ (导航)  │                                 │
+│        │                                 │
+│        │                                 │
+└────────┴─────────────────────────────────┘
+```
+
+### 4.2 信息架构（目标方向）
+
+```
+项目列表
+  └── 项目工作台
+      ├── 画布（Canvas）
+      ├── 干系人（Stakeholders）
+      ├── 时间规划（Timeline）
+      ├── 风险（Risks）
+      ├── 工作包（Work Packages）
+      └── 证据（Evidence）
+```
+
+### 4.3 当前导航（待迁移）
+
+当前侧边栏导航仍为旧方向：Dashboard / Portfolio / Inbox / My Work。需要逐步迁移到上方目标结构。
+
+---
+
+## 五、响应式与可用性
+
+- 目标屏幕：1366×768 以上（笔记本到台式机）
+- 最小支持：1280×720
+- 不需要移动端适配（桌面工具）
+- 侧边栏支持折叠
+- 表格支持列宽调整和列排序
+- 所有表单输入支持 Tab 键顺序切换
