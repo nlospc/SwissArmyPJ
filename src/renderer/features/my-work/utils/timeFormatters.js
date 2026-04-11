@@ -1,6 +1,7 @@
 /**
  * Time formatting utilities for My Work feature
  */
+import { isToday } from './dateHelpers';
 /**
  * Format minutes to compact time string
  * Examples: 30 → "30m", 90 → "1.5h", 120 → "2h"
@@ -16,6 +17,27 @@ export function formatDuration(minutes) {
     }
     // Otherwise show decimal
     return `${hours.toFixed(1)}h`;
+}
+/**
+ * Format minutes to human-readable string
+ * Alias for formatDuration for consistency
+ * Examples: 30 → "30m", 90 → "1.5h", 120 → "2h"
+ */
+export function formatMinutes(minutes) {
+    return formatDuration(minutes);
+}
+/**
+ * Format date for weekly chart display
+ * Shows "Mon", "Tue", etc. or "Today" if it's the current day
+ */
+export function formatRelativeDate(dateString) {
+    const date = new Date(dateString);
+    // If it's today, show "Today"
+    if (isToday(dateString)) {
+        return 'Today';
+    }
+    // Otherwise show abbreviated day name
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
 }
 /**
  * Format minutes to HH:MM format

@@ -1,13 +1,9 @@
-const hasInvoke = typeof window !== 'undefined'
-    && window.electron
-    && typeof window.electron.invoke === 'function';
-const invoke = hasInvoke
+const invoke = typeof window !== 'undefined' && window.electron?.invoke
     ? window.electron.invoke.bind(window.electron)
-    : (channel, ..._args) => Promise.resolve({
+    : ((channel, ..._args) => Promise.resolve({
         success: false,
         error: `IPC bridge unavailable for ${channel}`,
-    });
-
+    }));
 // Type-safe IPC wrapper
 export const ipc = {
     // ============================================================================

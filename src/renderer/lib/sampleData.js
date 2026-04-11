@@ -67,6 +67,8 @@ export async function loadSampleData() {
         status: 'done',
         start_date: '2026-01-15',
         end_date: '2026-02-01',
+        owner: 'Alex Chen',
+        priority: 'high',
     });
     if (wi1.success && wi1.data) {
         await ipc.workItems.create({
@@ -77,6 +79,8 @@ export async function loadSampleData() {
             status: 'done',
             start_date: '2026-01-15',
             end_date: '2026-01-22',
+            owner: 'Alex Chen',
+            priority: 'medium',
         });
     }
     await ipc.workItems.create({
@@ -86,6 +90,8 @@ export async function loadSampleData() {
         status: 'done',
         start_date: '2026-02-01',
         end_date: '2026-02-01',
+        owner: 'Alex Chen',
+        priority: 'high',
     });
     const wi4 = await ipc.workItems.create({
         project_id: project1.data.id,
@@ -94,6 +100,8 @@ export async function loadSampleData() {
         status: 'in_progress',
         start_date: '2026-02-03',
         end_date: '2026-03-15',
+        owner: 'Alex Chen',
+        priority: 'high',
     });
     if (wi4.success && wi4.data) {
         await ipc.workItems.create({
@@ -105,6 +113,8 @@ export async function loadSampleData() {
             start_date: '2026-02-10',
             end_date: '2026-02-28',
             notes: 'Currently reviewing with DBA team',
+            owner: 'Wei Zhang',
+            priority: 'high',
         });
     }
     await ipc.workItems.create({
@@ -113,6 +123,8 @@ export async function loadSampleData() {
         title: 'Data migration complexity higher than estimated',
         status: 'in_progress',
         notes: 'Need additional resources for data mapping',
+        owner: 'Alex Chen',
+        priority: 'critical',
     });
     // Work Items for Mobile App
     const wi7 = await ipc.workItems.create({
@@ -122,6 +134,8 @@ export async function loadSampleData() {
         status: 'done',
         start_date: '2025-11-01',
         end_date: '2025-12-15',
+        owner: 'Sam Taylor',
+        priority: 'medium',
     });
     if (wi7.success && wi7.data) {
         await ipc.workItems.create({
@@ -132,6 +146,8 @@ export async function loadSampleData() {
             status: 'done',
             start_date: '2025-11-01',
             end_date: '2025-11-20',
+            owner: 'Sam Taylor',
+            priority: 'medium',
         });
     }
     const wi9 = await ipc.workItems.create({
@@ -141,6 +157,8 @@ export async function loadSampleData() {
         status: 'in_progress',
         start_date: '2025-12-16',
         end_date: '2026-03-10',
+        owner: 'Sam Taylor',
+        priority: 'high',
     });
     if (wi9.success && wi9.data) {
         await ipc.workItems.create({
@@ -151,6 +169,8 @@ export async function loadSampleData() {
             status: 'in_progress',
             start_date: '2025-12-16',
             end_date: '2026-02-28',
+            owner: 'Sam Taylor',
+            priority: 'high',
         });
     }
     await ipc.workItems.create({
@@ -160,6 +180,8 @@ export async function loadSampleData() {
         status: 'not_started',
         start_date: '2026-03-15',
         end_date: '2026-03-15',
+        owner: 'Sam Taylor',
+        priority: 'critical',
     });
     // Work Items for Cloud Infrastructure
     await ipc.workItems.create({
@@ -169,6 +191,8 @@ export async function loadSampleData() {
         status: 'done',
         start_date: '2025-12-01',
         end_date: '2025-12-15',
+        owner: 'Jordan Lee',
+        priority: 'medium',
     });
     await ipc.workItems.create({
         project_id: project3.data.id,
@@ -178,6 +202,8 @@ export async function loadSampleData() {
         start_date: '2026-01-15',
         end_date: '2026-02-15',
         notes: 'Blocked by vendor SLA concerns',
+        owner: 'Jordan Lee',
+        priority: 'critical',
     });
     await ipc.workItems.create({
         project_id: project3.data.id,
@@ -185,12 +211,16 @@ export async function loadSampleData() {
         title: 'Vendor SLA concerns for uptime guarantee',
         status: 'blocked',
         notes: 'Escalated to procurement',
+        owner: 'Jordan Lee',
+        priority: 'high',
     });
     await ipc.workItems.create({
         project_id: project3.data.id,
         type: 'clash',
         title: 'Budget overrun - additional storage costs',
         status: 'in_progress',
+        owner: 'Jordan Lee',
+        priority: 'high',
     });
     // Work Items for Security Compliance
     await ipc.workItems.create({
@@ -200,6 +230,8 @@ export async function loadSampleData() {
         status: 'in_progress',
         start_date: '2026-01-10',
         end_date: '2026-02-10',
+        owner: 'Riley Morgan',
+        priority: 'critical',
     });
     await ipc.workItems.create({
         project_id: project4.data.id,
@@ -208,6 +240,8 @@ export async function loadSampleData() {
         status: 'not_started',
         start_date: '2026-02-15',
         end_date: '2026-03-15',
+        owner: 'Riley Morgan',
+        priority: 'medium',
     });
     await ipc.workItems.create({
         project_id: project4.data.id,
@@ -215,6 +249,8 @@ export async function loadSampleData() {
         title: 'Authentication module vulnerabilities identified',
         status: 'blocked',
         notes: 'Critical security issues require immediate attention',
+        owner: 'Riley Morgan',
+        priority: 'critical',
     });
     await ipc.workItems.create({
         project_id: project4.data.id,
@@ -223,6 +259,8 @@ export async function loadSampleData() {
         status: 'not_started',
         start_date: '2026-04-01',
         end_date: '2026-04-01',
+        owner: 'Riley Morgan',
+        priority: 'high',
     });
     await ipc.workItems.create({
         project_id: project4.data.id,
@@ -230,6 +268,8 @@ export async function loadSampleData() {
         title: 'Need additional security consultant',
         status: 'not_started',
         notes: 'Budget approval pending',
+        owner: 'Riley Morgan',
+        priority: 'low',
     });
     // Inbox Items
     await ipc.inbox.create({

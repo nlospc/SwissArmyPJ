@@ -6,3 +6,4 @@ dist
 .alma-snapshots
 backup-*
 code/
+nul

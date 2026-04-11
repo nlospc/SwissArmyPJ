@@ -6,31 +6,42 @@ import { registerMyWorkHandlers } from './myWorkHandlers';
 
 import { registerDashboardHandlers } from './dashboardHandlers';
 
-import type {
-  IPCResponse,
-  Workspace,
-  Portfolio,
-  Project,
-  WorkItem,
-  InboxItem,
-  Todo,
-  CreatePortfolioDTO,
-  UpdatePortfolioDTO,
-  CreateProjectDTO,
-  UpdateProjectDTO,
-  CreateWorkItemDTO,
-  UpdateWorkItemDTO,
-  CreateInboxItemDTO,
-  CreateTodoDTO,
-  UpdateTodoDTO,
-  PortfolioSummary,
-  SearchResult,
-} from '../../shared/types';
+import type {
+  IPCResponse,
+  Workspace,
+  Portfolio,
+  Project,
+  WorkItem,
+  InboxItem,
+  Todo,
+  CreatePortfolioDTO,
+  UpdatePortfolioDTO,
+  CreateProjectDTO,
+  UpdateProjectDTO,
+  CreateWorkItemDTO,
+  UpdateWorkItemDTO,
+  CreateInboxItemDTO,
+  CreateTodoDTO,
+  UpdateTodoDTO,
+  PortfolioSummary,
+  SearchResult,
+} from '../../shared/types';
+import type {
+  ProjectCanvasElementKey,
+  ProjectCanvasGetResponse,
+  ProjectCanvasRiskLevel,
+  ProjectCanvasSaveResponse,
+} from '../../shared/projectCanvas';
+import { getProjectCanvas, saveProjectCanvasElement } from '../services/projectCanvasService';
 
-export function registerIPCHandlers(): void {
-  // Register My Work handlers
-  registerMyWorkHandlers();
-  // Register Dashboard handlers
+export function registerIPCHandlers(): void {
+
+  // Register My Work handlers
+
+  registerMyWorkHandlers();
+
+  // Register Dashboard handlers
+
   registerDashboardHandlers();
   // ============================================================================
   // Workspace

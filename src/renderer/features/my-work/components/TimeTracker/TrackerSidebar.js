@@ -6,8 +6,10 @@ import { TimerWidget } from './PomodoroTimer/TimerWidget';
 import { TimerControls } from './PomodoroTimer/TimerControls';
 import { SessionIndicator } from './PomodoroTimer/SessionIndicator';
 import { LogSummary } from './TodayLog/LogSummary';
+import { WeeklyChart, TargetProgress } from './WeeklySummary';
 import { useMyWorkStore } from '@/stores/useMyWorkStore';
 export function TrackerSidebar() {
     const activePomodoro = useMyWorkStore((state) => state.activePomodoro);
-    return (_jsxs("div", { className: "flex flex-col gap-6 h-full overflow-y-auto p-6", children: [_jsxs("div", { className: "space-y-4", children: [_jsx(TimerWidget, {}), activePomodoro && (_jsxs(_Fragment, { children: [_jsx(TimerControls, {}), _jsx(SessionIndicator, {})] }))] }), _jsx("div", { className: "flex-1", children: _jsx(LogSummary, {}) })] }));
+    const weeklyLogs = useMyWorkStore((state) => state.weeklyLogs);
+    return (_jsxs("div", { className: "flex flex-col gap-6 h-full overflow-y-auto p-6", children: [_jsxs("div", { className: "space-y-4", children: [_jsx(TimerWidget, {}), activePomodoro && (_jsxs(_Fragment, { children: [_jsx(TimerControls, {}), _jsx(SessionIndicator, {})] }))] }), _jsxs("div", { className: "space-y-4", children: [_jsx(WeeklyChart, { data: weeklyLogs }), _jsx(TargetProgress, { data: weeklyLogs })] }), _jsx("div", { className: "flex-1 min-h-0", children: _jsx(LogSummary, {}) })] }));
 }
