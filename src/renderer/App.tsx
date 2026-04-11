@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ConfigProvider, theme, Spin, Alert, Button } from 'antd';
+import { ConfigProvider, theme, Spin, Alert, Button, App as AntApp } from 'antd';
 import { Agentation, type Annotation } from 'agentation';
 import { ReloadOutlined } from '@ant-design/icons';
 
@@ -132,7 +132,7 @@ function AppContent() {
   return (
     <div className="flex h-full overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-hidden">
         {currentView === 'dashboard' && <DashboardPage />}
         {currentView === 'portfolio' && <PortfolioPage />}
         {currentView === 'inbox' && <InboxPage />}
@@ -155,7 +155,9 @@ function App() {
 
   return (
     <ConfigProvider theme={getThemeConfig(isDark)}>
-      <AppContent />
+      <AntApp>
+        <AppContent />
+      </AntApp>
     </ConfigProvider>
   );
 }

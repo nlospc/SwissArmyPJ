@@ -7,8 +7,11 @@ let db: Database.Database | null = null;
 export function initDatabase(): void {
   const dbPath = path.join(process.cwd(), 'swiss-army-pm.db');
   db = new Database(dbPath);
+  // Enable foreign key constraints for CASCADE deletes
+  db.pragma('foreign_keys = ON');
   createTables();
   runMigrations();
+  ensureSchemaUpToDate();
 }
 
 export function getDatabase(): Database.Database {
@@ -25,6 +28,35 @@ function runMigrations(): void {
   } catch (error) {
     console.error('Migration failed:', error);
     throw error;
+  }
+}
+
+/**
+ * Ensure all expected columns exist in tables.
+ * This is a safety net in case migrations didn't run properly.
+ */
+function ensureSchemaUpToDate(): void {
+  if (!db) return;
+
+  try {
+    // Check work_items table for missing columns
+    const workItemsInfo = db.pragma('table_info(work_items)');
+    const workItemsColumns = workItemsInfo.map((c: any) => c.name);
+
+    // Add owner column if missing
+    if (!workItemsColumns.includes('owner')) {
+      console.log('Adding missing owner column to work_items...');
+      db.exec('ALTER TABLE work_items ADD COLUMN owner TEXT;');
+    }
+
+    // Add priority column if missing
+    if (!workItemsColumns.includes('priority')) {
+      console.log('Adding missing priority column to work_items...');
+      db.exec('ALTER TABLE work_items ADD COLUMN priority TEXT CHECK(priority IN (\'low\',\'medium\',\'high\',\'critical\')) DEFAULT \'medium\';');
+    }
+  } catch (error) {
+    console.error('Schema update failed:', error);
+    // Don't throw - this is just a safety net
   }
 }
 

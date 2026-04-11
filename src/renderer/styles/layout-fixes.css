@@ -1,0 +1,28 @@
+/**
+ * Layout Height Fixes
+ *
+ * Fixes for full-height layouts with Ant Design wrappers
+ */
+
+/* Fix Ant Design wrapper height issues - ConfigProvider/AntApp create divs without height */
+#root > div,
+#root [class^="css-dev-only-do-not-override"],
+.ant-app,
+.ant-app > div,
+[class^="ant-app"] {
+  height: 100% !important;
+}
+
+/* Ensure all flex containers can properly size their children */
+.h-full > .flex {
+  height: 100%;
+}
+
+/* Fix nested flex containers - ensure min-height: 0 for proper flex shrinking */
+.flex > .flex-1 {
+  min-height: 0;
+}
+
+.flex > .h-full {
+  min-height: 0;
+}

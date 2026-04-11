@@ -5,6 +5,7 @@ import zhCN from 'antd/locale/zh_CN';
 import App from './App';
 import './styles/globals.css';
 import './styles/dark-mode-fixes.css';
+import './styles/layout-fixes.css';
 import 'antd/dist/reset.css';
 
 // 开发环境下加载主题验证工具

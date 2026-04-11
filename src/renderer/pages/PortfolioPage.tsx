@@ -270,7 +270,7 @@ export function PortfolioPage() {
 
   const { projects, loadProjects, isLoading: projectsLoading } = useProjectStore();
 
-  const { workItems, loadAllWorkItems, isLoading: workItemsLoading } = useWorkItemStore();
+  const { workItems = [], loadAllWorkItems, isLoading: workItemsLoading, isSaving } = useWorkItemStore();
 
   const { t } = useI18n();
 
@@ -334,19 +334,17 @@ export function PortfolioPage() {
 
   const handleWorkItemUpdate = async (workItemId: number, updates: Partial<any>) => {
     const { updateWorkItem } = useWorkItemStore.getState();
-    await updateWorkItem(workItemId, updates);
+    return await updateWorkItem(workItemId, updates);
   };
 
   const handleWorkItemCreate = async (dto: any) => {
-    const { createWorkItem, loadAllWorkItems } = useWorkItemStore.getState();
-    await createWorkItem(dto);
-    await loadAllWorkItems(); // refresh so new item appears
+    const { createWorkItem } = useWorkItemStore.getState();
+    return await createWorkItem(dto);
   };
 
   const handleWorkItemDelete = async (workItemId: number) => {
-    const { deleteWorkItem, loadAllWorkItems } = useWorkItemStore.getState();
-    await deleteWorkItem(workItemId);
-    await loadAllWorkItems(); // refresh so deleted item disappears
+    const { deleteWorkItem } = useWorkItemStore.getState();
+    return await deleteWorkItem(workItemId);
   };
 
 
@@ -356,51 +354,32 @@ export function PortfolioPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Content */}
-
-      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
+      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900 min-h-0">
 
         {viewMode === 'projects' ? (
-
           <div className="h-full p-4">
-
             <ExcelGanttChart
-
               projects={projects}
-
               workItems={workItems}
-
               loading={isLoading}
-
               onProjectClick={handleProjectClick}
-
               onProjectUpdate={handleProjectUpdate}
-
               viewMode="month"
-
             />
-
           </div>
-
         ) : selectedProject ? (
-
-          <WorkItemExcelGantt
-
-            project={selectedProject}
-
-            workItems={workItems.filter((w) => w.project_id === selectedProject.id)}
-
-            loading={isLoading}
-
-            onBack={handleBack}
-
-            onWorkItemUpdate={handleWorkItemUpdate}
-
-            onWorkItemCreate={handleWorkItemCreate}
-
-            onWorkItemDelete={handleWorkItemDelete}
-
-          />
-
+          <div className="h-full">
+            <WorkItemExcelGantt
+              project={selectedProject}
+              workItems={workItems.filter((w) => w.project_id === selectedProject.id)}
+              loading={isLoading}
+              isSaving={isSaving}
+              onBack={handleBack}
+              onWorkItemUpdate={handleWorkItemUpdate}
+              onWorkItemCreate={handleWorkItemCreate}
+              onWorkItemDelete={handleWorkItemDelete}
+            />
+          </div>
         ) : null}
 
       </div>

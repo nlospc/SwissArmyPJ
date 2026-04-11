@@ -36,16 +36,18 @@ function createWindow(): void {
     mainWindow.webContents.openDevTools();
 
     // Install React DevTools
-    if (typeof installExtension === 'function') {
-      installExtension(REACT_DEVELOPER_TOOLS)
-        .then((name: string) => console.log(`Added Extension:  ${name}`))
-        .catch((err: Error) => console.log('An error occurred:', err));
+    // NOTE: Auto-installing DevTools extensions can cause "object null is not iterable" errors
+    // Users can still open DevTools with F12 or Ctrl+Shift+I
+    // if (typeof installExtension === 'function') {
+    //   installExtension(REACT_DEVELOPER_TOOLS)
+    //     .then((name: string) => console.log(`Added Extension:  ${name}`))
+    //     .catch((err: Error) => console.log('An error occurred:', err));
 
-      // Install Redux DevTools (if using Redux)
-      installExtension(REDUX_DEVTOOLS)
-        .then((name: string) => console.log(`Added Extension:  ${name}`))
-        .catch((err: Error) => console.log('An error occurred:', err));
-    }
+    //   // Install Redux DevTools (if using Redux)
+    //   installExtension(REDUX_DEVTOOLS)
+    //     .then((name: string) => console.log(`Added Extension:  ${name}`))
+    //     .catch((err: Error) => console.log('An error occurred:', err));
+    // }
 
     // Add keyboard shortcuts for DevTools
     mainWindow.webContents.on('before-input-event', (event, input) => {
