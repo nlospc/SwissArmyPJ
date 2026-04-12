@@ -244,28 +244,54 @@ Project List
 - 团队-Team
 - 经验总结-Lessons Learned
 
-### 9.3 `Stakeholder`
+### 9.3 `Stakeholder`（两层设计）
 
-表示一个对项目结果有影响、被项目影响、或需要被主动管理预期的人或群体。
+#### 9.3.1 Stakeholder Universe（全局人员库）
+
+表示一个跨项目共享的人员基本信息记录。
+
+**作用：**
+- 维护所有干系人的基本信息，一人一条
+- 在不同项目中被引用，角色和重要性在项目级定义
+
+**MVP 建议字段：**
+- `id`
+- `name`
+- `organization`
+- `title`
+- `email`
+- `phone`
+- `contact_note`
+- `created_at`
+- `updated_at`
+
+#### 9.3.2 Project Stakeholder（项目关联）
+
+表示一个人员在某个项目中的角色、重要性和管理策略。
 
 **作用：**
 - 不是通讯录，而是干系人管理对象
 - 帮助 PM 识别影响力、诉求、关系状态与待管理事项
+- 支持同一人在不同项目中拥有不同角色和重要性
 
 **MVP 建议字段：**
 - `id`
+- `person_id`
 - `project_id`
-- `name`
-- `organization`
-- `role`
-- `influence_level`
+- `role_in_project`
+- `role_tag`
+- `power_level`
+- `interest_level`
 - `support_level`
+- `engagement_current`
+- `engagement_desired`
 - `expectation`
 - `concern`
 - `relationship_status`
-- `owner_note`
-- `last_contact_at`
+- `communication_note`
 - `next_action`
+- `last_contact_at`
+- `raci_role`
 - `created_at`
 - `updated_at`
 

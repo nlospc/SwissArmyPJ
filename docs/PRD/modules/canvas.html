@@ -1,0 +1,522 @@
+<!--
+  Status: Design Reference Only
+  本文件是 Project Canvas 的 UI 设计参考稿，不是可运行组件。
+  实现时应以 Ant Design + React + Tailwind 重构，保留此文件中的布局和内容块定义。
+  关联 PRD: docs/PRD/modules/PRD-101-ProjectCanvas.md
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Project Canvas | 专业项目画布</title>
+    <style>
+        /* 现代商务风基础变量 */
+        :root {
+            --bg-color: #f1f5f9;         /* 浅灰蓝背景，柔和护眼 */
+            --card-bg: #ffffff;          /* 纯白卡片 */
+            --border-color: #e2e8f0;     /* 极浅的边框色 */
+            --text-main: #334155;        /* 正文深灰 */
+            --title-color: #0f172a;      /* 标题近乎纯黑，增加对比 */
+            --accent-primary: #2563eb;   /* 专业商务蓝 */
+            --accent-light: #eff6ff;     /* 极浅的蓝色，用于悬浮态 */
+            --tooltip-bg: #1e293b;       /* 提示框深色背景 */
+            --tooltip-text: #f8fafc;     /* 提示框浅色文字 */
+            --font-family: 'Segoe UI', system-ui, -apple-system, 'Microsoft YaHei', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 24px;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: var(--title-color);
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .canvas-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: grid;
+            gap: 16px;
+            /* 移动端默认单列 */
+            grid-template-columns: 1fr;
+            grid-template-areas:
+                "purpose"
+                "objective"
+                "sponsor"
+                "reqs"
+                "deliverables"
+                "exclusions"
+                "constraints"
+                "phases"
+                "milestones"
+                "resources"
+                "risks"
+                "team"
+                "stakeholders"
+                "lessons";
+        }
+
+        /* 桌面端 4列 布局 */
+        @media (min-width: 1024px) {
+            .canvas-container {
+                grid-template-columns: repeat(4, 1fr);
+                grid-auto-rows: minmax(220px, auto);
+                grid-template-areas:
+                    "purpose purpose objective sponsor"
+                    "reqs deliverables exclusions constraints"
+                    "phases milestones resources risks"
+                    "team stakeholders lessons lessons";
+            }
+        }
+
+        /* 现代化卡片设计 */
+        .box {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+            border-top: 4px solid var(--accent-primary); /* 顶部蓝色强调线 */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .box:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            transform: translateY(-2px);
+        }
+
+        .box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .box-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .box-title-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .box-title-text .zh {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--title-color);
+        }
+
+        .box-title-text .en {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--accent-primary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* 右上角图标去除了灰度滤镜，保留原生生动色彩，或稍微降低透明度使其不喧宾夺主 */
+        .icon {
+            font-size: 1.6rem;
+            opacity: 0.9;
+        }
+
+        /* 精致的悬浮提示框 (Tooltip) */
+        .tooltip-container {
+            position: relative;
+            cursor: help;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: var(--accent-primary);
+            opacity: 0.8;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+
+        .tooltip-container:hover {
+            opacity: 1;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 260px;
+            background-color: var(--tooltip-bg);
+            color: var(--tooltip-text);
+            text-align: left;
+            border-radius: 8px;
+            padding: 12px 14px;
+            position: absolute;
+            z-index: 20;
+            top: 150%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            font-size: 0.85rem;
+            font-weight: normal;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        /* 提示框的小箭头 (指向上方) */
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent transparent var(--tooltip-bg) transparent;
+        }
+
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .zh-def { margin-bottom: 6px; font-weight: 600; color: #ffffff;}
+        .en-def { font-size: 0.75rem; color: #94a3b8;}
+
+        /* 内容填写区：留白且带有极其微弱的背景色提示填写范围 */
+        .content-area {
+            flex-grow: 1;
+            width: 100%;
+            min-height: 120px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .box:hover .content-area {
+            background-color: var(--accent-light);
+        }
+
+        /* Grid Areas Mapping */
+        .purpose { grid-area: purpose; }
+        .objective { grid-area: objective; }
+        .sponsor { grid-area: sponsor; }
+        .reqs { grid-area: reqs; }
+        .deliverables { grid-area: deliverables; }
+        .exclusions { grid-area: exclusions; }
+        .constraints { grid-area: constraints; }
+        .phases { grid-area: phases; }
+        .milestones { grid-area: milestones; }
+        .resources { grid-area: resources; }
+        .risks { grid-area: risks; }
+        .team { grid-area: team; }
+        .stakeholders { grid-area: stakeholders; }
+        .lessons { grid-area: lessons; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>PROJECT CANVAS</h1>
+    </div>
+
+    <div class="canvas-container">
+        
+        <div class="box purpose">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">目的</span>
+                        <span class="en">Purpose</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">为什么开展这个项目？解决的根本问题或机会是什么？</div>
+                            <div class="en-def">Why the project exists. The underlying problem or opportunity to be addressed.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🔭</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box objective">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">目标</span>
+                        <span class="en">Objective</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">衡量项目成功的可量化结果。</div>
+                            <div class="en-def">Measurable outcomes indicating project success.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🎯</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box sponsor">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">发起人</span>
+                        <span class="en">Sponsor</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">提供资源和支持，并对项目成功负责的个人或团体。</div>
+                            <div class="en-def">The person or group providing resources/support, accountable for enabling success.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">💼</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box reqs">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">需求</span>
+                        <span class="en">Requirements</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">必须满足的高层级条件或能力。</div>
+                            <div class="en-def">High-level conditions or capabilities that must be met.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">📋</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box deliverables">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">可交付物</span>
+                        <span class="en">Deliverables</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">产生的有形或无形的产品、结果或能力。</div>
+                            <div class="en-def">Tangible or intangible products, results, or capabilities produced.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🎁</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box exclusions">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">范围之外</span>
+                        <span class="en">Exclusions</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">明确指出不包含的内容，以防止范围蔓延。</div>
+                            <div class="en-def">Explicit boundaries of what is NOT included to prevent scope creep.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🚫</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box constraints">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">制约/假设</span>
+                        <span class="en">Constraints</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">视为真实的因素，以及影响执行的限制因素（预算、时间）。</div>
+                            <div class="en-def">Factors considered true without proof, and limiting factors affecting execution.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🔒</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box phases">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">项目阶段</span>
+                        <span class="en">Phases</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">逻辑相关的活动集合，以完成特定成果为目标。</div>
+                            <div class="en-def">A collection of logically related activities culminating in major deliverables.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🔄</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box milestones">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">里程碑</span>
+                        <span class="en">Milestones</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">项目进度中的重要时间点或重大事件。</div>
+                            <div class="en-def">Significant points or events in the project timeline.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🚩</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box resources">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">资源</span>
+                        <span class="en">Resources</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">执行项目所需的资金、设备、材料或设施。</div>
+                            <div class="en-def">Funding, equipment, materials, or facilities required to perform the work.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">⛵</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box risks">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">风险</span>
+                        <span class="en">Risks</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">一旦发生会对项目目标产生积极或消极影响的不确定事件。</div>
+                            <div class="en-def">Uncertain events that, if they occur, have an effect on project objectives.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🦈</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box team">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">团队</span>
+                        <span class="en">Team</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">直接执行工作以实现项目目标的内部成员。</div>
+                            <div class="en-def">Individuals directly performing the work to achieve project objectives.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🧑‍🤝‍🧑</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box stakeholders">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">干系人</span>
+                        <span class="en">Stakeholders</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">可能影响项目或受项目影响的个人或团体。</div>
+                            <div class="en-def">Individuals/groups who may affect or be affected by the project.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">🧍</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+        <div class="box lessons">
+            <div class="box-header">
+                <div class="box-title">
+                    <div class="box-title-text">
+                        <span class="zh">经验总结</span>
+                        <span class="en">Lessons Learned</span>
+                    </div>
+                    <div class="tooltip-container">?
+                        <div class="tooltip-text">
+                            <div class="zh-def">在项目过程中获得的知识，指导未来如何应对类似情况。</div>
+                            <div class="en-def">Knowledge gained during the project showing how events should be addressed in the future.</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="icon">💡</span>
+            </div>
+            <div class="content-area"></div>
+        </div>
+
+    </div>
+
+</body>
+</html>
