@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title>Advanced Project Trace Timeline</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
+    <link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f1115; color: #e5e7eb; }
+        #visualization { background: #161920; border: 1px solid #374151; border-radius: 8px; }
+        
+        /* 自定义样式：工作项 */
+        .vis-item { border-color: #4f46e5; background-color: #6366f1; color: white; border-radius: 4px; font-size: 12px; }
+        /* 自定义样式：里程碑 */
+        .vis-item.vis-point { background: transparent; border: none; }
+        .vis-item.vis-dot { border-color: #f59e0b; border-width: 4px; }
+        /* 自定义样式：阶段背景 */
+        .stage-dev { background-color: rgba(34, 197, 94, 0.1); }
+        .stage-audit { background-color: rgba(239, 68, 68, 0.1); }
+        
+        /* 轴线样式 */
+        .vis-time-axis .vis-text { color: #9ca3af; }
+        .vis-panel.vis-left { border-right: 1px solid #374151; }
+        .vis-label { color: #d1d5db; font-weight: 500; }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold text-white">Project Trace: RWA Tokenization v1.0</h2>
+        <p class="text-gray-400 text-sm">混合视图：工作项 (Range) + 阶段 (Background) + 里程碑 (Point)</p>
+    </div>
+
+    <div id="visualization"></div>
+
+    <script type="text/javascript">
+        // 1. 定义分组 (Groups)
+        var groups = new vis.DataSet([
+            {id: 'p-mgmt', content: '项目管理'},
+            {id: 'dev-core', content: '核心开发 (Agent A)'},
+            {id: 'dev-fe', content: '前端交互 (Agent B)'},
+            {id: 'security', content: '安全审计'}
+        ]);
+
+        // 2. 定义数据项 (Items)
+        var items = new vis.DataSet([
+            // 阶段背景 (Background)
+            {id: 'bg_1', content: '开发周期', start: '2026-04-10', end: '2026-04-25', type: 'background', className: 'stage-dev', group: 'dev-core'},
+            {id: 'bg_2', content: '安全审计期', start: '2026-04-26', end: '2026-05-05', type: 'background', className: 'stage-audit', group: 'security'},
+
+            // 工作项 (Range)
+            {id: 1, group: 'dev-core', content: '智能合约架构设计', start: '2026-04-11', end: '2026-04-15'},
+            {id: 2, group: 'dev-core', content: '代币铸造逻辑开发', start: '2026-04-16', end: '2026-04-24'},
+            {id: 3, group: 'dev-fe', content: 'BI 仪表盘 UI 开发', start: '2026-04-13', end: '2026-04-20'},
+            {id: 4, group: 'security', content: '代码静态扫描', start: '2026-04-26', end: '2026-04-29'},
+            {id: 5, group: 'security', content: '渗透测试', start: '2026-04-30', end: '2026-05-04'},
+
+            // 里程碑 (Point)
+            {id: 6, group: 'p-mgmt', content: '🚩 需求冻结', start: '2026-04-10', type: 'point'},
+            {id: 7, group: 'dev-core', content: '🚀 合约部署至测试网', start: '2026-04-25', type: 'point'},
+            {id: 8, group: 'p-mgmt', content: '💎 V1.0 正式发布', start: '2026-05-06', type: 'point'}
+        ]);
+
+        // 3. 配置项
+        var options = {
+            stack: true, // 自动堆叠，防止重叠
+            horizontalScroll: true,
+            zoomKey: 'ctrlKey',
+            orientation: 'top',
+            margin: {
+                item: 10, // 任务间的间距
+                axis: 5
+            },
+            editable: true, // 允许拖拽调整进度
+            showCurrentTime: true
+        };
+
+        // 4. 初始化
+        var container = document.getElementById('visualization');
+        var timeline = new vis.Timeline(container, items, groups, options);
+    </script>
+
+    <div class="mt-6 grid grid-cols-3 gap-4 text-xs">
+        <div class="bg-gray-800 p-3 rounded">
+            <span class="text-indigo-400 font-bold">Range (长条):</span> 表示有明确起止的工作项。
+        </div>
+        <div class="bg-gray-800 p-3 rounded">
+            <span class="text-yellow-500 font-bold">Point (点):</span> 表示里程碑，瞬时完成的关键节点。
+        </div>
+        <div class="bg-gray-800 p-3 rounded">
+            <span class="text-green-900 font-bold">Background (背景):</span> 表示项目的大阶段或环境状态。
+        </div>
+    </div>
+</body>
+</html>
