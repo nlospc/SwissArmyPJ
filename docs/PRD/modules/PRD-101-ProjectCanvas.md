@@ -74,6 +74,7 @@ Project Canvas 是项目的结构化全景摘要。
 ### P1
 
 - 支持与 Timeline / Risks / Stakeholders 的摘要联动
+- 支持状态显示（正常/风险/问题） 第一阶段允许用户手动修改，第二阶段提供api或者tool让agent能够修改
 - 支持显示最近更新来源
 - 支持查看修改历史
 
