@@ -169,6 +169,31 @@ Project List
 
 ---
 
+## 8.1 模块文档索引
+
+为支持按需加载，模块细节将逐步从本文件拆分到独立文档。
+
+### 模块 PRD
+
+- `docs/PRD/modules/PRD-101-ProjectCanvas.md`
+- `docs/PRD/modules/PRD-102-Stakeholders.md`
+- `docs/PRD/modules/PRD-103-Timeline.md`（待创建）
+- `docs/PRD/modules/PRD-104-Risks.md`（待创建）
+- `docs/PRD/modules/PRD-105-WorkPackages.md`（待创建）
+- `docs/PRD/modules/PRD-106-Evidence.md`
+
+### 跨模块文档
+
+- `docs/PRD/cross-cutting/PRD-201-Evidence-Traceability.md`
+
+### 读取原则
+
+- 本文件负责产品总纲与模块总览
+- 模块字段、页面结构、交互细节优先写入独立模块 PRD
+- 跨模块机制优先写入 `cross-cutting/` 文档
+
+---
+
 ## 9. 核心对象定义
 
 本节定义的是产品中的**一等对象**，用于统一后续数据模型、页面设计、查询能力与 agent 辅助能力。
