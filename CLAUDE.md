@@ -1,8 +1,34 @@
-# CLAUDE.md
+# CLAUDE.md — Global Product Guideline (Monorepo)
 
-This file is the canonical working brief for future coding/design sessions in this repository.
+This file is the canonical working brief for all coding/design sessions in this repository.
+If sub-project `CLAUDE.md` files conflict with this file, **this file wins**.
+
+---
+
+## Monorepo Overview
+
+**SwissArmyPM** is a monorepo containing two independent but complementary sub-projects:
+
+| Package | Location | Purpose |
+|---|---|---|
+| **SwissArmyPM Desktop** | `packages/swissarmypm/` | Electron + React + Vite desktop workbench for project managers |
+| **PMBrain** | `packages/pmbrain/` | Bun + TypeScript CLI knowledge brain with SQLite, Obsidian vault projection, and MCP surface |
+
+Both sub-projects retain fully independent build, dev, and release pipelines. The monorepo provides structural cohesion, shared documentation, and future cross-package integration.
+
+### Navigation
+
+- **Global product direction** → this file (`/CLAUDE.md`)
+- **Desktop-specific guidelines** → `packages/swissarmypm/CLAUDE.md`
+- **CLI/MCP/Vault guidelines** → `packages/pmbrain/CLAUDE.md`
+- **Shared documentation** → `docs/` (PRDs, architecture, PMBOK guideline)
+- **Agent instructions** → `AGENTS.md`
+
+---
 
 ## Canonical Product Direction
+
+### SwissArmyPM Desktop — PM Workbench
 
 **SwissArmyPM** is a **desktop workbench for project managers only**.
 
@@ -10,15 +36,13 @@ It is **not** a generic project collaboration suite, **not** a PMO portfolio pla
 
 The product must help a project manager quickly **store, update, review, and trust** key project information in one place.
 
-## Primary User
+#### Primary User
 
 - Only user served by the product: **Project Manager**
 - Product form: **independent desktop workbench**
 - Operating mode: **single-user first**, local-first, evidence-aware
 
-## MVP/Core Objects
-
-The core data objects that must become first-class citizens are:
+#### MVP/Core Objects
 
 1. **Project Canvas**
 2. **Stakeholders**
@@ -27,26 +51,24 @@ The core data objects that must become first-class citizens are:
 5. **Work Packages**
 6. **Evidence** (meeting notes, emails, IM snippets, documents)
 
-These objects are the product center. Other modules are secondary unless they directly support these objects.
+### PMBrain — Knowledge Brain
 
-## Core Job To Be Done
+**PMBrain** is a local-first PM knowledge brain that ingests meetings, emails, and artifacts, normalizes them into typed PM records, persists them in SQLite, projects them into an Obsidian vault, and exposes structured tools via MCP.
 
-A project manager opens the app and can within seconds:
+It complements the desktop app by providing a CLI-accessible, scriptable knowledge layer that can run independently or be consumed by SwissArmyPM in the future.
 
-- find the current truth of a project
-- update key facts quickly
-- review timeline / risks / stakeholders / work packages
-- attach or inspect source evidence
-- answer questions such as “what is the committed delivery date?” with a value plus source
+---
 
-## Product Principles
+## Shared Product Principles
+
+These principles govern **both** sub-projects:
 
 1. **PM-first, not organization-first**
    - Optimize for the project manager's daily operating surface.
    - Do not assume broad team adoption.
 
 2. **Independent workbench first**
-   - The app should be useful even without Jira / MSP / Outlook / Feishu integrations.
+   - Each tool should be useful standalone.
    - External integrations are future accelerators, not prerequisites.
 
 3. **Structured truth before automation**
@@ -61,6 +83,20 @@ A project manager opens the app and can within seconds:
    - Every core page should support quick add / quick edit.
    - The product should reduce PM friction, not introduce enterprise ceremony.
 
+---
+
+## Core Job To Be Done
+
+A project manager opens the app and can within seconds:
+
+- find the current truth of a project
+- update key facts quickly
+- review timeline / risks / stakeholders / work packages
+- attach or inspect source evidence
+- answer questions such as "what is the committed delivery date?" with a value plus source
+
+---
+
 ## Current Agreed Scope
 
 ### In Scope Now
@@ -68,6 +104,7 @@ A project manager opens the app and can within seconds:
 - Project workspace as the main product shell
 - CRUD for project canvas, stakeholders, timeline plan, risk register, and work packages
 - Evidence collection as a supporting module
+- PMBrain CLI for setup, project init, risk matrix, stats, vault sync, and MCP serve
 - Future-ready slots for AI extraction and change proposals
 
 ### Explicitly Out of Scope as Product Center
@@ -77,36 +114,34 @@ A project manager opens the app and can within seconds:
 - broad multi-role workflows for executives / PMO / tech leads
 - rebuilding a general-purpose agent from scratch
 
-## Build Strategy
-
-Use existing agent capabilities where needed. Do **not** rebuild an agent runtime from zero unless a very specific low-level capability is impossible to reuse.
-
-The moat should come from the **project-management domain layer**, not from a custom agent shell.
-
-That domain layer should eventually center on:
-
-- project facts
-- evidence provenance
-- structured updates
-- conflict handling
-- trustworthy answers with source
+---
 
 ## Architecture Guidance
 
-### Preferred Product Structure
+### Monorepo Structure
 
-- **Project List / Home**
-- **Project Workspace**
-  - Canvas
-  - Stakeholders
-  - Timeline
-  - Risks
-  - Work Packages
-  - Evidence
+```
+D:\code\SwissArmyPM/
+├── package.json                  ← workspace orchestrator (workspaces: ["packages/*"])
+├── packages/
+│   ├── swissarmypm/              ← Electron desktop app
+│   │   ├── src/                  ← main/, preload/, renderer/, shared/
+│   │   ├── design/               ← Living prototype & component library
+│   │   ├── vite.config.ts
+│   │   └── CLAUDE.md             ← desktop-specific guidelines
+│   └── pmbrain/                  ← CLI + MCP knowledge brain
+│       ├── src/                  ← cli.ts, commands/, core/
+│       ├── docs/architecture.md
+│       └── CLAUDE.md             ← CLI/MCP/Vault guidelines
+├── docs/                         ← shared docs (PRDs, PMBOK guideline)
+├── CLAUDE.md                     ← this file (global guideline)
+├── AGENTS.md                     ← agent instructions
+└── README.md
+```
 
-### Preferred Data Direction
+### Preferred Data Direction (Shared Domain)
 
-Move toward these domain concepts:
+Move toward these domain concepts across both sub-projects:
 
 - `Project`
 - `ProjectCanvas`
@@ -129,26 +164,49 @@ Do not treat these as the long-term center of the app:
 
 They may remain temporarily in code, but they are **legacy direction**, not the target product definition.
 
-## Important Reality Check
+---
 
-The repository currently contains substantial implementation and documentation for:
+## Build Strategy
 
-- portfolio dashboards
-- inbox workflows
-- gantt/timeline views tied to projects/work items
-- my-work / todo / pomodoro flows
+Use existing agent capabilities where needed. Do **not** rebuild an agent runtime from zero unless a very specific low-level capability is impossible to reuse.
 
-Those represent the **previous product direction** and should not be used as the source of truth for new planning.
+The moat should come from the **project-management domain layer**, not from a custom agent shell.
+
+That domain layer should eventually center on:
+
+- project facts
+- evidence provenance
+- structured updates
+- conflict handling
+- trustworthy answers with source
+
+---
+
+## Shared Documentation
+
+The `docs/` directory at the repository root is the shared documentation hub for both sub-projects:
+
+- `docs/PMBOK-GBRAIN-GUIDELINE.md` — PMBOK mindset + GBrain adoption baseline (shared product guideline)
+- `docs/PRD/` — Product Requirements Documents
+- `docs/architecture/` — Technical architecture docs
+- `docs/MEMORY.md` — Current stable consensus
+- `docs/getting-started.md` — Onboarding guide
+
+Both sub-projects should reference shared docs via relative paths from their own `CLAUDE.md`.
+
+---
 
 ## Documentation Priority Order
 
 When documents disagree, follow this order:
 
-1. `CLAUDE.md`
-2. `docs/MEMORY.md`
-3. `docs/PRD/PRD-001-Master.md`
-4. `docs/overview.md`
-5. other historical docs
+1. `/CLAUDE.md` (this file)
+2. Sub-project `CLAUDE.md` (`packages/*/CLAUDE.md`)
+3. `docs/PMBOK-GBRAIN-GUIDELINE.md`
+4. `docs/MEMORY.md`
+5. `docs/PRD/PRD-001-Master.md`
+6. `docs/overview.md`
+7. other historical docs
 
 ## Documentation Hygiene Rule
 

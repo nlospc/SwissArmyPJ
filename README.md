@@ -1,50 +1,67 @@
-# SwissArmyPM
+# SwissArmyPM Monorepo
 
-面向**项目经理**的桌面工作台。
+This is an npm workspace monorepo containing **SwissArmyPM** (Electron + React + Vite desktop app) and **PMBrain** (Bun + TypeScript CLI knowledge brain). Both sub-projects retain independent build, dev, and release pipelines; the monorepo provides structural cohesion and future cross-package integration.
 
-当前明确方向：先做一个可独立使用的 PM Workspace，让项目经理能快速维护和查看项目关键事实，而不是继续扩展成组合治理平台或个人效率工具。
+## Monorepo Structure
 
-## 当前产品中心
-
-- 项目画布
-- 干系人
-- 时间规划表
-- 风险登记册
-- 工作包
-- 资料/证据
-
-## 当前原则
-
-- **项目经理唯一核心用户**
-- **桌面独立可用**，不依赖外部系统才能成立
-- **手工 CRUD 优先**，AI/Agent 先做建议，不先做自动改写
-- **证据可追溯**，未来回答关键问题时要能给来源
-
-## 仓库现状提醒
-
-仓库里仍有大量旧方向内容，包括：
-
-- Portfolio Dashboard
-- Inbox
-- My Work / Pomodoro
-- 通用 work item / todo 结构
-
-这些是历史实现资产，不再代表当前产品定义。
-
-## 关键文档
-
-- `CLAUDE.md`：当前最高优先级工作说明
-- `docs/MEMORY.md`：已确认产品事实与废弃假设
-- `docs/PRD/PRD-001-Master.md`：新的主 PRD
-- `docs/overview.md`：面向项目本身的概览
-
-## 开发
-
-```bash
-npm install
-npm run dev
+```
+D:\code\SwissArmyPM/              ← workspace root
+├── package.json                  ← workspace orchestrator (workspaces: ["packages/*"])
+├── packages/
+│   ├── swissarmypm/              ← Electron desktop app (React + Vite + SQLite)
+│   │   ├── package.json
+│   │   ├── vite.config.ts
+│   │   ├── tsconfig.json
+│   │   ├── src/                  ← main/, preload/, renderer/, shared/
+│   │   └── ...
+│   └── pmbrain/                  ← Bun + TypeScript CLI / knowledge brain
+│       ├── package.json
+│       ├── tsconfig.json
+│       ├── src/                  ← cli.ts, commands/, core/
+│       └── ...
+├── docs/                         ← shared documentation
+├── CLAUDE.md                     ← global product guidelines
+├── AGENTS.md                     ← agent instructions
+└── README.md                     ← this file
 ```
 
-## 备注
+- **`packages/swissarmypm`** — Electron desktop app (React + Vite + SQLite)
+- **`packages/pmbrain`** — Bun + TypeScript CLI / knowledge brain
 
-如果文档之间有冲突，以 `CLAUDE.md` 为准。
+## Workspace Usage
+
+Install dependencies from the workspace root:
+
+```bash
+npm run install:all
+```
+
+Run each package in dev mode:
+
+```bash
+npm run dev:swissarmypm
+npm run dev:pmbrain
+```
+
+Build each package:
+
+```bash
+npm run build:swissarmypm
+npm run build:pmbrain
+```
+
+Type-check each package:
+
+```bash
+npm run type-check:swissarmypm
+npm run type-check:pmbrain
+```
+
+## Key Technical Decisions
+
+| Decision | Rationale |
+|---|---|
+| **npm workspaces** | Minimal disruption to existing SwissArmyPM npm setup |
+| **Independent tsconfig per package** | Incompatible compiler options (React vs Bun) |
+| **Optional workspace dependency** | `swissarmypm` declares `pmbrain` as optional — no hard coupling |
+| **No shared node_modules rebuild** | Migration avoids running `npm install` during restructuring |
