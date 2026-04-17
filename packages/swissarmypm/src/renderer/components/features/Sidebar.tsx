@@ -5,7 +5,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/hooks/useI18n';
 import { Button, Badge, Tooltip } from 'antd';
 import { MoonOutlined, SunOutlined } from '@ant-design/icons';
-import { Inbox, LayoutDashboard, FolderKanban, ListChecks, Search, Settings } from 'lucide-react';
+import { FolderKanban, LayoutDashboard, Inbox, Search, Settings } from 'lucide-react';
 
 export function Sidebar() {
   const { currentView, setCurrentView } = useUIStore();
@@ -15,10 +15,9 @@ export function Sidebar() {
   const unprocessedCount = getUnprocessedCount();
 
   const navItems = [
-    { id: 'dashboard', icon: <LayoutDashboard className="h-4 w-4" />, labelKey: 'nav.dashboard' as const },
-    { id: 'portfolio', icon: <FolderKanban className="h-4 w-4" />, labelKey: 'nav.portfolio' as const },
+    { id: 'projects', icon: <FolderKanban className="h-4 w-4" />, labelKey: 'nav.projects' as const },
+    { id: 'workbench', icon: <LayoutDashboard className="h-4 w-4" />, labelKey: 'nav.workbench' as const },
     { id: 'inbox', icon: <Inbox className="h-4 w-4" />, labelKey: 'nav.inbox' as const, badge: unprocessedCount },
-    { id: 'my-work', icon: <ListChecks className="h-4 w-4" />, labelKey: 'nav.myWork' as const },
     { id: 'search', icon: <Search className="h-4 w-4" />, labelKey: 'nav.search' as const },
     { id: 'settings', icon: <Settings className="h-4 w-4" />, labelKey: 'nav.settings' as const },
   ] as const;
@@ -29,14 +28,10 @@ export function Sidebar() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('app.name')}</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Project Management</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">PM Workspace MVP</p>
           </div>
           <Tooltip title={isDark ? '切换到亮色模式' : '切换到暗色模式'}>
-            <Button
-              type="text"
-              icon={isDark ? <SunOutlined className="h-4 w-4" /> : <MoonOutlined className="h-4 w-4" />}
-              onClick={toggleTheme}
-            />
+            <Button type="text" icon={isDark ? <SunOutlined className="h-4 w-4" /> : <MoonOutlined className="h-4 w-4" />} onClick={toggleTheme} />
           </Tooltip>
         </div>
       </div>
@@ -44,19 +39,10 @@ export function Sidebar() {
       <nav className="flex-1 p-4 space-y-2">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
-
           return (
-            <Button
-              key={item.id}
-              type={isActive ? 'primary' : 'text'}
-              className="w-full justify-start h-10"
-              icon={item.icon}
-              onClick={() => setCurrentView(item.id as any)}
-            >
+            <Button key={item.id} type={isActive ? 'primary' : 'text'} className="w-full justify-start h-10" icon={item.icon} onClick={() => setCurrentView(item.id as any)}>
               {t(item.labelKey)}
-              {item.badge !== undefined && item.badge > 0 && (
-                <Badge count={item.badge} className="ml-auto" />
-              )}
+              {item.badge !== undefined && item.badge > 0 && <Badge count={item.badge} className="ml-auto" />}
             </Button>
           );
         })}
@@ -65,9 +51,7 @@ export function Sidebar() {
       <div className="p-4 border-t border-gray-200 text-xs text-gray-400 dark:border-gray-700 dark:text-gray-500">
         <div className="flex items-center justify-between">
           <p>v1.0.0</p>
-          <span className="text-xs text-gray-400 dark:text-gray-500">
-            {isDark ? '🌙 暗色' : '☀️ 亮色'}
-          </span>
+          <span>{isDark ? '🌙 暗色' : '☀️ 亮色'}</span>
         </div>
       </div>
     </div>

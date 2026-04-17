@@ -1,25 +1,20 @@
-/**
- * Internationalization hook stub
- * TODO: Implement proper i18n system with react-i18next or similar
- */
+import { translations } from '@/i18n';
+import { useUIStore } from '@/stores/useUIStore';
 
-const TRANSLATIONS: Record<string, string> = {
-  'app.name':       'SwissArmyPM',
-  'nav.dashboard':  'Dashboard',
-  'nav.portfolio':  'Gantt Chart',
-  'nav.inbox':      'Inbox',
-  'nav.myWork':     'My Work',
-  'nav.search':     'Search',
-  'nav.settings':   'Settings',
-};
+function getNestedValue(source: Record<string, any>, path: string): string | undefined {
+  return path.split('.').reduce<any>((current, key) => current?.[key], source);
+}
 
 export function useI18n() {
+  const language = useUIStore((state) => state.language);
+
   const t = (key: string): string => {
-    if (TRANSLATIONS[key]) return TRANSLATIONS[key];
-    // Fallback: capitalize last key segment
-    const last = key.split('.').pop() || key;
-    return last.charAt(0).toUpperCase() + last.slice(1);
+    const value = getNestedValue(translations[language] as Record<string, any>, key);
+    if (typeof value === 'string') return value;
+    const fallback = getNestedValue(translations.en as Record<string, any>, key);
+    if (typeof fallback === 'string') return fallback;
+    return key;
   };
 
-  return { t };
+  return { t, language };
 }

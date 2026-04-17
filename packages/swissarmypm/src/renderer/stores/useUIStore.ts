@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Language } from '@/i18n';
 
-export type ViewType = 'dashboard' | 'inbox' | 'portfolio' | 'my-work' | 'search' | 'settings';
+export type ViewType = 'projects' | 'workbench' | 'inbox' | 'search' | 'settings';
 
 interface UIState {
   currentView: ViewType;
@@ -9,8 +9,6 @@ interface UIState {
   sidebarCollapsed: boolean;
   theme: 'light' | 'dark';
   language: Language;
-
-  // Actions
   setCurrentView: (view: ViewType) => void;
   setSelectedProjectId: (id: number | null) => void;
   toggleSidebar: () => void;
@@ -19,12 +17,11 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
-  currentView: 'dashboard',
+  currentView: 'projects',
   selectedProjectId: null,
   sidebarCollapsed: false,
   theme: 'light',
   language: 'zh',
-
   setCurrentView: (view) => set({ currentView: view }),
   setSelectedProjectId: (id) => set({ selectedProjectId: id }),
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
