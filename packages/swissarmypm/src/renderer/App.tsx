@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ConfigProvider, theme, Spin, Alert, Button, App as AntApp } from 'antd';
+import { ConfigProvider, Spin, Alert, Button, App as AntApp } from 'antd';
 import { Agentation, type Annotation } from 'agentation';
 import { ReloadOutlined } from '@ant-design/icons';
 
@@ -16,11 +16,9 @@ import { useInboxStore } from './stores/useInboxStore';
 import { useTodoStore } from './stores/useTodoStore';
 import { loadSampleData } from './lib/sampleData';
 
-// Pages
-import { DashboardPage } from './pages/DashboardPage';
-import { PortfolioPage } from './pages/PortfolioPage';
+import { ProjectsPage } from './pages/ProjectsPage';
+import { ProjectWorkbenchPage } from './pages/ProjectWorkbenchPage';
 import { InboxPage } from './pages/InboxPage';
-import { MyWorkPage } from './features/my-work';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
 
@@ -44,17 +42,13 @@ function AppContent() {
         setIsLoading(true);
         setError(null);
 
-        // Load workspace
         await workspaceStore.loadWorkspace();
-
-        // Check if we need to load sample data
         await projectStore.loadProjects();
+
         if (projectStore.projects.length === 0) {
-          console.log('Loading sample data...');
           await loadSampleData();
         }
 
-        // Load all data
         await Promise.all([
           portfolioStore.loadPortfolios(),
           projectStore.loadProjects(),
@@ -72,10 +66,9 @@ function AppContent() {
       }
     }
 
-    initialize();
+    void initialize();
   }, []);
 
-  // Agentation callback - receives UI annotation data
   const handleAnnotationAdd = (annotation: Annotation) => {
     console.log('Agentation Annotation:', {
       element: annotation.element,
@@ -105,11 +98,7 @@ function AppContent() {
           type="error"
           showIcon
           action={
-            <Button
-              type="primary"
-              icon={<ReloadOutlined />}
-              onClick={() => window.location.reload()}
-            >
+            <Button type="primary" icon={<ReloadOutlined />} onClick={() => window.location.reload()}>
               {t('app.retry')}
             </Button>
           }
@@ -133,18 +122,14 @@ function AppContent() {
     <div className="flex h-full overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-hidden">
-        {currentView === 'dashboard' && <DashboardPage />}
-        {currentView === 'portfolio' && <PortfolioPage />}
+        {currentView === 'projects' && <ProjectsPage />}
+        {currentView === 'workbench' && <ProjectWorkbenchPage />}
         {currentView === 'inbox' && <InboxPage />}
-        {currentView === 'my-work' && <MyWorkPage />}
         {currentView === 'search' && <SearchPage />}
         {currentView === 'settings' && <SettingsPage />}
       </main>
       {process.env.NODE_ENV === 'development' && (
-        <Agentation
-          onAnnotationAdd={handleAnnotationAdd}
-          copyToClipboard={true}
-        />
+        <Agentation onAnnotationAdd={handleAnnotationAdd} copyToClipboard={true} />
       )}
     </div>
   );
