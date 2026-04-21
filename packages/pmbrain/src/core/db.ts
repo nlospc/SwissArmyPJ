@@ -69,6 +69,9 @@ export function requiredTables(): string[] {
     'vault_sync_state',
     'projects',
     'risks',
+    'stakeholders',
+    'work_packages',
+    'evidence',
   ]
 }
 
@@ -134,8 +137,8 @@ export function insertProject(config: PMBrainConfig, input: ProjectInitInput): P
 
       db.query(
         `INSERT INTO projects (
-          id, code, owner, sponsor, status, priority, health, objective, start_date, target_date, end_date, progress_pct, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          id, code, owner, sponsor, status, priority, health, objective, start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         id,
         input.code,
@@ -149,6 +152,8 @@ export function insertProject(config: PMBrainConfig, input: ProjectInitInput): P
         null,
         null,
         0,
+        input.budgetBaseline ?? null,
+        null,
         now,
         now,
       )
@@ -187,7 +192,7 @@ export function insertProject(config: PMBrainConfig, input: ProjectInitInput): P
 
     const row = db.query<any, [string]>(
       `SELECT id, code, owner, sponsor, status, priority, health, objective,
-              start_date, target_date, end_date, progress_pct, created_at, updated_at
+              start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, created_at, updated_at
        FROM projects WHERE id = ?`
     ).get(id)
 
@@ -279,6 +284,8 @@ function mapProjectRecord(row: any): ProjectRecord {
     targetDate: row.target_date ? String(row.target_date) : null,
     endDate: row.end_date ? String(row.end_date) : null,
     progressPct: Number(row.progress_pct ?? 0),
+    budgetBaseline: row.budget_baseline ? Number(row.budget_baseline) : null,
+    costActual: row.cost_actual ? Number(row.cost_actual) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   }

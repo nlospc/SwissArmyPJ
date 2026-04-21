@@ -37,6 +37,7 @@ export interface ProjectInitInput {
   name: string
   status?: string
   owner?: string
+  budgetBaseline?: number
 }
 
 export interface RiskMatrixCell {
@@ -73,6 +74,8 @@ export interface ProjectRecord {
   targetDate: string | null
   endDate: string | null
   progressPct: number
+  budgetBaseline: number | null
+  costActual: number | null
   createdAt: string
   updatedAt: string
 }

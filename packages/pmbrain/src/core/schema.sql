@@ -165,6 +165,8 @@ CREATE TABLE IF NOT EXISTS projects (
   target_date TEXT,
   end_date TEXT,
   progress_pct REAL NOT NULL DEFAULT 0,
+  budget_baseline REAL,         -- Total approved budget in project currency
+  cost_actual REAL,             -- Actual cost to date
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   FOREIGN KEY (id) REFERENCES pages(id) ON DELETE CASCADE
@@ -191,6 +193,60 @@ CREATE TABLE IF NOT EXISTS risks (
   FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
 );
 
+-- Core PM objects: stakeholders
+CREATE TABLE IF NOT EXISTS stakeholders (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  page_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT,
+  organization TEXT,
+  contact TEXT,
+  influence TEXT,          -- high/medium/low
+  interest TEXT,          -- high/medium/low
+  engagement_strategy TEXT,
+  notes TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+);
+
+-- Core PM objects: work packages
+CREATE TABLE IF NOT EXISTS work_packages (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  page_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  responsible TEXT,       -- stakeholder id reference
+  start_date TEXT,
+  end_date TEXT,
+  status TEXT NOT NULL,   -- pending/in_progress/done/cancelled
+  progress_pct REAL NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+);
+
+-- Core PM objects: evidence
+CREATE TABLE IF NOT EXISTS evidence (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  entity_type TEXT,       -- project/risk/stakeholder/work_package
+  entity_id TEXT,
+  title TEXT NOT NULL,
+  source_type TEXT NOT NULL, -- meeting_note/email/im/document
+  source_uri TEXT,
+  captured_at TEXT NOT NULL,
+  content_text TEXT,
+  file_path TEXT,
+  metadata_json TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_pages_type ON pages(page_type);
 CREATE INDEX IF NOT EXISTS idx_pages_updated ON pages(updated_at);
 CREATE INDEX IF NOT EXISTS idx_links_src ON links(src_page_id);
@@ -199,3 +255,7 @@ CREATE INDEX IF NOT EXISTS idx_timeline_event_at ON timeline_entries(event_at);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_risks_project ON risks(project_id);
 CREATE INDEX IF NOT EXISTS idx_risks_status ON risks(status);
+CREATE INDEX IF NOT EXISTS idx_stakeholders_project ON stakeholders(project_id);
+CREATE INDEX IF NOT EXISTS idx_work_packages_project ON work_packages(project_id);
+CREATE INDEX IF NOT EXISTS idx_work_packages_status ON work_packages(status);
+CREATE INDEX IF NOT EXISTS idx_evidence_project ON evidence(project_id);
