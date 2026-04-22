@@ -1,7 +1,7 @@
 import { registerDashboardHandlers } from './dashboardHandlers';
-import { registerCoreIPCHandlers } from './handlers';
 import { registerInboxHandlers } from './inboxHandlers';
 import { registerMyWorkHandlers } from './myWorkHandlers';
+import { registerPortfolioHandlers } from './portfolioHandlers';
 import { registerProjectHandlers } from './projectHandlers';
 import { registerSearchHandlers } from './searchHandlers';
 import { registerSettingsHandlers } from './settingsHandlers';
@@ -23,6 +23,6 @@ export function registerIPCHandlers(): void {
   registerTodoHandlers();
   registerSearchHandlers();
 
-  // Remaining legacy portfolio surface still lives in handlers.ts and can be extracted in a later phase.
-  registerCoreIPCHandlers();
+  // Legacy portfolio surface stays isolated as its own retrieval unit.
+  registerPortfolioHandlers();
 }

@@ -4,13 +4,13 @@ import * as crypto from 'node:crypto';
 import { getDatabase } from '../database/schema';
 
 import type {
+  CreatePortfolioDTO,
   IPCResponse,
   Portfolio,
-  CreatePortfolioDTO,
   UpdatePortfolioDTO,
 } from '../../shared/types';
 
-export function registerCoreIPCHandlers(): void {
+export function registerPortfolioHandlers(): void {
   ipcMain.handle('portfolios:getAll', handleGetAllPortfolios);
   ipcMain.handle('portfolios:getById', handleGetPortfolioById);
   ipcMain.handle('portfolios:create', handleCreatePortfolio);
@@ -20,16 +20,11 @@ export function registerCoreIPCHandlers(): void {
   ipcMain.handle('portfolios:removeProject', handleRemoveProjectFromPortfolio);
 }
 
-// ============================================================================
-// Portfolio Handlers
-// ============================================================================
-
 function handleGetAllPortfolios(): IPCResponse<Portfolio[]> {
   try {
     const db = getDatabase();
     const portfolios = db.prepare('SELECT * FROM portfolios ORDER BY created_at DESC').all() as Portfolio[];
 
-    // Populate project IDs for each portfolio
     for (const portfolio of portfolios) {
       const projectIds = db.prepare('SELECT project_id FROM portfolio_projects WHERE portfolio_id = ?')
         .all(portfolio.id)
@@ -146,4 +141,3 @@ function handleRemoveProjectFromPortfolio(_event: any, portfolioId: number, proj
     return { success: false, error: error.message };
   }
 }
-
