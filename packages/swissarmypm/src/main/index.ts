@@ -1,6 +1,6 @@
 import * as electron from 'electron';
 import { initDatabase } from './database/schema';
-import { registerIPCHandlers } from './ipc/handlers';
+import { registerIPCHandlers } from './ipc';
 
 // 在开发环境中导入 devtools installer
 let installExtension: any, REACT_DEVELOPER_TOOLS: any, REDUX_DEVTOOLS: any;

@@ -3,10 +3,6 @@ import * as crypto from 'node:crypto';
 
 import { getDatabase } from '../database/schema';
 
-import { registerMyWorkHandlers } from './myWorkHandlers';
-
-import { registerDashboardHandlers } from './dashboardHandlers';
-
 import type {
 
   IPCResponse,
@@ -59,58 +55,91 @@ import type {
 
 } from '../../shared/projectCanvas';
 
-import { getProjectCanvas, saveProjectCanvasElement } from '../services/projectCanvasService';
-
-// ============================================================================
-// Audit Log Helper
-// ============================================================================
-
-interface AuditLogEntry {
-  entity_type: string;
-  entity_id: string;
-  action: 'create' | 'update' | 'delete';
-  user_id?: string;
-  source?: string;
-  old_values_json?: string;
-  new_values_json?: string;
-}
-
-function writeAuditLog(entry: AuditLogEntry): void {
-  try {
-    const db = getDatabase();
-    const uuid = crypto.randomUUID();
-    const now = new Date().toISOString();
-
-    db.prepare(`
-      INSERT INTO audit_log (uuid, entity_type, entity_id, action, user_id, source, old_values_json, new_values_json, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      uuid,
-      entry.entity_type,
-      entry.entity_id,
-      entry.action,
-      entry.user_id || null,
-      entry.source || null,
-      entry.old_values_json || null,
-      entry.new_values_json || null,
-      now
-    );
-  } catch (error) {
-    console.error('Failed to write audit log:', error);
-    // Don't throw - audit log failures shouldn't break the main operation
-  }
-}
-
-export function registerIPCHandlers(): void {
-
-  // Register My Work handlers
-
-  registerMyWorkHandlers();
-
-  // Register Dashboard handlers
+import { getProjectCanvas, saveProjectCanvasElement } from '../services/projectCanvasService';
 
 
-  registerDashboardHandlers();
+
+// ============================================================================
+
+// Audit Log Helper
+
+// ============================================================================
+
+
+
+interface AuditLogEntry {
+
+  entity_type: string;
+
+  entity_id: string;
+
+  action: 'create' | 'update' | 'delete';
+
+  user_id?: string;
+
+  source?: string;
+
+  old_values_json?: string;
+
+  new_values_json?: string;
+
+}
+
+
+
+function writeAuditLog(entry: AuditLogEntry): void {
+
+  try {
+
+    const db = getDatabase();
+
+    const uuid = crypto.randomUUID();
+
+    const now = new Date().toISOString();
+
+
+
+    db.prepare(`
+
+      INSERT INTO audit_log (uuid, entity_type, entity_id, action, user_id, source, old_values_json, new_values_json, created_at)
+
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+    `).run(
+
+      uuid,
+
+      entry.entity_type,
+
+      entry.entity_id,
+
+      entry.action,
+
+      entry.user_id || null,
+
+      entry.source || null,
+
+      entry.old_values_json || null,
+
+      entry.new_values_json || null,
+
+      now
+
+    );
+
+  } catch (error) {
+
+    console.error('Failed to write audit log:', error);
+
+    // Don't throw - audit log failures shouldn't break the main operation
+
+  }
+
+}
+
+
+
+export function registerCoreIPCHandlers(): void {
   // ============================================================================
   // Workspace
   // ============================================================================
