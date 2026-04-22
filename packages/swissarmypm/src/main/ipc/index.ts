@@ -3,7 +3,9 @@ import { registerCoreIPCHandlers } from './handlers';
 import { registerInboxHandlers } from './inboxHandlers';
 import { registerMyWorkHandlers } from './myWorkHandlers';
 import { registerProjectHandlers } from './projectHandlers';
+import { registerSearchHandlers } from './searchHandlers';
 import { registerSettingsHandlers } from './settingsHandlers';
+import { registerTodoHandlers } from './todoHandlers';
 import { registerWorkItemHandlers } from './workItemHandlers';
 import { registerWorkspaceHandlers } from './workspaceHandlers';
 
@@ -18,7 +20,9 @@ export function registerIPCHandlers(): void {
   registerWorkItemHandlers();
   registerInboxHandlers();
   registerSettingsHandlers();
+  registerTodoHandlers();
+  registerSearchHandlers();
 
-  // Core/general IPC surface still lives in handlers.ts and will be split by domain in later phases.
+  // Remaining legacy portfolio surface still lives in handlers.ts and can be extracted in a later phase.
   registerCoreIPCHandlers();
 }

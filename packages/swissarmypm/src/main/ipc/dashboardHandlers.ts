@@ -1,7 +1,11 @@
 import { ipcMain } from 'electron';
 import { getDatabase } from '../database/schema';
 
+import type { IPCResponse, PortfolioSummary } from '../../shared/types';
+
 export function registerDashboardHandlers() {
+  ipcMain.handle('dashboard:getPortfolioSummary', handleGetPortfolioSummary);
+
   // Get portfolio metrics
   ipcMain.handle('dashboard:get-metrics', async () => {
     const db = getDatabase();
@@ -335,4 +339,55 @@ export function registerDashboardHandlers() {
       low: low.count,
     };
   });
+}
+
+function handleGetPortfolioSummary(): IPCResponse<PortfolioSummary> {
+  try {
+    const db = getDatabase();
+
+    const totalProjects = db.prepare('SELECT COUNT(*) as count FROM projects').get() as { count: number };
+    const totalWorkItems = db.prepare('SELECT COUNT(*) as count FROM work_items').get() as { count: number };
+
+    const statusCounts = db.prepare(`
+      SELECT
+        SUM(CASE WHEN status = 'not_started' THEN 1 ELSE 0 END) as not_started,
+        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+        SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done,
+        SUM(CASE WHEN status = 'blocked' THEN 1 ELSE 0 END) as blocked
+      FROM (
+        SELECT status FROM projects
+        UNION ALL
+        SELECT status FROM work_items
+      )
+    `).get() as any;
+
+    const blockedCount = db.prepare(`
+      SELECT COUNT(*) as count FROM (
+        SELECT id FROM projects WHERE status = 'blocked'
+        UNION ALL
+        SELECT id FROM work_items WHERE status = 'blocked'
+      )
+    `).get() as { count: number };
+
+    const atRiskCount = db.prepare(`
+      SELECT COUNT(*) as count FROM work_items WHERE type = 'issue'
+    `).get() as { count: number };
+
+    const summary: PortfolioSummary = {
+      totalProjects: totalProjects.count,
+      totalWorkItems: totalWorkItems.count,
+      atRisk: atRiskCount.count,
+      blocked: blockedCount.count,
+      statusDistribution: {
+        not_started: statusCounts.not_started || 0,
+        in_progress: statusCounts.in_progress || 0,
+        done: statusCounts.done || 0,
+        blocked: statusCounts.blocked || 0,
+      },
+    };
+
+    return { success: true, data: summary };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
