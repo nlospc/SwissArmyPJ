@@ -19,6 +19,11 @@
 4. `../PRD/PRD-001-Master.md`
 5. 相关模块 PRD
 
+如果任务涉及架构、目录组织、文件拆分/合并、domain 边界，请额外读取：
+
+6. `../../.claude/skills/architecture-agent.md`
+7. `../architecture/RETRIEVAL-UNIT-GUIDANCE.md`
+
 ---
 
 ## 📁 实际目录结构
@@ -87,6 +92,14 @@ SwissArmyPM/
 | 状态管理 | `src/renderer/stores/` |
 | IPC Bridge | `src/renderer/lib/` |
 
+### 2.1 架构 agent 的拆分规则
+
+- 不按文件行数机械拆分
+- 优先按 domain + runtime + 检索单元组织代码
+- 同一问题的相关方法尽量收敛在同一文件或同一 feature 单元
+- 只有出现真正边界时才拆：runtime、domain、生命周期、依赖方向、公共 contract
+- 禁止把完整功能过早打碎成很多薄文件，增加 agent 检索噪音
+
 ### 3. 当前实际技术栈
 
 | 层 | 技术 | 版本 |
@@ -121,6 +134,7 @@ SwissArmyPM/
 5. 布局用 `flex` + `h-full` + `min-h-0` 处理高度
 6. 修改前先确认意图和范围，避免返工
 7. 产品方向变更时同步更新根目录 `CLAUDE.md`、`docs/MEMORY.md` 与相关 PRD
+8. 架构调整优先优化 agent/LLM 的上下文检索质量，不追求表面上的小文件化
 
 ---
 

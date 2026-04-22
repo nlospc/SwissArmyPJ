@@ -51,6 +51,20 @@ npm run type-check   # TypeScript type checking (tsc -b -f)
 └─────────────────────────────────────────┘
 ```
 
+### Agent-Oriented Architecture Rule
+
+When doing architecture or file-organization work, load `.claude/skills/architecture-agent.md` first.
+
+SwissArmyPM follows a retrieval-oriented architecture rule for agent coding:
+
+- Do not split files by line count alone
+- Prefer keeping methods of the same domain problem in the same retrieval unit
+- A file may be large if it still represents one coherent runtime + domain + change reason
+- Split only when a real boundary appears: runtime, domain, lifecycle, dependency direction, or public contract
+- Avoid one-method-per-file and premature helper fragmentation
+
+In short: optimize for low-noise retrieval and stable modification, not for visually small files.
+
 ### Directory Structure
 
 ```
