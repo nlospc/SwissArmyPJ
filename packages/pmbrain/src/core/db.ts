@@ -290,3 +290,88 @@ function mapProjectRecord(row: any): ProjectRecord {
     updatedAt: String(row.updated_at),
   }
 }
+
+export interface ProjectDeleteResult {
+  deleted: boolean
+  projectId: string | null
+  projectCode: string | null
+  message: string
+}
+
+/**
+ * Find project by code or ID
+ */
+export function findProjectByCodeOrId(config: PMBrainConfig, codeOrId: string): ProjectRecord | null {
+  const db = openDatabase(config)
+  try {
+    // Try exact match on code first, then on id
+    let row = db.query<any, [string]>(
+      `SELECT id, code, owner, sponsor, status, priority, health, objective,
+              start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, created_at, updated_at
+       FROM projects WHERE code = ?`
+    ).get(codeOrId)
+
+    if (!row) {
+      row = db.query<any, [string]>(
+        `SELECT id, code, owner, sponsor, status, priority, health, objective,
+                start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, created_at, updated_at
+         FROM projects WHERE id = ?`
+      ).get(codeOrId)
+    }
+
+    if (!row) {
+      return null
+    }
+
+    return mapProjectRecord(row)
+  } finally {
+    db.close()
+  }
+}
+
+/**
+ * Delete a project by ID.
+ * Relies on SQLite ON DELETE CASCADE foreign key constraints to handle cascading deletion
+ * of all dependent records: stakeholders, work_packages, evidence, pages, etc.
+ */
+export function deleteProjectById(config: PMBrainConfig, projectId: string): ProjectDeleteResult {
+  const db = openDatabase(config)
+  try {
+    db.exec(readSchemaSql())
+
+    // Find the project first to get code for the response
+    const project = db.query<any, [string]>(
+      `SELECT code FROM projects WHERE id = ?`
+    ).get(projectId)
+
+    if (!project) {
+      return {
+        deleted: false,
+        projectId,
+        projectCode: null,
+        message: 'Project not found',
+      }
+    }
+
+    // Begin transaction: projects references pages(id) ON DELETE CASCADE,
+    // and all child entities reference projects(id) ON DELETE CASCADE
+    // So deleting the page will cascade to project, which cascades to children
+    const deleteTransaction = db.transaction(() => {
+      // Get the page id (same as project id) from projects table
+      // Delete the page - cascades to projects via FK ON DELETE CASCADE,
+      // which cascades to stakeholders, work_packages, evidence via their FKs
+      db.query(`DELETE FROM pages WHERE id = ?`).run(projectId)
+    })
+
+    deleteTransaction()
+
+    return {
+      deleted: true,
+      projectId,
+      projectCode: String(project.code),
+      message: 'Project and all associated records deleted successfully (cascade via foreign keys)',
+    }
+  } finally {
+    db.close()
+  }
+}
