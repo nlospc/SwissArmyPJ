@@ -137,8 +137,8 @@ export function insertProject(config: PMBrainConfig, input: ProjectInitInput): P
 
       db.query(
         `INSERT INTO projects (
-          id, code, owner, sponsor, status, priority, health, objective, start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          id, code, owner, sponsor, status, priority, health, objective, start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, program_id, program_role, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         id,
         input.code,
@@ -154,6 +154,8 @@ export function insertProject(config: PMBrainConfig, input: ProjectInitInput): P
         0,
         input.budgetBaseline ?? null,
         null,
+        input.programId ?? null,
+        input.programRole ?? 'standalone',
         now,
         now,
       )
@@ -192,7 +194,7 @@ export function insertProject(config: PMBrainConfig, input: ProjectInitInput): P
 
     const row = db.query<any, [string]>(
       `SELECT id, code, owner, sponsor, status, priority, health, objective,
-              start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, created_at, updated_at
+              start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, program_id, program_role, created_at, updated_at
        FROM projects WHERE id = ?`
     ).get(id)
 
@@ -286,6 +288,8 @@ function mapProjectRecord(row: any): ProjectRecord {
     progressPct: Number(row.progress_pct ?? 0),
     budgetBaseline: row.budget_baseline ? Number(row.budget_baseline) : null,
     costActual: row.cost_actual ? Number(row.cost_actual) : null,
+    programId: row.program_id ? String(row.program_id) : null,
+    programRole: (row.program_role as 'program' | 'component' | 'standalone') ?? 'standalone',
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   }
@@ -307,14 +311,14 @@ export function findProjectByCodeOrId(config: PMBrainConfig, codeOrId: string): 
     // Try exact match on code first, then on id
     let row = db.query<any, [string]>(
       `SELECT id, code, owner, sponsor, status, priority, health, objective,
-              start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, created_at, updated_at
+              start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, program_id, program_role, created_at, updated_at
        FROM projects WHERE code = ?`
     ).get(codeOrId)
 
     if (!row) {
       row = db.query<any, [string]>(
         `SELECT id, code, owner, sponsor, status, priority, health, objective,
-                start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, created_at, updated_at
+                start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, program_id, program_role, created_at, updated_at
          FROM projects WHERE id = ?`
       ).get(codeOrId)
     }

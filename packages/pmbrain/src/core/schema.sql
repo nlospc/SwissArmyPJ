@@ -167,6 +167,8 @@ CREATE TABLE IF NOT EXISTS projects (
   progress_pct REAL NOT NULL DEFAULT 0,
   budget_baseline REAL,         -- Total approved budget in project currency
   cost_actual REAL,             -- Actual cost to date
+  program_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  program_role TEXT NOT NULL DEFAULT 'standalone', -- 'program' / 'component' / 'standalone'
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   FOREIGN KEY (id) REFERENCES pages(id) ON DELETE CASCADE

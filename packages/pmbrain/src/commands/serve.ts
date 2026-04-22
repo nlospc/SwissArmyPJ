@@ -7,7 +7,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { loadConfig } from '../core/config';
-import { collectStats, getRiskMatrix, insertProject, missingTables, openDatabase } from '../core/db';
+import { collectStats, deleteProjectById, findProjectByCodeOrId, getRiskMatrix, insertProject, missingTables, openDatabase } from '../core/db';
 import type { ProjectInitInput } from '../core/types';
 
 export async function runServe(): Promise<void> {
@@ -98,6 +98,15 @@ export async function runServe(): Promise<void> {
                 type: 'string',
                 description: 'Initial status (default: planning)',
               },
+              program_id: {
+                type: 'string',
+                description: 'Parent program ID (optional, for component projects)',
+              },
+              program_role: {
+                type: 'string',
+                description: 'Program role: "program" (project set), "component" (child project), or "standalone" (independent project, default)',
+                enum: ['program', 'component', 'standalone'],
+              },
             },
             required: ['code', 'name'],
           },
@@ -113,6 +122,20 @@ export async function runServe(): Promise<void> {
                 description: 'Filter by project code (optional)',
               },
             },
+          },
+        },
+        {
+          name: 'delete_project',
+          description: 'Delete a project by code or id (permanently deletes all associated records)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              code_or_id: {
+                type: 'string',
+                description: 'Project code or project ID',
+              },
+            },
+            required: ['code_or_id'],
           },
         },
       ],
@@ -140,7 +163,7 @@ export async function runServe(): Promise<void> {
         const db = openDatabase(config);
         try {
           let sql = `
-            SELECT id, code, owner, status, priority, health, progress_pct, budget_baseline, created_at
+            SELECT id, code, owner, status, priority, health, progress_pct, budget_baseline, program_id, program_role, created_at
             FROM projects
             ORDER BY created_at DESC
           `;
@@ -148,7 +171,7 @@ export async function runServe(): Promise<void> {
 
           if (args?.status) {
             sql = `
-              SELECT id, code, owner, status, priority, health, progress_pct, budget_baseline, created_at
+              SELECT id, code, owner, status, priority, health, progress_pct, budget_baseline, program_id, program_role, created_at
               FROM projects
               WHERE status = ?
               ORDER BY created_at DESC
@@ -179,7 +202,7 @@ export async function runServe(): Promise<void> {
         try {
           const row = db.query(
             `SELECT id, code, owner, sponsor, status, priority, health, objective,
-                    start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, created_at, updated_at
+                    start_date, target_date, end_date, progress_pct, budget_baseline, cost_actual, program_id, program_role, created_at, updated_at
              FROM projects WHERE code = ?`
           ).get(args.code);
 
@@ -187,11 +210,26 @@ export async function runServe(): Promise<void> {
             throw new McpError(ErrorCode.InvalidRequest, `Project with code '${args.code}' not found`);
           }
 
+          // If this is a program, get all component projects
+          let components: any[] | undefined;
+          if ((row as any).program_role === 'program') {
+            components = db.query(
+              `SELECT id, code, owner, status, progress_pct, start_date, target_date
+               FROM projects WHERE program_id = ?
+               ORDER BY created_at DESC`
+            ).all((row as any).id);
+          }
+
+          const result = {
+            ...row,
+            components,
+          };
+
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(row, null, 2),
+                text: JSON.stringify(result, null, 2),
               },
             ],
           };
@@ -214,6 +252,8 @@ export async function runServe(): Promise<void> {
           owner: typeof args.owner === 'string' ? args.owner : undefined,
           budgetBaseline: typeof args.budget_baseline === 'number' ? args.budget_baseline : undefined,
           status: typeof args.status === 'string' ? args.status : 'planning',
+          programId: typeof args.program_id === 'string' ? args.program_id : undefined,
+          programRole: (typeof args.program_role === 'string' ? args.program_role : undefined) as 'program' | 'component' | 'standalone' | undefined,
         };
 
         const project = insertProject(config, input);
@@ -240,6 +280,36 @@ export async function runServe(): Promise<void> {
             },
           ],
         };
+      }
+
+      case 'delete_project': {
+        if (!args?.code_or_id || typeof args.code_or_id !== 'string') {
+          throw new McpError(ErrorCode.InvalidParams, 'Project code or ID is required');
+        }
+
+        const db = openDatabase(config);
+        try {
+          const project = findProjectByCodeOrId(config, args.code_or_id);
+          if (!project) {
+            throw new McpError(ErrorCode.InvalidRequest, `Project '${args.code_or_id}' not found`);
+          }
+
+          const result = deleteProjectById(config, project.id);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({ 
+                  ok: true, 
+                  deleted: result.deleted, 
+                  message: `Project '${project.code}' deleted successfully` 
+                }, null, 2),
+              },
+            ],
+          };
+        } finally {
+          db.close();
+        }
       }
 
       default:

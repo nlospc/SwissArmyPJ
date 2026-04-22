@@ -38,6 +38,8 @@ export interface ProjectInitInput {
   status?: string
   owner?: string
   budgetBaseline?: number
+  programId?: string | null
+  programRole?: 'program' | 'component' | 'standalone'
 }
 
 export interface RiskMatrixCell {
@@ -76,6 +78,8 @@ export interface ProjectRecord {
   progressPct: number
   budgetBaseline: number | null
   costActual: number | null
+  programId: string | null
+  programRole: 'program' | 'component' | 'standalone'
   createdAt: string
   updatedAt: string
 }
