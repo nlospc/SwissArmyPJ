@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo } from 'react';
-import { AppstoreOutlined, DeploymentUnitOutlined, FileSearchOutlined, FlagOutlined, ProfileOutlined, TeamOutlined } from '@ant-design/icons';
-import { Button, Card, Empty, Typography } from 'antd';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AppstoreOutlined, DeploymentUnitOutlined, FileSearchOutlined, FlagOutlined, InfoCircleOutlined, ProfileOutlined, TeamOutlined } from '@ant-design/icons';
+import { Button, Card, Drawer, Empty, Typography } from 'antd';
 
 import { WorkbenchCanvasPanel } from '@/features/workbench/components/WorkbenchCanvasPanel';
 import { WorkbenchHeader } from '@/features/workbench/components/WorkbenchHeader';
@@ -9,6 +9,7 @@ import { WorkbenchPlaceholderPanel } from '@/features/workbench/components/Workb
 import { WorkbenchRiskPanel } from '@/features/workbench/components/WorkbenchRiskPanel';
 import { WorkbenchTimelinePanel } from '@/features/workbench/components/WorkbenchTimelinePanel';
 import { useI18n } from '@/hooks/useI18n';
+import { useWorkbenchLayoutMode } from '@/hooks/useWorkbenchLayoutMode';
 import { useProjectStore } from '@/stores/useProjectStore';
 import { useUIStore } from '@/stores/useUIStore';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
@@ -80,6 +81,8 @@ type Copy = {
     workItems: string;
     risks: string;
     nextMilestone: string;
+    recentUpdates: string;
+    openDrawer: string;
     sourceHint: string;
   };
 };
@@ -159,6 +162,8 @@ const copyByLanguage: Record<'zh' | 'en', Copy> = {
       workItems: '工作项',
       risks: '风险',
       nextMilestone: '下个里程碑',
+      recentUpdates: '最近更新',
+      openDrawer: '打开上下文面板',
       sourceHint: '后续这里承接来源、关联对象与最近更新。',
     },
   },
@@ -236,6 +241,8 @@ const copyByLanguage: Record<'zh' | 'en', Copy> = {
       workItems: 'Work Items',
       risks: 'Risks',
       nextMilestone: 'Next Milestone',
+      recentUpdates: 'Recent Updates',
+      openDrawer: 'Open Context Panel',
       sourceHint: 'This panel will later hold source links, related records, and recent changes.',
     },
   },
@@ -287,6 +294,8 @@ export function ProjectWorkbenchPage() {
   const { selectedProjectId, setCurrentView } = useUIStore();
   const { activeModule, setActiveModule, reset } = useWorkbenchStore();
   const { language } = useI18n();
+  const { isCompactWorkbench } = useWorkbenchLayoutMode();
+  const [isInspectorDrawerOpen, setInspectorDrawerOpen] = useState(false);
   const copy = copyByLanguage[language];
 
   useEffect(() => {
@@ -298,6 +307,12 @@ export function ProjectWorkbenchPage() {
       reset();
     }
   }, [selectedProjectId, reset]);
+
+  useEffect(() => {
+    if (!isCompactWorkbench && isInspectorDrawerOpen) {
+      setInspectorDrawerOpen(false);
+    }
+  }, [isCompactWorkbench, isInspectorDrawerOpen]);
 
   const project = useMemo(
     () => projects.find((item) => item.id === selectedProjectId) || null,
@@ -375,9 +390,15 @@ export function ProjectWorkbenchPage() {
           onBack={() => setCurrentView('projects')}
         />
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[260px_minmax(0,1fr)_320px]">
-          <Card title={<span className="font-semibold">{copy.railTitle}</span>} bodyStyle={{ padding: 12 }}>
-            <div className="space-y-2">
+        <div className="overflow-x-auto pb-2">
+          <div
+            className={[
+              'grid min-w-[1280px] items-start gap-6',
+              isCompactWorkbench ? 'grid-cols-[240px_minmax(0,1fr)]' : 'grid-cols-[240px_minmax(0,1fr)_300px]',
+            ].join(' ')}
+          >
+            <Card title={<span className="font-semibold">{copy.railTitle}</span>} bodyStyle={{ padding: 12 }}>
+              <div className="space-y-2">
               {modules.map((module) => {
                 const isActive = module.key === activeModule;
                 return (
@@ -409,65 +430,102 @@ export function ProjectWorkbenchPage() {
                   </button>
                 );
               })}
-            </div>
-          </Card>
+              </div>
+            </Card>
 
-          <div className="min-w-0">
-            {activeModule === 'canvas' && (
-              <WorkbenchCanvasPanel
+            <div className="min-w-0">
+              {isCompactWorkbench && (
+                <div className="mb-4 flex justify-end">
+                  <Button icon={<InfoCircleOutlined />} onClick={() => setInspectorDrawerOpen(true)}>
+                    {copy.inspector.openDrawer}
+                  </Button>
+                </div>
+              )}
+
+              {activeModule === 'canvas' && (
+                <WorkbenchCanvasPanel
+                  project={project}
+                  snapshot={snapshot}
+                  phases={phases}
+                  milestones={milestones}
+                  activeRisks={activeRisks}
+                />
+              )}
+
+              {activeModule === 'timeline' && (
+                <WorkbenchTimelinePanel
+                  phases={phases}
+                  milestones={milestones}
+                  copy={copy.timeline}
+                />
+              )}
+
+              {activeModule === 'risks' && (
+                <WorkbenchRiskPanel
+                  risks={activeRisks}
+                  copy={copy.risks}
+                />
+              )}
+
+              {activeModule === 'stakeholders' && (
+                <WorkbenchPlaceholderPanel
+                  title={copy.modules.stakeholders.label}
+                  description={copy.modules.stakeholders.description}
+                />
+              )}
+
+              {activeModule === 'work-packages' && (
+                <WorkbenchPlaceholderPanel
+                  title={copy.modules['work-packages'].label}
+                  description={copy.modules['work-packages'].description}
+                />
+              )}
+
+              {activeModule === 'evidence' && (
+                <WorkbenchPlaceholderPanel
+                  title={copy.modules.evidence.label}
+                  description={copy.modules.evidence.description}
+                />
+              )}
+            </div>
+
+            {!isCompactWorkbench && (
+              <WorkbenchInspector
                 project={project}
                 snapshot={snapshot}
-                phases={phases}
-                milestones={milestones}
-                activeRisks={activeRisks}
-              />
-            )}
-
-            {activeModule === 'timeline' && (
-              <WorkbenchTimelinePanel
-                phases={phases}
-                milestones={milestones}
-                copy={copy.timeline}
-              />
-            )}
-
-            {activeModule === 'risks' && (
-              <WorkbenchRiskPanel
-                risks={activeRisks}
-                copy={copy.risks}
-              />
-            )}
-
-            {activeModule === 'stakeholders' && (
-              <WorkbenchPlaceholderPanel
-                title={copy.modules.stakeholders.label}
-                description={copy.modules.stakeholders.description}
-              />
-            )}
-
-            {activeModule === 'work-packages' && (
-              <WorkbenchPlaceholderPanel
-                title={copy.modules['work-packages'].label}
-                description={copy.modules['work-packages'].description}
-              />
-            )}
-
-            {activeModule === 'evidence' && (
-              <WorkbenchPlaceholderPanel
-                title={copy.modules.evidence.label}
-                description={copy.modules.evidence.description}
+                activeModule={activeModuleDefinition}
+                recentUpdates={recentUpdates}
+                copy={copy.inspector}
               />
             )}
           </div>
-
-          <WorkbenchInspector
-            project={project}
-            snapshot={snapshot}
-            activeModule={activeModuleDefinition}
-            recentUpdates={recentUpdates}
-            copy={copy.inspector}
-          />
         </div>
+
+        {isCompactWorkbench && (
+          <Drawer
+            title={
+              <div>
+                <div className="font-semibold">{copy.inspector.title}</div>
+                <div className="mt-1 text-xs text-slate-500">{activeModuleDefinition.label}</div>
+              </div>
+            }
+            placement="right"
+            width={360}
+            open={isInspectorDrawerOpen}
+            onClose={() => setInspectorDrawerOpen(false)}
+            maskClosable={true}
+            keyboard={true}
+          >
+            <WorkbenchInspector
+              project={project}
+              snapshot={snapshot}
+              activeModule={activeModuleDefinition}
+              recentUpdates={recentUpdates}
+              copy={copy.inspector}
+              variant="drawer"
+            />
+          </Drawer>
+        )}
       </div>
     </div>
   );

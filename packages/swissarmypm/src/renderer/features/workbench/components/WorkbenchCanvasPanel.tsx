@@ -84,7 +84,7 @@ type Copy = {
 const copyByLanguage: Record<'zh' | 'en', Copy> = {
   zh: {
     title: '项目画布',
-    subtitle: '按 PMBOK 项目画布组织项目概览：在一个页面里并排呈现项目目的、目标、范围、阶段、风险、团队与经验，便于项目经理快速判断项目整体状态。',
+    subtitle: '按 PMBOK 项目画布组织项目概览：在一个页面里并排呈现项目目的、目标、范围、阶段、风险、团队与经验，便于项目经理快速判断项目整体状态。窗口缩小时优先保持画布语义，通过横向滚动保护布局。',
     derived: '自动摘要',
     mixed: '半结构化',
     pendingModel: '待建模',
@@ -108,7 +108,7 @@ const copyByLanguage: Record<'zh' | 'en', Copy> = {
   },
   en: {
     title: 'Project Canvas',
-    subtitle: 'Organize the project overview as a PMBOK-style canvas: purpose, objective, scope, phases, risks, team, and lessons presented side by side so PMs can assess the whole project in one place.',
+    subtitle: 'Organize the project overview as a PMBOK-style canvas: purpose, objective, scope, phases, risks, team, and lessons presented side by side so PMs can assess the whole project in one place. When the window shrinks, preserve canvas semantics and protect the layout with horizontal scrolling.',
     derived: 'Derived',
     mixed: 'Mixed',
     pendingModel: 'Pending Model',
@@ -133,20 +133,20 @@ const copyByLanguage: Record<'zh' | 'en', Copy> = {
 };
 
 const gridClassByKey: Record<CanvasBlockKey, string> = {
-  purpose: 'xl:col-span-2',
-  objective: 'xl:col-span-1',
-  sponsor: 'xl:col-span-1',
-  requirements: 'xl:col-span-1',
-  deliverables: 'xl:col-span-1',
-  exclusions: 'xl:col-span-1',
-  constraints: 'xl:col-span-1',
-  phases: 'xl:col-span-1',
-  milestones: 'xl:col-span-1',
-  resources: 'xl:col-span-1',
-  risks: 'xl:col-span-1',
-  team: 'xl:col-span-1',
-  stakeholders: 'xl:col-span-1',
-  lessons: 'xl:col-span-2',
+  purpose: 'col-span-2',
+  objective: 'col-span-1',
+  sponsor: 'col-span-1',
+  requirements: 'col-span-1',
+  deliverables: 'col-span-1',
+  exclusions: 'col-span-1',
+  constraints: 'col-span-1',
+  phases: 'col-span-1',
+  milestones: 'col-span-1',
+  resources: 'col-span-1',
+  risks: 'col-span-1',
+  team: 'col-span-1',
+  stakeholders: 'col-span-1',
+  lessons: 'col-span-2',
 };
 
 function getToneClasses(tone: CanvasBlockTone = 'default') {
@@ -349,7 +349,7 @@ export function WorkbenchCanvasPanel({ project, snapshot, phases, milestones, ac
         ? '会对项目目标产生影响的不确定事件。'
         : 'Uncertain events that affect project objectives.',
       lines: riskLines.length ? riskLines : [copy.risksEmpty],
-      note: riskLines.length ? copy.derived : copy.derived,
+      note: copy.derived,
       tone: riskLines.length >= 3 ? 'issue' : riskLines.length >= 1 ? 'risk' : 'normal',
     },
     {
@@ -400,70 +400,72 @@ export function WorkbenchCanvasPanel({ project, snapshot, phases, milestones, ac
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-        {blocks.map((block) => {
-          const tone = getToneClasses(block.tone);
-          return (
-            <Card
-              key={block.key}
-              bodyStyle={{ padding: 0 }}
-              className={`${gridClassByKey[block.key]} overflow-hidden rounded-xl ${tone.border}`}
-            >
-              <div className={`h-1 w-full ${tone.top}`} />
-              <div className="flex h-full flex-col gap-4 p-5">
-                <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-3 dark:border-slate-800">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <div className="text-slate-500 dark:text-slate-400">
-                        {block.key === 'purpose' && <AimOutlined />}
-                        {block.key === 'objective' && <TrophyOutlined />}
-                        {block.key === 'sponsor' && <UserOutlined />}
-                        {block.key === 'requirements' && <FileDoneOutlined />}
-                        {block.key === 'deliverables' && <FlagOutlined />}
-                        {block.key === 'exclusions' && <ExclamationCircleOutlined />}
-                        {block.key === 'constraints' && <LockOutlined />}
-                        {block.key === 'phases' && <AppstoreOutlined />}
-                        {block.key === 'milestones' && <FlagOutlined />}
-                        {block.key === 'resources' && <FolderOpenOutlined />}
-                        {block.key === 'risks' && <ExclamationCircleOutlined />}
-                        {block.key === 'team' && <TeamOutlined />}
-                        {block.key === 'stakeholders' && <UserOutlined />}
-                        {block.key === 'lessons' && <BulbOutlined />}
-                      </div>
-                      <div>
-                        <div className="text-base font-semibold text-slate-900 dark:text-slate-100">{block.title}</div>
-                        <div className="text-[11px] uppercase tracking-wide text-blue-600 dark:text-blue-400">{block.titleEn}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <Tooltip title={block.tooltip}>
-                    <Tag className="cursor-help">?</Tag>
-                  </Tooltip>
-                </div>
-
-                <div className="min-h-[120px] flex-1 rounded-lg bg-slate-50/70 p-3 dark:bg-slate-900/60">
-                  {block.lines.length > 0 ? (
-                    <div className="space-y-2">
-                      {block.lines.map((line, index) => (
-                        <div key={`${block.key}-${index}`} className="text-sm leading-6 text-slate-700 dark:text-slate-300">
-                          {line}
+      <div className="overflow-x-auto pb-2">
+        <div className="grid min-w-[1040px] grid-cols-4 auto-rows-[minmax(220px,auto)] gap-4">
+          {blocks.map((block) => {
+            const tone = getToneClasses(block.tone);
+            return (
+              <Card
+                key={block.key}
+                bodyStyle={{ padding: 0 }}
+                className={`${gridClassByKey[block.key]} min-h-[220px] overflow-hidden rounded-xl ${tone.border}`}
+              >
+                <div className={`h-1 w-full ${tone.top}`} />
+                <div className="flex h-full flex-col gap-4 p-5">
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-3 dark:border-slate-800">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="text-slate-500 dark:text-slate-400">
+                          {block.key === 'purpose' && <AimOutlined />}
+                          {block.key === 'objective' && <TrophyOutlined />}
+                          {block.key === 'sponsor' && <UserOutlined />}
+                          {block.key === 'requirements' && <FileDoneOutlined />}
+                          {block.key === 'deliverables' && <FlagOutlined />}
+                          {block.key === 'exclusions' && <ExclamationCircleOutlined />}
+                          {block.key === 'constraints' && <LockOutlined />}
+                          {block.key === 'phases' && <AppstoreOutlined />}
+                          {block.key === 'milestones' && <FlagOutlined />}
+                          {block.key === 'resources' && <FolderOpenOutlined />}
+                          {block.key === 'risks' && <ExclamationCircleOutlined />}
+                          {block.key === 'team' && <TeamOutlined />}
+                          {block.key === 'stakeholders' && <UserOutlined />}
+                          {block.key === 'lessons' && <BulbOutlined />}
                         </div>
-                      ))}
+                        <div>
+                          <div className="text-base font-semibold text-slate-900 dark:text-slate-100">{block.title}</div>
+                          <div className="text-[11px] uppercase tracking-wide text-blue-600 dark:text-blue-400">{block.titleEn}</div>
+                        </div>
+                      </div>
                     </div>
-                  ) : (
-                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={copy.noData} />
+                    <Tooltip title={block.tooltip}>
+                      <Tag className="cursor-help">?</Tag>
+                    </Tooltip>
+                  </div>
+
+                  <div className="min-h-[132px] max-h-[220px] flex-1 overflow-y-auto rounded-lg bg-slate-50/70 p-3 dark:bg-slate-900/60">
+                    {block.lines.length > 0 ? (
+                      <div className="space-y-2">
+                        {block.lines.map((line, index) => (
+                          <div key={`${block.key}-${index}`} className="text-sm leading-6 text-slate-700 dark:text-slate-300">
+                            {line}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={copy.noData} />
+                    )}
+                  </div>
+
+                  {block.note && (
+                    <div className={`shrink-0 text-xs ${tone.note}`}>
+                      {block.note}
+                    </div>
                   )}
                 </div>
-
-                {block.note && (
-                  <div className={`text-xs ${tone.note}`}>
-                    {block.note}
-                  </div>
-                )}
-              </div>
-            </Card>
-          );
-        })}
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

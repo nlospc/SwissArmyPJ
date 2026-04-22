@@ -1,10 +1,8 @@
 import React from 'react';
-import { Card, List, Tag, Typography } from 'antd';
+import { Card, List, Tag } from 'antd';
 
 import type { Project, WorkItem } from '@/shared/types';
 import type { WorkbenchModuleDefinition, WorkbenchSnapshot } from '@/shared/types/workbench';
-
-const { Text } = Typography;
 
 type WorkbenchInspectorCopy = {
   title: string;
@@ -14,6 +12,7 @@ type WorkbenchInspectorCopy = {
   workItems: string;
   risks: string;
   nextMilestone: string;
+  recentUpdates: string;
   sourceHint: string;
 };
 
@@ -23,12 +22,20 @@ interface WorkbenchInspectorProps {
   activeModule: WorkbenchModuleDefinition;
   recentUpdates: WorkItem[];
   copy: WorkbenchInspectorCopy;
+  variant?: 'panel' | 'drawer';
 }
 
-export function WorkbenchInspector({ project, snapshot, activeModule, recentUpdates, copy }: WorkbenchInspectorProps) {
+export function WorkbenchInspector({
+  project,
+  snapshot,
+  activeModule,
+  recentUpdates,
+  copy,
+  variant = 'panel',
+}: WorkbenchInspectorProps) {
   return (
     <div className="space-y-4">
-      <Card title={<span className="font-semibold">{copy.title}</span>} size="small">
+      <Card title={variant === 'panel' ? <span className="font-semibold">{copy.title}</span> : undefined} size="small">
         <div className="space-y-3 text-sm">
           <div>
             <div className="text-xs text-slate-500">{copy.activeModule}</div>
@@ -59,7 +66,7 @@ export function WorkbenchInspector({ project, snapshot, activeModule, recentUpda
         </div>
       </Card>
 
-      <Card size="small" title={<span className="font-semibold">Recent updates</span>}>
+      <Card size="small" title={<span className="font-semibold">{copy.recentUpdates}</span>}>
         <List
           size="small"
           dataSource={recentUpdates.slice(0, 5)}
