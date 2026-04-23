@@ -249,6 +249,36 @@ CREATE TABLE IF NOT EXISTS evidence (
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
 
+-- Core PM objects: processes (流程规范管理)
+CREATE TABLE IF NOT EXISTS processes (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  page_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  scope TEXT,            -- which phase/activity this process covers
+  owner TEXT,            -- process owner (stakeholder)
+  status TEXT NOT NULL,  -- draft/active/retired
+  version INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+);
+
+-- Core PM objects: organizations (组织架构管理)
+CREATE TABLE IF NOT EXISTS organizations (
+  id TEXT PRIMARY KEY,
+  parent_id TEXT REFERENCES organizations(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  code TEXT,
+  description TEXT,
+  level INTEGER NOT NULL DEFAULT 1,  -- 1=top level, 2=department, 3=team etc.
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (parent_id) REFERENCES organizations(id) ON DELETE SET NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_pages_type ON pages(page_type);
 CREATE INDEX IF NOT EXISTS idx_pages_updated ON pages(updated_at);
 CREATE INDEX IF NOT EXISTS idx_links_src ON links(src_page_id);
@@ -261,3 +291,6 @@ CREATE INDEX IF NOT EXISTS idx_stakeholders_project ON stakeholders(project_id);
 CREATE INDEX IF NOT EXISTS idx_work_packages_project ON work_packages(project_id);
 CREATE INDEX IF NOT EXISTS idx_work_packages_status ON work_packages(status);
 CREATE INDEX IF NOT EXISTS idx_evidence_project ON evidence(project_id);
+CREATE INDEX IF NOT EXISTS idx_processes_project ON processes(project_id);
+CREATE INDEX IF NOT EXISTS idx_processes_status ON processes(status);
+CREATE INDEX IF NOT EXISTS idx_organizations_parent ON organizations(parent_id);

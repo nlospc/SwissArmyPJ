@@ -72,6 +72,8 @@ export function requiredTables(): string[] {
     'stakeholders',
     'work_packages',
     'evidence',
+    'processes',
+    'organizations',
   ]
 }
 
@@ -97,6 +99,9 @@ export function collectStats(config: PMBrainConfig): StatsReport {
       pages: countFrom(db, 'SELECT COUNT(*) AS count FROM pages'),
       projects: countFrom(db, 'SELECT COUNT(*) AS count FROM projects'),
       risks: countFrom(db, 'SELECT COUNT(*) AS count FROM risks'),
+      stakeholders: countFrom(db, 'SELECT COUNT(*) AS count FROM stakeholders'),
+      processes: countFrom(db, 'SELECT COUNT(*) AS count FROM processes'),
+      organizations: countFrom(db, 'SELECT COUNT(*) AS count FROM organizations'),
       chunks: countFrom(db, 'SELECT COUNT(*) AS count FROM content_chunks'),
     }
   } finally {

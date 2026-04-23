@@ -6,6 +6,8 @@ export type PageType =
   | 'decision'
   | 'artifact'
   | 'stakeholder'
+  | 'process'
+  | 'organization'
   | 'deliverable'
   | 'sprint'
   | 'index'
@@ -60,6 +62,9 @@ export interface StatsReport {
   pages: number
   projects: number
   risks: number
+  stakeholders: number
+  processes: number
+  organizations: number
   chunks: number
 }
 
