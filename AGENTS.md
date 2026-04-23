@@ -24,6 +24,8 @@ npm run check:pmbrain
 npm run verify:workspace
 ```
 
+Root-level `verify:*` commands are wrapped with automatic temp-artifact cleanup. They create an isolated TMPDIR for the verification run and remove temporary/build outputs such as `packages/swissarmypm/dist` and `*.tsbuildinfo` when the task ends. Set `VERIFY_KEEP_ARTIFACTS=1` only when you explicitly need to inspect retained build artifacts.
+
 ## SwissArmyPM (`packages/swissarmypm/`)
 
 **Tech Stack:** Electron + React 19 + TypeScript + Vite + Zustand + Ant Design + SQLite (better-sqlite3)

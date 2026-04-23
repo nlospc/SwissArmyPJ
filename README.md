@@ -65,7 +65,7 @@ npm run check:pmbrain
 npm run verify:workspace
 ```
 
-Note: `verify:swissarmypm` is the stable default local verification path. `type-check:swissarmypm` and `verify:swissarmypm:strict` remain available for ongoing TypeScript debt cleanup.
+Note: `verify:swissarmypm` is the stable default local verification path. `type-check:swissarmypm` and `verify:swissarmypm:strict` remain available for ongoing TypeScript debt cleanup. All root `verify:*` commands now run inside a temporary TMPDIR and automatically clean temporary/build artifacts such as `packages/swissarmypm/dist` and `*.tsbuildinfo` when the task finishes. If you intentionally want to keep those artifacts for inspection, run with `VERIFY_KEEP_ARTIFACTS=1`.
 
 ## Key Technical Decisions
 

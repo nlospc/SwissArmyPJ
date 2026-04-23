@@ -55,6 +55,7 @@ npm run verify:swissarmypm:strict
 - `build:swissarmypm`：执行生产构建
 - `verify:swissarmypm`：默认本地验证入口，执行稳定可通过的桌面应用构建验证
 - `verify:swissarmypm:strict`：先 type-check 再 build，适合专门处理类型问题时使用
+- 所有根级 `verify:*` 命令都会创建独立 TMPDIR，并在结束后自动清理验证产生的临时目录、`packages/swissarmypm/dist`、`*.tsbuildinfo` 等可再生产物；如需保留这些产物排查问题，可临时设置 `VERIFY_KEEP_ARTIFACTS=1`
 
 ### PMBrain
 
