@@ -4,8 +4,8 @@
 
 import { WeeklySummary } from '@/stores/useMyWorkStore';
 import { theme } from 'antd';
-import { formatMinutes } from '@/features/my-work/utils/timeFormatters';
-import { formatRelativeDate } from '@/features/my-work/utils/timeFormatters';
+import { formatMinutes } from '@/features/archive/my-work/utils/timeFormatters';
+import { formatRelativeDate } from '@/features/archive/my-work/utils/timeFormatters';
 
 interface WeeklyChartProps {
   data: WeeklySummary | null;

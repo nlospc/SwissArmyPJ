@@ -30,11 +30,13 @@ D:\code\SwissArmyPM/              ← workspace root
 
 ## Workspace Usage
 
-Install dependencies from the workspace root:
+Canonical local workflow starts from the workspace root and uses npm for dependency installation:
 
 ```bash
-npm run install:all
+npm install
 ```
+
+PMBrain runtime commands still require Bun, but root dependency installation and workspace verification are npm-first.
 
 Run each package in dev mode:
 
@@ -43,19 +45,27 @@ npm run dev:swissarmypm
 npm run dev:pmbrain
 ```
 
-Build each package:
+Build and verify the desktop app:
 
 ```bash
 npm run build:swissarmypm
-npm run build:pmbrain
+npm run verify:swissarmypm
 ```
 
-Type-check each package:
+For a stricter local gate that also runs TypeScript checking for SwissArmyPM:
 
 ```bash
-npm run type-check:swissarmypm
-npm run type-check:pmbrain
+npm run verify:swissarmypm:strict
 ```
+
+Check PMBrain and verify the whole workspace:
+
+```bash
+npm run check:pmbrain
+npm run verify:workspace
+```
+
+Note: `verify:swissarmypm` is the stable default local verification path. `type-check:swissarmypm` and `verify:swissarmypm:strict` remain available for ongoing TypeScript debt cleanup.
 
 ## Key Technical Decisions
 
@@ -63,5 +73,5 @@ npm run type-check:pmbrain
 |---|---|
 | **npm workspaces** | Minimal disruption to existing SwissArmyPM npm setup |
 | **Independent tsconfig per package** | Incompatible compiler options (React vs Bun) |
-| **Optional workspace dependency** | `swissarmypm` declares `pmbrain` as optional — no hard coupling |
+| **Loose package coupling** | `swissarmypm` does not require a package-manager-level dependency on `pmbrain`; integration can stay at CLI/SDK boundary |
 | **No shared node_modules rebuild** | Migration avoids running `npm install` during restructuring |

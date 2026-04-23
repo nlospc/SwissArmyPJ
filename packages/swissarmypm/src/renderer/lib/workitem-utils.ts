@@ -5,7 +5,7 @@
 
 import type { WorkItem } from '@/shared/types';
 
-export interface WorkItemNode extends WorkItem {
+export interface WorkItemNode extends Omit<WorkItem, 'children' | 'level'> {
   children: WorkItemNode[];
   level: number;
 }

@@ -22,7 +22,7 @@ import {
   timelineItemToProjectUpdate
 } from './timeline-adapter';
 import type { Project, WorkItem, Portfolio } from '@/shared/types';
-import type { TimelineOptions } from 'vis-timeline/types';
+import type { TimelineOptions } from 'vis-timeline';
 
 const { Title, Text } = Typography;
 

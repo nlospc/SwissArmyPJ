@@ -13,7 +13,7 @@ import { Timeline } from 'vis-timeline/standalone';
 
 import { DataSet } from 'vis-data';
 
-import type { TimelineOptions, TimelineItem, TimelineGroup } from 'vis-timeline/types';
+import type { TimelineOptions, TimelineItem, TimelineGroup } from 'vis-timeline';
 
 import 'vis-timeline/styles/vis-timeline-graph2d.css';
 
@@ -258,58 +258,110 @@ export const VisTimelineWrapper = forwardRef<VisTimelineHandle, VisTimelineWrapp
     };
   }, []); // Run once
 
-  // Update DataSets when items/groups change
-  useEffect(() => {
-    const itemsDataSet = itemsDataSetRef.current;
-    if (!itemsDataSet) return;
-
-    const nextItemsById = new Map(items.map((item) => [item.id, item]));
-    const currentIds = itemsDataSet.getIds();
-    const idsToRemove = currentIds.filter((id) => !nextItemsById.has(id));
-
-    if (idsToRemove.length > 0) {
-      itemsDataSet.remove(idsToRemove);
-    }
-
-    const itemsToUpsert = items.filter((item) => {
-      const currentItem = itemsDataSet.get(item.id);
-      return !currentItem || !isSameTimelineRecord(currentItem, item);
-    });
-
-    if (itemsToUpsert.length > 0) {
-      itemsDataSet.update(itemsToUpsert as any);
-    }
-  }, [items]);
-
-  useEffect(() => {
-    const groupsDataSet = groupsDataSetRef.current;
-    if (!groupsDataSet) return;
-
-    if (!groups || groups.length === 0) {
-      const currentIds = groupsDataSet.getIds();
-      if (currentIds.length > 0) {
-        groupsDataSet.remove(currentIds);
-      }
-      return;
-    }
-
-    const nextGroupsById = new Map(groups.map((group) => [group.id, group]));
-    const currentIds = groupsDataSet.getIds();
-    const idsToRemove = currentIds.filter((id) => !nextGroupsById.has(id));
-
-    if (idsToRemove.length > 0) {
-      groupsDataSet.remove(idsToRemove);
-    }
-
-    const groupsToUpsert = groups.filter((group) => {
-      const currentGroup = groupsDataSet.get(group.id);
-      return !currentGroup || !isSameTimelineRecord(currentGroup, group);
-    });
-
-    if (groupsToUpsert.length > 0) {
-      groupsDataSet.update(groupsToUpsert as any);
-    }
-  }, [groups]);
+  // Update DataSets when items/groups change
+
+  useEffect(() => {
+
+    const itemsDataSet = itemsDataSetRef.current;
+
+    if (!itemsDataSet) return;
+
+
+
+    const nextItemsById = new Map(items.map((item) => [item.id, item]));
+
+    const currentIds = itemsDataSet.getIds();
+
+    const idsToRemove = currentIds.filter((id) => !nextItemsById.has(id));
+
+
+
+    if (idsToRemove.length > 0) {
+
+      itemsDataSet.remove(idsToRemove);
+
+    }
+
+
+
+    const itemsToUpsert = items.filter((item) => {
+
+      const currentItem = itemsDataSet.get(item.id);
+
+      return !currentItem || !isSameTimelineRecord(currentItem, item);
+
+    });
+
+
+
+    if (itemsToUpsert.length > 0) {
+
+      itemsDataSet.update(itemsToUpsert as any);
+
+    }
+
+  }, [items]);
+
+
+
+  useEffect(() => {
+
+    const groupsDataSet = groupsDataSetRef.current;
+
+    if (!groupsDataSet) return;
+
+
+
+    if (!groups || groups.length === 0) {
+
+      const currentIds = groupsDataSet.getIds();
+
+      if (currentIds.length > 0) {
+
+        groupsDataSet.remove(currentIds);
+
+      }
+
+      return;
+
+    }
+
+
+
+    const nextGroupsById = new Map(groups.map((group) => [group.id, group]));
+
+    const currentIds = groupsDataSet.getIds();
+
+    const idsToRemove = currentIds.filter((id) => !nextGroupsById.has(id));
+
+
+
+    if (idsToRemove.length > 0) {
+
+      groupsDataSet.remove(idsToRemove);
+
+    }
+
+
+
+    const groupsToUpsert = groups.filter((group) => {
+
+      const currentGroup = groupsDataSet.get(group.id);
+
+      return !currentGroup || !isSameTimelineRecord(currentGroup, group);
+
+    });
+
+
+
+    if (groupsToUpsert.length > 0) {
+
+      groupsDataSet.update(groupsToUpsert as any);
+
+    }
+
+  }, [groups]);
+
 
   // Update options dynamically
   useEffect(() => {

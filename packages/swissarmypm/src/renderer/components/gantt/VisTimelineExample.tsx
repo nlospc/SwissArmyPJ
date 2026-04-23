@@ -9,7 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, Button, Space, message } from 'antd';
 import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 import { VisTimelineWrapper, type VisTimelineItem } from './VisTimelineWrapper';
-import type { TimelineOptions } from 'vis-timeline/types';
+import type { TimelineOptions } from 'vis-timeline';
 
 export const VisTimelineExample: React.FC = () => {
   const [zoomLevel, setZoomLevel] = useState(1);

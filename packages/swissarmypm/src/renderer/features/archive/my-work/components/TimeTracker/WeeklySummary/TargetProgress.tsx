@@ -3,7 +3,7 @@
  */
 
 import { WeeklySummary } from '@/stores/useMyWorkStore';
-import { formatMinutes } from '@/features/my-work/utils/timeFormatters';
+import { formatMinutes } from '@/features/archive/my-work/utils/timeFormatters';
 
 interface TargetProgressProps {
   data: WeeklySummary | null;

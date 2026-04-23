@@ -211,7 +211,7 @@ export class ThemeValidator {
       console.log(`  ⚠️  警告: ${bySeverity.warning || 0}`);
       console.log(`  ℹ️  信息: ${bySeverity.info || 0}`);
 
-      console.groupBy(this.issues, 'severity');
+      console.group('Issues by severity');
 
       this.issues.forEach((issue, index) => {
         const icon = issue.severity === 'error' ? '❌' : issue.severity === 'warning' ? '⚠️' : 'ℹ️';

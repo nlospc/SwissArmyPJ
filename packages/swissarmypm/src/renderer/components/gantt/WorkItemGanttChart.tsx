@@ -19,7 +19,7 @@ import {
   timelineItemToWorkItemUpdate,
   calculateDateRange,
 } from './timeline-adapter';
-import type { TimelineOptions } from 'vis-timeline/types';
+import type { TimelineOptions } from 'vis-timeline';
 import type { Project, WorkItem } from '@/shared/types';
 
 const { Text, Title } = Typography;

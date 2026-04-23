@@ -19,7 +19,9 @@ npm install              # Install all workspace dependencies
 npm run dev:swissarmypm  # Start Electron app dev server
 npm run dev:pmbrain      # Run PMBrain CLI
 npm run build:swissarmypm
-npm run build:pmbrain
+npm run verify:swissarmypm
+npm run check:pmbrain
+npm run verify:workspace
 ```
 
 ## SwissArmyPM (`packages/swissarmypm/`)
@@ -108,7 +110,7 @@ Cross-project docs live in the repo root `docs/`:
 ## Key Rules
 
 1. **PMBrain does not depend on SwissArmyPM** — dependency is strictly one-directional
-2. **SwissArmyPM declares `pmbrain` as optional dependency** — no hard coupling
+2. **SwissArmyPM does not require a package-manager-level dependency on `pmbrain`** — keep coupling at CLI/SDK/runtime boundary
 3. **Each package has its own `tsconfig.json`** — incompatible compiler options (React vs Bun)
 4. **Follow CLAUDE.md hierarchy** — root CLAUDE.md > sub-project CLAUDE.md > docs/
 5. **All SQL uses parameterized queries** — no string interpolation

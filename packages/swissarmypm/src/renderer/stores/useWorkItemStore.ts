@@ -79,11 +79,13 @@ export const useWorkItemStore = create<WorkItemState>((set, get) => ({
     const tempId = -(Date.now());
     const optimisticItem: WorkItem = {
       id: tempId,
+      uuid: `temp-${Math.abs(tempId)}`,
       project_id: data.project_id,
       parent_id: data.parent_id || null,
       title: data.title,
       type: data.type || 'task',
       status: data.status || 'not_started',
+      level: data.parent_id ? 2 : 1,
       priority: data.priority || 'medium',
       owner: data.owner || null,
       notes: data.notes || null,

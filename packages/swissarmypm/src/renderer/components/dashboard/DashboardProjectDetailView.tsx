@@ -11,7 +11,7 @@ import {
   ClockCircleOutlined, StopOutlined, PlusOutlined, MoreOutlined,
   EditOutlined, DeleteOutlined, CloseOutlined,
 } from '@ant-design/icons';
-import type { ColumnsType } from 'antd';
+import type { TableColumnsType } from 'antd';
 import type { Project, WorkItem } from '@/shared/types';
 import { useProjectStore } from '@/stores/useProjectStore';
 import { useWorkItemStore } from '@/stores/useWorkItemStore';
@@ -453,7 +453,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
     ? getPortfolioById(selectedProject.portfolio_id)?.name || `Portfolio #${selectedProject.portfolio_id}`
     : null;
 
-  const workItemColumns: ColumnsType<WorkItem> = [
+  const workItemColumns: TableColumnsType<WorkItem> = [
     {
       title: 'Title',
       dataIndex: 'title',
@@ -599,7 +599,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
     },
   ];
 
-  const riskColumns: ColumnsType<DerivedRisk> = [
+  const riskColumns: TableColumnsType<DerivedRisk> = [
     {
       title: 'Risk',
       dataIndex: 'title',
@@ -655,7 +655,7 @@ export function DashboardProjectDetailView({ projectId, onClose }: DashboardProj
     },
   ];
 
-  const budgetBreakdownColumns: ColumnsType<ReturnType<typeof budgetBreakdown>[0]> = [
+  const budgetBreakdownColumns: TableColumnsType<ReturnType<typeof budgetBreakdown>[0]> = [
     { title: 'Category', dataIndex: 'category', key: 'category', render: (t: string) => <span className="text-sm font-medium">{t}</span> },
     { title: 'Allocated', dataIndex: 'allocated', key: 'allocated', width: 110, render: (v: number) => <span className="text-sm">${v.toLocaleString()}</span> },
     { title: 'Spent', dataIndex: 'spent', key: 'spent', width: 110, render: (v: number) => <span className="text-sm">${v.toLocaleString()}</span> },

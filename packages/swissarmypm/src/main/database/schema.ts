@@ -40,8 +40,8 @@ function ensureSchemaUpToDate(): void {
 
   try {
     // Check work_items table for missing columns
-    const workItemsInfo = db.pragma('table_info(work_items)');
-    const workItemsColumns = workItemsInfo.map((c: any) => c.name);
+    const workItemsInfo = db.pragma('table_info(work_items)') as Array<{ name: string }>;
+    const workItemsColumns = workItemsInfo.map((column) => column.name);
 
     // Add owner column if missing
     if (!workItemsColumns.includes('owner')) {

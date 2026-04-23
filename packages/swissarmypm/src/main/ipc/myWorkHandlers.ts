@@ -9,6 +9,7 @@
 
 import { ipcMain } from 'electron';
 import { getDatabase } from '../database/schema';
+import { writeAuditLog } from './shared/auditLog';
 import type Database from 'better-sqlite3';
 
 // =============================================================================
@@ -94,26 +95,6 @@ interface UserPreferences {
 function generateUUID(db: Database.Database): string {
   const result = db.prepare("SELECT lower(hex(randomblob(16))) as uuid").get() as { uuid: string };
   return result.uuid;
-}
-
-/**
- * Create audit log entry
- */
-function createAuditLog(
-  db: Database.Database,
-  entityType: string,
-  entityId: string,
-  action: 'create' | 'update' | 'delete',
-  userId: string,
-  oldValues?: string,
-  newValues?: string
-): void {
-  const uuid = generateUUID(db);
-
-  db.prepare(`
-    INSERT INTO audit_log (uuid, entity_type, entity_id, action, user_id, source, old_values_json, new_values_json)
-    VALUES (?, ?, ?, ?, ?, 'ui', ?, ?)
-  `).run(uuid, entityType, entityId, action, userId, oldValues || null, newValues || null);
 }
 
 /**
@@ -209,15 +190,15 @@ ipcMain.handle('mywork:markDone', async (event, { itemId, userId }) => {
     const newItem = db.prepare('SELECT * FROM work_items WHERE id = ?').get(itemId) as any;
 
     // Create audit log
-    createAuditLog(
-      db,
-      'WorkItem',
-      newItem.uuid,
-      'update',
+    writeAuditLog({
+      entityType: 'WorkItem',
+      entityId: newItem.uuid,
+      action: 'update',
       userId,
-      `status:${oldItem.status}`,
-      `status:done,completed_at:${newItem.completed_at}`
-    );
+      source: 'ui',
+      oldValuesJson: `status:${oldItem.status}`,
+      newValuesJson: `status:done,completed_at:${newItem.completed_at}`,
+    }, { db });
 
     return { success: true };
   } catch (error) {
@@ -240,7 +221,14 @@ ipcMain.handle('mywork:addQuickTask', async (event, { projectId, title, userId }
       VALUES (?, ?, 'task', ?, 'not_started', ?, ?, ?, 1)
     `).run(uuid, projectId, title, userId, now, now);
 
-    createAuditLog(db, 'WorkItem', uuid, 'create', userId, undefined, `title:${title},type:task`);
+    writeAuditLog({
+      entityType: 'WorkItem',
+      entityId: uuid,
+      action: 'create',
+      userId,
+      source: 'ui',
+      newValuesJson: `title:${title},type:task`,
+    }, { db });
 
     return { success: true, data: { id: result.lastInsertRowid, uuid } };
   } catch (error) {
@@ -276,15 +264,14 @@ ipcMain.handle('timelog:start', async (event, { workItemId, userId, logType = 't
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(uuid, workItemId, userId, now, logType, now, now);
 
-    createAuditLog(
-      db,
-      'TimeLog',
-      uuid,
-      'create',
+    writeAuditLog({
+      entityType: 'TimeLog',
+      entityId: uuid,
+      action: 'create',
       userId,
-      undefined,
-      `work_item_id:${workItemId},log_type:${logType}`
-    );
+      source: 'ui',
+      newValuesJson: `work_item_id:${workItemId},log_type:${logType}`,
+    }, { db });
 
     return { success: true, data: { logId: result.lastInsertRowid, uuid } };
   } catch (error) {
@@ -326,15 +313,15 @@ ipcMain.handle('timelog:stop', async (event, { logId, notes }) => {
       WHERE id = ?
     `).run(now, duration, notes || null, now, logId);
 
-    createAuditLog(
-      db,
-      'TimeLog',
-      timeLog.uuid,
-      'update',
-      timeLog.user_id,
-      `end_time:NULL`,
-      `end_time:${now},duration:${duration}`
-    );
+    writeAuditLog({
+      entityType: 'TimeLog',
+      entityId: timeLog.uuid,
+      action: 'update',
+      userId: timeLog.user_id,
+      source: 'ui',
+      oldValuesJson: 'end_time:NULL',
+      newValuesJson: `end_time:${now},duration:${duration}`,
+    }, { db });
 
     return { success: true, data: { duration } };
   } catch (error) {
@@ -375,15 +362,14 @@ ipcMain.handle('timelog:logManual', async (event, entry: ManualTimeEntry) => {
       now
     );
 
-    createAuditLog(
-      db,
-      'TimeLog',
-      uuid,
-      'create',
-      entry.userId,
-      undefined,
-      `work_item_id:${entry.workItemId},duration:${entry.durationMinutes},log_type:manual`
-    );
+    writeAuditLog({
+      entityType: 'TimeLog',
+      entityId: uuid,
+      action: 'create',
+      userId: entry.userId,
+      source: 'ui',
+      newValuesJson: `work_item_id:${entry.workItemId},duration:${entry.durationMinutes},log_type:manual`,
+    }, { db });
 
     return { success: true, data: { logId: result.lastInsertRowid, uuid } };
   } catch (error) {
@@ -439,15 +425,15 @@ ipcMain.handle('timelog:edit', async (event, { logId, updates, userId }) => {
     );
 
     // Audit log (trigger already handles this, but add extra detail)
-    createAuditLog(
-      db,
-      'TimeLog',
-      oldLog.uuid,
-      'update',
+    writeAuditLog({
+      entityType: 'TimeLog',
+      entityId: oldLog.uuid,
+      action: 'update',
       userId,
-      `start:${oldLog.start_time},end:${oldLog.end_time},duration:${oldLog.duration_minutes}`,
-      `start:${startTime},end:${endTime},duration:${durationMinutes}`
-    );
+      source: 'ui',
+      oldValuesJson: `start:${oldLog.start_time},end:${oldLog.end_time},duration:${oldLog.duration_minutes}`,
+      newValuesJson: `start:${startTime},end:${endTime},duration:${durationMinutes}`,
+    }, { db });
 
     return { success: true };
   } catch (error) {

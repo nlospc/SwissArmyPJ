@@ -2,7 +2,7 @@
  * Gantt Chart Utilities
  */
 
-import { type GanttDateRange, type GanttViewMode } from '@/renderer/types/gantt';
+import { type GanttDateRange, type GanttViewMode } from '@/types/gantt';
 
 /**
  * Get date range for a given view mode

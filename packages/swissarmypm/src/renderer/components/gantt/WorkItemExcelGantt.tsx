@@ -26,7 +26,7 @@ import {
   ZoomOutOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import type { TimelineOptions } from 'vis-timeline/types';
+import type { TimelineOptions } from 'vis-timeline';
 import type { CreateWorkItemDTO, UpdateWorkItemDTO, WorkItem, Project } from '@/shared/types';
 import {
   calculateDateRange,

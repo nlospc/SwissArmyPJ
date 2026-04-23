@@ -19,7 +19,7 @@ import {
   timelineItemToProjectUpdate,
   calculateDateRange,
 } from './timeline-adapter';
-import type { TimelineOptions } from 'vis-timeline/types';
+import type { TimelineOptions } from 'vis-timeline';
 import type { Project, WorkItem } from '@/shared/types';
 
 interface ProjectGanttChartProps {
@@ -65,7 +65,7 @@ export function ProjectGanttChart({
 
   // Create groups from portfolios
   const timelineGroups = useMemo(() => {
-    return portfolios.length > 0 ? portfoliosToGroups(portfolios) : undefined;
+    return portfolios.length > 0 ? portfoliosToGroups(portfolios as any) : undefined;
   }, [portfolios]);
 
   // Calculate date range for initial view
@@ -96,10 +96,6 @@ export function ProjectGanttChart({
       axis: 5,
     },
     height: '100%',
-    moment: (date: Date) => {
-      // Format dates based on view scale
-      return date;
-    },
   }), [dateRange, portfolios.length]);
 
   // Handle item click

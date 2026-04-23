@@ -1,4 +1,5 @@
 import { theme } from 'antd';
+import type { ThemeConfig } from 'antd';
 
 /**
  * 全局主题配置
@@ -348,10 +349,10 @@ export const getComponentTokenConfig = (isDark: boolean) => ({
  * 获取完整的主题配置
  * @param isDark 是否为深色主题
  */
-export const getThemeConfig = (isDark: boolean) => ({
+export const getThemeConfig = (isDark: boolean): ThemeConfig => ({
   algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
   token: isDark ? darkThemeTokens : lightThemeTokens,
-  components: getComponentTokenConfig(isDark),
+  components: getComponentTokenConfig(isDark) as ThemeConfig['components'],
 });
 
 export default getThemeConfig;

@@ -80,7 +80,7 @@ export function TodoItem({ todo, isCompleted = false }: TodoItemProps) {
       const result = await ipc.workItems.update(todo.id, {
         title: editData.title.trim(),
         status: editData.status as 'not_started' | 'in_progress' | 'done' | 'blocked',
-        end_date: editData.end_date || null,
+        end_date: editData.end_date || undefined,
       });
       if (result.success) {
         await fetchTodos(true);

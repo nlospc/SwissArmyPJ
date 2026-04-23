@@ -10,8 +10,12 @@
     "dev:swissarmypm": "npm run dev --workspace swissarmypm",
     "dev:pmbrain": "npm run dev --workspace pmbrain",
     "build:swissarmypm": "npm run build --workspace swissarmypm",
-    "build:pmbrain": "npm run build --workspace pmbrain",
+    "check:pmbrain": "npm run check --workspace pmbrain",
     "type-check:swissarmypm": "npm run type-check --workspace swissarmypm",
-    "type-check:pmbrain": "npm run type-check --workspace pmbrain"
+    "type-check:pmbrain": "npm run check --workspace pmbrain",
+    "verify:swissarmypm": "npm run build:swissarmypm",
+    "verify:swissarmypm:strict": "npm run type-check:swissarmypm && npm run build:swissarmypm",
+    "verify:pmbrain": "npm run check:pmbrain",
+    "verify:workspace": "npm run verify:swissarmypm && npm run verify:pmbrain"
   }
 }

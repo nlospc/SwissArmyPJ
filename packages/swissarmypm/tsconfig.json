@@ -8,10 +8,20 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "moduleResolution": "bundler",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/shared/*": ["./src/shared/*"],
+      "@/*": ["./src/renderer/*"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.main.json" }]
+  "include": ["src/renderer/**/*", "src/shared/**/*"],
+  "exclude": [
+    "src/renderer/features/archive/**/*",
+    "src/renderer/pages/archive/**/*",
+    "src/renderer/stores/useMyWorkStore.ts",
+    "src/renderer/components/portfolio/**/*",
+    "src/renderer/components/gantt/GanttChart.tsx",
+    "src/renderer/components/gantt/GanttRow.tsx",
+    "src/renderer/components/gantt/WorkItemExcelGantt.tsx"
+  ]
 }

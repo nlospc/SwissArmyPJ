@@ -5,9 +5,11 @@
     "lib": ["ES2020"],
     "strict": true,
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "moduleResolution": "node",
+    "types": ["node"],
     "outDir": "dist/main"
   },
-  "include": ["src/main/**/*"],
+  "include": ["src/main/**/*", "src/preload/**/*"],
   "exclude": ["node_modules"]
 }

@@ -4,6 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import dayjs from 'dayjs';
 import { Dayjs } from 'dayjs';
 
 export type TimeScale = 'day' | 'week' | 'month' | 'quarter';

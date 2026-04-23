@@ -14,13 +14,18 @@ export function Sidebar() {
   const { t } = useI18n();
   const unprocessedCount = getUnprocessedCount();
 
-  const navItems = [
+  const navItems: Array<{
+    id: 'projects' | 'workbench' | 'inbox' | 'search' | 'settings';
+    icon: React.ReactNode;
+    labelKey: 'nav.projects' | 'nav.workbench' | 'nav.inbox' | 'nav.search' | 'nav.settings';
+    badge?: number;
+  }> = [
     { id: 'projects', icon: <FolderKanban className="h-4 w-4" />, labelKey: 'nav.projects' as const },
     { id: 'workbench', icon: <LayoutDashboard className="h-4 w-4" />, labelKey: 'nav.workbench' as const },
     { id: 'inbox', icon: <Inbox className="h-4 w-4" />, labelKey: 'nav.inbox' as const, badge: unprocessedCount },
     { id: 'search', icon: <Search className="h-4 w-4" />, labelKey: 'nav.search' as const },
     { id: 'settings', icon: <Settings className="h-4 w-4" />, labelKey: 'nav.settings' as const },
-  ] as const;
+  ];
 
   return (
     <div className="w-64 border-r border-gray-200 bg-white h-full flex flex-col dark:border-gray-700 dark:bg-gray-900">
@@ -40,7 +45,7 @@ export function Sidebar() {
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           return (
-            <Button key={item.id} type={isActive ? 'primary' : 'text'} className="w-full justify-start h-10" icon={item.icon} onClick={() => setCurrentView(item.id as any)}>
+            <Button key={item.id} type={isActive ? 'primary' : 'text'} className="w-full justify-start h-10" icon={item.icon} onClick={() => setCurrentView(item.id)}>
               {t(item.labelKey)}
               {item.badge !== undefined && item.badge > 0 && <Badge count={item.badge} className="ml-auto" />}
             </Button>

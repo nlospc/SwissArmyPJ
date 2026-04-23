@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import * as crypto from 'node:crypto';
 
 import { getDatabase } from '../database/schema';
+import { writeAuditLog } from './shared/auditLog';
 
 import type {
   CreateWorkItemDTO,
@@ -9,41 +10,6 @@ import type {
   UpdateWorkItemDTO,
   WorkItem,
 } from '../../shared/types';
-
-interface AuditLogEntry {
-  entity_type: string;
-  entity_id: string;
-  action: 'create' | 'update' | 'delete';
-  user_id?: string;
-  source?: string;
-  old_values_json?: string;
-  new_values_json?: string;
-}
-
-function writeAuditLog(entry: AuditLogEntry): void {
-  try {
-    const db = getDatabase();
-    const uuid = crypto.randomUUID();
-    const now = new Date().toISOString();
-
-    db.prepare(`
-      INSERT INTO audit_log (uuid, entity_type, entity_id, action, user_id, source, old_values_json, new_values_json, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      uuid,
-      entry.entity_type,
-      entry.entity_id,
-      entry.action,
-      entry.user_id || null,
-      entry.source || null,
-      entry.old_values_json || null,
-      entry.new_values_json || null,
-      now
-    );
-  } catch (error) {
-    console.error('Failed to write audit log:', error);
-  }
-}
 
 export function registerWorkItemHandlers(): void {
   ipcMain.handle('workItems:getAll', handleGetAllWorkItems);
@@ -138,11 +104,11 @@ function handleCreateWorkItem(_event: any, data: CreateWorkItemDTO): IPCResponse
     const workItem = db.prepare('SELECT * FROM work_items WHERE id = ?').get(result.lastInsertRowid) as WorkItem;
 
     writeAuditLog({
-      entity_type: 'work_item',
-      entity_id: String(workItem.id),
+      entityType: 'work_item',
+      entityId: String(workItem.id),
       action: 'create',
       source: 'gantt',
-      new_values_json: JSON.stringify(workItem),
+      newValuesJson: JSON.stringify(workItem),
     });
 
     return { success: true, data: workItem };
@@ -203,12 +169,12 @@ function handleUpdateWorkItem(_event: any, id: number, data: UpdateWorkItemDTO):
 
     if (oldWorkItem) {
       writeAuditLog({
-        entity_type: 'work_item',
-        entity_id: String(id),
+        entityType: 'work_item',
+        entityId: String(id),
         action: 'update',
         source: 'gantt',
-        old_values_json: JSON.stringify(oldWorkItem),
-        new_values_json: JSON.stringify(workItem),
+        oldValuesJson: JSON.stringify(oldWorkItem),
+        newValuesJson: JSON.stringify(workItem),
       });
     }
 
@@ -228,21 +194,21 @@ function handleDeleteWorkItem(_event: any, id: number): IPCResponse<{ deletedIds
 
     if (workItem) {
       writeAuditLog({
-        entity_type: 'work_item',
-        entity_id: String(id),
+        entityType: 'work_item',
+        entityId: String(id),
         action: 'delete',
         source: 'gantt',
-        old_values_json: JSON.stringify(workItem),
+        oldValuesJson: JSON.stringify(workItem),
       });
     }
 
     for (const child of childItems) {
       writeAuditLog({
-        entity_type: 'work_item',
-        entity_id: String(child.id),
+        entityType: 'work_item',
+        entityId: String(child.id),
         action: 'delete',
         source: 'gantt',
-        old_values_json: JSON.stringify(child),
+        oldValuesJson: JSON.stringify(child),
       });
     }
 

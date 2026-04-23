@@ -14,8 +14,6 @@ export {
   timelineItemToWorkItemUpdate,
   timelineItemToProjectUpdate,
   calculateDateRange,
-  getStatusColor as getStatusColorAdapter,
-  getTypeColor,
 } from './timeline-adapter';
 
 // Legacy custom implementation (will be deprecated)

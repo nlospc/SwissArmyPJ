@@ -6,7 +6,7 @@
 
 import type { Project, WorkItem, Portfolio } from '@/shared/types';
 import type { VisTimelineItem } from './VisTimelineWrapper';
-import type { TimelineGroup } from 'vis-timeline/types';
+import type { TimelineGroup } from 'vis-timeline';
 
 /**
  * Convert WorkItems to vis-timeline items
@@ -42,13 +42,20 @@ export function workItemsToTimelineItems(workItems: WorkItem[]): VisTimelineItem
       `status-${item.status}`,
     ];
 
-    return {
-      id: item.id,
-      content: isPhase ? '' : item.title,
-      start: item.start_date ? new Date(item.start_date) : new Date(),
-      end: item.end_date ? new Date(item.end_date) : undefined,
-      type,
-      className: classNames.join(' '),
+    return {
+
+      id: item.id,
+
+      content: isPhase ? '' : item.title,
+
+      start: item.start_date ? new Date(item.start_date) : new Date(),
+
+      end: item.end_date ? new Date(item.end_date) : undefined,
+
+      type,
+
+      className: classNames.join(' '),
+
       group: item.parent_id || 'root',
       title: `${item.type.toUpperCase()}: ${item.title} (${item.status})`,
       editable: {
@@ -176,8 +183,10 @@ export function calculateDateRange(
   });
 
   const padding = 14 * 24 * 60 * 60 * 1000; // 2 weeks padding
-  const start = minDate ? new Date(minDate.getTime() - padding) : new Date();
-  const end = maxDate ? new Date(maxDate.getTime() + padding * 2) : new Date();
+  const startBase = minDate ?? new Date();
+  const endBase = maxDate ?? new Date();
+  const start = new Date(startBase.getTime() - padding);
+  const end = new Date(endBase.getTime() + padding * 2);
 
   return { start, end };
 }

@@ -10,7 +10,7 @@ const { Title, Text } = Typography;
 export function TimelineView() {
   const { projects } = useProjectStore();
   const { workItems } = useWorkItemStore();
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   // 计算项目统计数据
   const projectStats = useMemo(() => {
@@ -84,10 +84,10 @@ export function TimelineView() {
               {selectedProject.startDate.toLocaleDateString()} - {selectedProject.endDate.toLocaleDateString()}
             </Text>
           </div>
-          <ProjectGanttChart
-            projectId={selectedProject.id}
-            projectName={selectedProject.name}
-          />
+            <ProjectGanttChart
+              projects={[selectedProject]}
+              workItems={workItems.filter((w) => w.project_id === selectedProject.id)}
+            />
         </div>
       );
     }

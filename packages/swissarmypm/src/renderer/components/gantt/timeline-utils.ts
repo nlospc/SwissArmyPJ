@@ -3,7 +3,12 @@
  */
 
 import dayjs, { Dayjs } from 'dayjs';
+import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
 import type { TimeScale } from './TimelineProvider';
+
+dayjs.extend(quarterOfYear);
+dayjs.extend(weekOfYear);
 
 /**
  * Convert a date to pixel position on the timeline

@@ -74,7 +74,6 @@ function AppContent() {
       element: annotation.element,
       elementPath: annotation.elementPath,
       boundingBox: annotation.boundingBox,
-      text: annotation.text,
     });
   };
 
