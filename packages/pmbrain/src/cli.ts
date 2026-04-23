@@ -1,6 +1,7 @@
 import { runDoctor } from './commands/doctor'
 import { runProjectInit } from './commands/project-init'
 import { runProjectDelete } from './commands/project-delete'
+import { runProjectUpdate } from './commands/project-update'
 import { runRiskMatrix } from './commands/risk-matrix'
 import { runServe } from './commands/serve'
 import { runSetup } from './commands/setup'
@@ -21,6 +22,7 @@ Commands:
   serve                      Start MCP stub entrypoint
   project-init <code> <name> Create the first project records in SQLite
   project-delete <code|id>  Delete a project and all associated records (requires confirmation)
+  project-update <code|id> <field=value>... Update project fields
   risk-matrix [projectCode]  Query the current risk matrix from SQLite
   vault-sync [mode]          Run placeholder vault sync
 `)
@@ -53,6 +55,9 @@ async function main(): Promise<void> {
       return
     case 'project-delete':
       await runProjectDelete(args)
+      return
+    case 'project-update':
+      await runProjectUpdate(args)
       return
     case 'risk-matrix':
       await runRiskMatrix(args)

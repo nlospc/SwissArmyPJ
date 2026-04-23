@@ -7,7 +7,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { loadConfig } from '../core/config';
-import { collectStats, deleteProjectById, findProjectByCodeOrId, getRiskMatrix, insertProject, missingTables, openDatabase } from '../core/db';
+import { collectStats, deleteProjectById, findProjectByCodeOrId, getRiskMatrix, insertProject, missingTables, openDatabase, updateProjectById } from '../core/db';
 import type { ProjectInitInput } from '../core/types';
 
 export async function runServe(): Promise<void> {
@@ -109,6 +109,57 @@ export async function runServe(): Promise<void> {
               },
             },
             required: ['code', 'name'],
+          },
+        },
+        {
+          name: 'update_project',
+          description: 'Update an existing project (partial update - only provided fields will be changed)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              code_or_id: {
+                type: 'string',
+                description: 'Project code or project ID',
+              },
+              code: {
+                type: 'string',
+                description: 'New project code (optional)',
+              },
+              name: {
+                type: 'string',
+                description: 'New project name (also updates page title, optional)',
+              },
+              owner: {
+                type: 'string',
+                description: 'New project owner (optional)',
+              },
+              status: {
+                type: 'string',
+                description: 'New project status (optional)',
+              },
+              budget_baseline: {
+                type: 'number',
+                description: 'New project budget baseline (optional)',
+              },
+              program_id: {
+                type: 'string',
+                description: 'New parent program ID (use null to remove, optional)',
+              },
+              program_role: {
+                type: 'string',
+                description: 'New program role: "program" (project set), "component" (child project), or "standalone" (independent project, optional)',
+                enum: ['program', 'component', 'standalone'],
+              },
+              progress_pct: {
+                type: 'number',
+                description: 'Progress percentage (0-100, optional)',
+              },
+              description: {
+                type: 'string',
+                description: 'Project description/objective (optional)',
+              },
+            },
+            required: ['code_or_id'],
           },
         },
         {
@@ -265,6 +316,49 @@ export async function runServe(): Promise<void> {
             },
           ],
         };
+      }
+
+      case 'update_project': {
+        if (!args?.code_or_id || typeof args.code_or_id !== 'string') {
+          throw new McpError(ErrorCode.InvalidParams, 'Project code or ID is required');
+        }
+
+        const db = openDatabase(config);
+        try {
+          const project = findProjectByCodeOrId(config, args.code_or_id);
+          if (!project) {
+            throw new McpError(ErrorCode.InvalidRequest, `Project '${args.code_or_id}' not found`);
+          }
+
+          // Collect update options
+          const updates: any = {};
+          if (args.code !== undefined) updates.code = args.code;
+          if (args.name !== undefined) updates.name = args.name;
+          if (args.owner !== undefined) updates.owner = args.owner;
+          if (args.status !== undefined) updates.status = args.status;
+          if (args.budget_baseline !== undefined) updates.budget_baseline = args.budget_baseline;
+          if (args.program_id !== undefined) updates.program_id = args.program_id;
+          if (args.program_role !== undefined) updates.program_role = args.program_role;
+          if (args.progress_pct !== undefined) updates.progress_pct = args.progress_pct;
+          if (args.description !== undefined) updates.description = args.description;
+
+          const result = updateProjectById(config, project.id, updates);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  ok: true,
+                  updated: result.updated,
+                  message: result.message,
+                }, null, 2),
+              },
+            ],
+          };
+        } finally {
+          db.close();
+        }
       }
 
       case 'get_risk_matrix': {

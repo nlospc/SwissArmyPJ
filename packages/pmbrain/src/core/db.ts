@@ -174,7 +174,15 @@ export function insertProject(config: PMBrainConfig, input: ProjectInitInput): P
         id,
         1,
         title,
-        `# ${title}\n\n## Objective\n\n## Status\n\n- Status: ${input.status ?? 'planning'}\n- Owner: ${input.owner ?? 'TBD'}\n`,
+        `# ${title}
+
+## Objective
+
+## Status
+
+- Status: ${input.status ?? 'planning'}
+- Owner: ${input.owner ?? 'TBD'}
+`,
         JSON.stringify({
           pmbrain_id: id,
           page_type: 'project',
@@ -242,7 +250,7 @@ export function getRiskMatrix(config: PMBrainConfig, projectCode?: string | null
           probability,
           impact,
           count: index.get(matrixKey(probability, impact)) ?? 0,
-        })
+        });
       }
     }
 
@@ -379,6 +387,115 @@ export function deleteProjectById(config: PMBrainConfig, projectId: string): Pro
       projectId,
       projectCode: String(project.code),
       message: 'Project and all associated records deleted successfully (cascade via foreign keys)',
+    }
+  } finally {
+    db.close()
+  }
+}
+
+/**
+ * Update an existing project.
+ * Updates project metadata in projects table and optionally page title in pages table.
+ */
+export interface UpdateProjectOptions {
+  code?: string
+  name?: string
+  owner?: string
+  status?: string
+  budget_baseline?: number
+  program_id?: string | null
+  program_role?: 'program' | 'component' | 'standalone'
+  progress_pct?: number
+  description?: string
+}
+
+export function updateProjectById(
+  config: PMBrainConfig,
+  projectId: string,
+  updates: UpdateProjectOptions
+): {
+  updated: boolean
+  projectId: string
+  projectCode: string | null
+  message: string
+} {
+  const db = openDatabase(config)
+  try {
+    db.exec(readSchemaSql())
+
+    // Find the project first to verify it exists
+    const existing = db.query<any, [string]>(
+      `SELECT code, id FROM projects WHERE id = ?`
+    ).get(projectId)
+
+    if (!existing) {
+      return {
+        updated: false,
+        projectId,
+        projectCode: null,
+        message: 'Project not found',
+      }
+    }
+
+    // Begin transaction
+    const updateTransaction = db.transaction(() => {
+      // Build dynamic UPDATE for projects table based on provided fields
+      const projectFields: string[] = []
+      const projectValues: any[] = []
+
+      if (updates.code !== undefined) {
+        projectFields.push('code = ?')
+        projectValues.push(updates.code)
+      }
+      if (updates.owner !== undefined) {
+        projectFields.push('owner = ?')
+        projectValues.push(updates.owner)
+      }
+      if (updates.status !== undefined) {
+        projectFields.push('status = ?')
+        projectValues.push(updates.status)
+      }
+      if (updates.budget_baseline !== undefined) {
+        projectFields.push('budget_baseline = ?')
+        projectValues.push(updates.budget_baseline)
+      }
+      if (updates.program_id !== undefined) {
+        projectFields.push('program_id = ?')
+        projectValues.push(updates.program_id)
+      }
+      if (updates.program_role !== undefined) {
+        projectFields.push('program_role = ?')
+        projectValues.push(updates.program_role)
+      }
+      if (updates.progress_pct !== undefined) {
+        projectFields.push('progress_pct = ?')
+        projectValues.push(updates.progress_pct)
+      }
+      if (updates.description !== undefined) {
+        projectFields.push('description = ?')
+        projectValues.push(updates.description)
+      }
+
+      // Update projects table if there are any changes
+      if (projectFields.length > 0) {
+        projectValues.push(projectId)
+        const updateProjectSql = `UPDATE projects SET ${projectFields.join(', ')} WHERE id = ?`
+        db.query(updateProjectSql).run(...projectValues)
+      }
+
+      // Update pages table if name changed
+      if (updates.name !== undefined) {
+        db.query(`UPDATE pages SET title = ? WHERE id = ?`).run(`${updates.code ?? existing.code} ${updates.name}`, projectId)
+      }
+    })
+
+    updateTransaction()
+
+    return {
+      updated: true,
+      projectId,
+      projectCode: String(existing.code),
+      message: 'Project updated successfully',
     }
   } finally {
     db.close()
