@@ -1,0 +1,14 @@
+task_id: none
+title: none
+status: idle
+
+active_agent: none
+active_role: none
+active_writer: none
+
+branch: swissarmypm
+package_scope: packages/swissarmypm
+
+current_goal: ""
+next_step: ""
+updated_at: ""

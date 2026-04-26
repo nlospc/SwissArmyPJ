@@ -1,120 +1,48 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+Repository-level engineering guide for external coding agents.
+Product direction lives in `CLAUDE.md`; if there is a conflict, `CLAUDE.md` wins.
 
-## Repository Overview
+## Repo Shape
 
-This is a **monorepo** containing two independent but complementary packages:
+This monorepo contains two independent packages:
 
 | Package | Directory | Purpose |
-|---------|-----------|---------|
-| **SwissArmyPM** | `packages/swissarmypm/` | Electron + React + Vite desktop workbench for project managers |
-| **PMBrain** | `packages/pmbrain/` | Bun + TypeScript CLI knowledge brain with SQLite, Obsidian vault, MCP |
+|---|---|---|
+| **SwissArmyPM** | `packages/swissarmypm/` | Electron desktop PM workbench |
+| **PMBrain** | `packages/pmbrain/` | Bun CLI/MCP knowledge brain |
 
-### Workspace Setup
+## Canonical Root Commands
+
+Run from repo root:
 
 ```bash
-# From repo root
-npm install              # Install all workspace dependencies
-npm run dev:swissarmypm  # Start Electron app dev server
-npm run dev:pmbrain      # Run PMBrain CLI
+npm install
+npm run dev:swissarmypm
+npm run dev:pmbrain
 npm run build:swissarmypm
 npm run verify:swissarmypm
-npm run check:pmbrain
+npm run verify:pmbrain
 npm run verify:workspace
 ```
 
-Root-level `verify:*` commands are wrapped with automatic temp-artifact cleanup. They create an isolated TMPDIR for the verification run and remove temporary/build outputs such as `packages/swissarmypm/dist` and `*.tsbuildinfo` when the task ends. Set `VERIFY_KEEP_ARTIFACTS=1` only when you explicitly need to inspect retained build artifacts.
+Root-level `verify:*` commands auto-clean temporary/build artifacts. Set `VERIFY_KEEP_ARTIFACTS=1` only when you intentionally need retained outputs.
 
-## SwissArmyPM (`packages/swissarmypm/`)
+## Where Detailed Rules Live
 
-**Tech Stack:** Electron + React 19 + TypeScript + Vite + Zustand + Ant Design + SQLite (better-sqlite3)
-
-**Commands:**
-```bash
-npm run dev          # Start Vite dev server + Electron
-npm run build        # Production build
-npm run type-check   # TypeScript type checking
-```
-
-**Directory Structure:**
-```
-packages/swissarmypm/
-├── src/
-│   ├── main/              # Electron main process
-│   │   ├── index.ts       # Entry point
-│   │   ├── database/      # SQLite schema + migrations
-│   │   └── ipc/           # IPC command handlers
-│   ├── renderer/          # React frontend
-│   │   ├── components/    # UI components
-│   │   ├── features/      # Feature modules
-│   │   ├── stores/        # Zustand stores
-│   │   ├── pages/         # Page components
-│   │   └── App.tsx
-│   ├── preload/           # Electron preload
-│   └── shared/            # Shared types
-├── design/                # UI prototypes (reference only)
-├── scripts/               # Build/utility scripts
-├── vite.config.ts
-├── tsconfig.json
-└── tsconfig.main.json
-```
-
-**Path Aliases:**
-- `@/*` → `./src/renderer/*`
-- `@/shared/*` → `./src/shared/*`
-
-**IPC Pattern:**
-```
-React Component → Zustand store → invoke('command', args) → IPC handler → SQLite
-```
-
-**Key Principles:**
-1. Local-first, always-capable (works offline)
-2. Human-in-the-loop (AI suggests, humans confirm)
-3. Auditable (all changes logged)
-4. PM Workspace is the product center (not Portfolio/Inbox/My Work)
-
-## PMBrain (`packages/pmbrain/`)
-
-**Tech Stack:** Bun + TypeScript + SQLite (bun:sqlite)
-
-**Commands:**
-```bash
-bun run dev -- setup          # Initialize config + schema
-bun run dev -- doctor         # Health check
-bun run dev -- stats          # DB counts
-bun run dev -- project-init   # Create project
-bun run dev -- risk-matrix    # Query risks
-bun run check                 # tsc --noEmit
-```
-
-**Architecture:**
-- SQLite = source of truth (pages, chunks, links, tags, versions, raw_data)
-- Obsidian vault = projection layer (markdown view/edit)
-- MCP = agent access layer
-- CLI = operator surface
-
-**Key Files:**
-- `src/core/schema.sql` — Database schema
-- `src/core/db.ts` — Database bootstrap
-- `src/core/types.ts` — Type definitions
-- `src/cli.ts` — CLI entrypoint
-- `src/sdk/index.ts` — SDK exports for programmatic use
-
-## Shared Documentation
-
-Cross-project docs live in the repo root `docs/`:
-- `docs/PMBOK-GBRAIN-GUIDELINE.md` — Shared product guideline
-- `docs/PRD/` — Product Requirements Documents
-- `docs/MEMORY.md` — Current consensus
+- Product direction: `CLAUDE.md`
+- SwissArmyPM implementation rules: `packages/swissarmypm/CLAUDE.md`
+- PMBrain implementation rules: `packages/pmbrain/CLAUDE.md`
+- Shared workflow state:
+  - `workflow/project-profile.yaml`
+  - `workflow/active-task.yaml`
+  - `workflow/handoff.md`
 
 ## Key Rules
 
-1. **PMBrain does not depend on SwissArmyPM** — dependency is strictly one-directional
-2. **SwissArmyPM does not require a package-manager-level dependency on `pmbrain`** — keep coupling at CLI/SDK/runtime boundary
-3. **Each package has its own `tsconfig.json`** — incompatible compiler options (React vs Bun)
-4. **Follow CLAUDE.md hierarchy** — root CLAUDE.md > sub-project CLAUDE.md > docs/
-5. **All SQL uses parameterized queries** — no string interpolation
-6. **Audit all data changes** — audit_log for SwissArmyPM, ingest_log for PMBrain
-7. **Component PascalCase, hooks camelCase with `use` prefix, stores camelCase with `use` prefix**
+1. PMBrain must not depend on SwissArmyPM.
+2. SwissArmyPM must not add a package-manager-level dependency on PMBrain.
+3. Follow document priority: root `CLAUDE.md` → package `CLAUDE.md` → shared docs.
+4. Use parameterized SQL only.
+5. Audit data changes (`audit_log` for SwissArmyPM, `ingest_log` for PMBrain).
+6. Keep SwissArmyPM centered on PM Workspace, not Portfolio / My Work / Pomodoro.

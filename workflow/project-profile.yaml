@@ -1,0 +1,24 @@
+project_name: SwissArmyPM
+primary_package: packages/swissarmypm
+
+verify_command: npm run verify:swissarmypm
+strict_verify_command: npm run verify:swissarmypm:strict
+workspace_verify_command: npm run verify:workspace
+
+default_allowed_paths:
+  - packages/swissarmypm/src/**
+  - docs/**
+  - workflow/**
+  - CLAUDE.md
+  - AGENTS.md
+  - packages/swissarmypm/CLAUDE.md
+
+default_forbidden_paths:
+  - packages/pmbrain/**
+
+architecture_rules:
+  - PM Workspace is the product center
+  - Do not expand Portfolio / My Work / Pomodoro as the main direction
+  - Prefer retrieval-oriented architecture over arbitrary line-count splitting
+  - Preserve desktop-first workbench semantics
+  - Do not implement modules without relevant design docs or PRD
