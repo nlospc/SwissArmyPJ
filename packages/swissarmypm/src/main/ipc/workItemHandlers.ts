@@ -82,8 +82,8 @@ function handleCreateWorkItem(_event: any, data: CreateWorkItemDTO): IPCResponse
     const level = data.parent_id ? 2 : 1;
 
     const result = db.prepare(`
-      INSERT INTO work_items (uuid, project_id, parent_id, type, title, status, start_date, end_date, level, notes, owner, priority, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO work_items (uuid, project_id, parent_id, type, title, status, start_date, end_date, actual_start_date, actual_end_date, level, notes, owner, priority, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       uuid,
       data.project_id,
@@ -93,6 +93,8 @@ function handleCreateWorkItem(_event: any, data: CreateWorkItemDTO): IPCResponse
       data.status || 'not_started',
       data.start_date || null,
       data.end_date || null,
+      data.actual_start_date || null,
+      data.actual_end_date || null,
       level,
       data.notes || null,
       data.owner || null,
@@ -141,6 +143,14 @@ function handleUpdateWorkItem(_event: any, id: number, data: UpdateWorkItemDTO):
     if (data.end_date !== undefined) {
       updates.push('end_date = ?');
       values.push(data.end_date);
+    }
+    if (data.actual_start_date !== undefined) {
+      updates.push('actual_start_date = ?');
+      values.push(data.actual_start_date);
+    }
+    if (data.actual_end_date !== undefined) {
+      updates.push('actual_end_date = ?');
+      values.push(data.actual_end_date);
     }
     if (data.notes !== undefined) {
       updates.push('notes = ?');

@@ -85,6 +85,8 @@ export const useWorkItemStore = create<WorkItemState>((set, get) => ({
       title: data.title,
       type: data.type || 'task',
       status: data.status || 'not_started',
+      actual_start_date: data.actual_start_date || null,
+      actual_end_date: data.actual_end_date || null,
       level: data.parent_id ? 2 : 1,
       priority: data.priority || 'medium',
       owner: data.owner || null,

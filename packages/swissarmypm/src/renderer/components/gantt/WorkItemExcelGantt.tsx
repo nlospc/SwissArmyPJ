@@ -29,8 +29,13 @@ import dayjs from 'dayjs';
 import type { TimelineOptions } from 'vis-timeline';
 import type { CreateWorkItemDTO, UpdateWorkItemDTO, WorkItem, Project } from '@/shared/types';
 import {
+  calculateWorkingDays,
+  deriveRiskDelayState,
+  nextStatusPatch,
+  type TimelineScale,
+} from '@/lib/timeline-workitems';
+import {
   calculateDateRange,
-  timelineItemToWorkItemUpdate,
   workItemsToGroups,
   workItemsToTimelineItems,
 } from './timeline-adapter';
@@ -38,7 +43,6 @@ import { VisTimelineWrapper, type VisTimelineHandle, type VisTimelineItem } from
 
 const { Text } = Typography;
 
-type TimelineScale = 'day' | 'week' | 'month' | 'quarter';
 type QuickDateFilter = 'all' | 'this_week' | 'this_month' | 'custom';
 
 interface WorkItemExcelGanttProps {
@@ -99,9 +103,9 @@ function getTimelineOptions(scale: TimelineScale, start: Date, end: Date): Timel
     stack: true,
     showCurrentTime: true,
     orientation: 'top',
-    editable: { updateTime: true, updateGroup: false, add: false, remove: false },
+    editable: { updateTime: false, updateGroup: false, add: false, remove: false },
     zoomMin: 1000 * 60 * 60 * 24,
-    zoomMax: 1000 * 60 * 60 * 24 * 365 * 2,
+    zoomMax: 1000 * 60 * 60 * 24 * 31,
   };
 
   if (scale === 'day') {
@@ -110,10 +114,14 @@ function getTimelineOptions(scale: TimelineScale, start: Date, end: Date): Timel
   if (scale === 'week') {
     return { ...base, timeAxis: { scale: 'week', step: 1 } };
   }
-  if (scale === 'quarter') {
-    return { ...base, timeAxis: { scale: 'month', step: 3 } };
-  }
   return { ...base, timeAxis: { scale: 'month', step: 1 } };
+}
+
+function zoomScale(current: TimelineScale, direction: 'in' | 'out'): TimelineScale {
+  const order: TimelineScale[] = ['day', 'week', 'month'];
+  const index = order.indexOf(current);
+  const nextIndex = direction === 'in' ? Math.max(0, index - 1) : Math.min(order.length - 1, index + 1);
+  return order[nextIndex];
 }
 
 export function WorkItemExcelGantt({
@@ -133,7 +141,7 @@ export function WorkItemExcelGantt({
   const [leftWidth, setLeftWidth] = useState(450);
   const [resizing, setResizing] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [scale, setScale] = useState<TimelineScale>('month');
+  const [scale, setScale] = useState<TimelineScale>('week');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [ownerFilter, setOwnerFilter] = useState<string[]>([]);
@@ -201,12 +209,23 @@ export function WorkItemExcelGantt({
     const phases = (byParent.get(null) || []).filter((item) => item.type === 'phase');
     const roots = (byParent.get(null) || []).filter((item) => item.type !== 'phase');
 
-    const rows: Array<WorkItem & { key: string; children?: Array<WorkItem & { key: string }> }> = [];
+    type TimelineTableRow = Omit<WorkItem, 'children'> & {
+      key: string;
+      children?: TimelineTableRow[];
+    };
+    const rows: TimelineTableRow[] = [];
     phases.forEach((phase) => {
-      const children = (byParent.get(phase.id) || []).map((child) => ({ ...child, key: `wi-${child.id}` }));
-      rows.push({ ...phase, key: `wi-${phase.id}`, children });
+      const children = (byParent.get(phase.id) || []).map((child) => {
+        const { children: _existingChildren, ...childRow } = child;
+        return { ...childRow, key: `wi-${child.id}` };
+      });
+      const { children: _existingChildren, ...phaseRow } = phase;
+      rows.push({ ...phaseRow, key: `wi-${phase.id}`, children });
     });
-    roots.forEach((root) => rows.push({ ...root, key: `wi-${root.id}` }));
+    roots.forEach((root) => {
+      const { children: _existingChildren, ...rootRow } = root;
+      rows.push({ ...rootRow, key: `wi-${root.id}` });
+    });
     return rows;
   }, [filteredWorkItems]);
 
@@ -214,66 +233,6 @@ export function WorkItemExcelGantt({
   const timelineGroups = useMemo(() => workItemsToGroups(filteredWorkItems), [filteredWorkItems]);
   const dateRange = useMemo(() => calculateDateRange(filteredWorkItems), [filteredWorkItems]);
   const timelineOptions = useMemo(() => getTimelineOptions(scale, dateRange.start, dateRange.end), [scale, dateRange]);
-
-  const tableColumns: ColumnsType<WorkItem> = useMemo(() => [
-    {
-      title: 'Name',
-      dataIndex: 'title',
-      key: 'title',
-      width: 260,
-      render: (value: string, record) => (
-        <span className={record.type === 'phase' ? 'font-semibold text-slate-800' : 'text-slate-700'}>
-          {value}
-        </span>
-      ),
-    },
-    {
-      title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
-      width: 95,
-      render: (value: string) => <Tag className="uppercase text-[10px] m-0">{value}</Tag>,
-    },
-    {
-      title: 'Start',
-      dataIndex: 'start_date',
-      key: 'start_date',
-      width: 110,
-      render: (value: string | null) => <Text className="text-xs text-slate-500">{value || '-'}</Text>,
-    },
-    {
-      title: 'End',
-      dataIndex: 'end_date',
-      key: 'end_date',
-      width: 110,
-      render: (value: string | null) => <Text className="text-xs text-slate-500">{value || '-'}</Text>,
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      width: 110,
-      render: (value: WorkItem['status']) => (
-        <Tag color={STATUS_COLORS[value]} className="m-0 uppercase text-[10px] font-semibold">
-          {value.replace('_', ' ')}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Owner',
-      dataIndex: 'owner',
-      key: 'owner',
-      width: 130,
-      render: (value: string | null) => <Text className="text-xs text-slate-600">{value || '-'}</Text>,
-    },
-    {
-      title: 'Priority',
-      dataIndex: 'priority',
-      key: 'priority',
-      width: 100,
-      render: (value: WorkItem['priority']) => <Text className="text-xs text-slate-600 uppercase">{value || '-'}</Text>,
-    },
-  ], []);
 
   const handleResizeMouseDown = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
@@ -303,11 +262,11 @@ export function WorkItemExcelGantt({
       }
       if (event.key === '+' || event.key === '=') {
         event.preventDefault();
-        timelineRef.current?.zoomIn(0.15);
+        setScale((current) => zoomScale(current, 'in'));
       }
       if (event.key === '-') {
         event.preventDefault();
-        timelineRef.current?.zoomOut(0.15);
+        setScale((current) => zoomScale(current, 'out'));
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -329,35 +288,31 @@ export function WorkItemExcelGantt({
   }, [form]);
 
   const handleTimelineItemUpdate = useCallback(async (item: VisTimelineItem, callback: (item: VisTimelineItem | null) => void) => {
-    if (!onWorkItemUpdate) {
-      callback(item);
-      return;
-    }
-
+    callback(null);
     const workItem = filteredWorkItems.find((w) => w.id === Number(item.id));
-    if (!workItem) {
-      callback(null);
+    message.info(`Edit dates from the Work Item form${workItem ? `: ${workItem.title}` : ''}.`);
+  }, [filteredWorkItems, message]);
+
+  const handleStatusClick = useCallback(async (item: WorkItem) => {
+    if (!onWorkItemUpdate) return;
+    if (item.type === 'milestone') {
+      message.info('Milestones use risk/delay review rather than the normal status toggle.');
       return;
     }
 
-    const updates = timelineItemToWorkItemUpdate(item);
-    const start = updates.start_date ? dayjs(updates.start_date) : null;
-    const end = updates.end_date ? dayjs(updates.end_date) : start;
-    if (start && end && end.isBefore(start)) {
-      message.warning('End date cannot be earlier than start date.');
-      callback(null);
+    const patch = nextStatusPatch(item);
+    if (!patch) {
+      message.info('Completed or blocked items need explicit editing before changing status again.');
       return;
     }
 
-    const result = await onWorkItemUpdate(workItem.id, updates);
-    if (result?.success) {
-      callback(item);
-      message.success(`Updated timeline: ${workItem.title}`);
-    } else {
-      callback(null);
-      message.error(result?.error || 'Failed to update timeline item');
+    const result = await onWorkItemUpdate(item.id, patch);
+    if (!result.success) {
+      message.error(result.error || 'Failed to update work item status');
+      return;
     }
-  }, [onWorkItemUpdate, filteredWorkItems, message]);
+    message.success(patch.status === 'in_progress' ? 'Actual start date recorded' : 'Actual end date recorded');
+  }, [message, onWorkItemUpdate]);
 
   const handleExportCsv = useCallback(() => {
     const headers = ['Name', 'Type', 'Start', 'End', 'Status', 'Owner', 'Priority'];
@@ -440,6 +395,95 @@ export function WorkItemExcelGantt({
     setModalVisible(false);
   }, [form, editingItem, onWorkItemUpdate, onWorkItemCreate, message, project.id]);
 
+  const tableColumns: ColumnsType<WorkItem> = useMemo(() => [
+    {
+      title: 'Work Item',
+      dataIndex: 'title',
+      key: 'title',
+      width: 260,
+      render: (value: string, record) => {
+        const risk = deriveRiskDelayState(record);
+        return (
+          <div className="min-w-0">
+            <div className={record.type === 'phase' ? 'font-semibold text-slate-800' : 'font-medium text-slate-700'}>
+              {value}
+            </div>
+            <div className="mt-1 flex items-center gap-1">
+              <Tag className="m-0 uppercase text-[10px]">{record.type}</Tag>
+              {risk.severity !== 'none' && (
+                <Tag color={risk.severity === 'delay' ? 'error' : 'warning'} className="m-0 uppercase text-[10px]">
+                  {risk.label}
+                </Tag>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      title: 'Planned',
+      key: 'planned',
+      width: 170,
+      render: (_, record) => {
+        const days = calculateWorkingDays(record.start_date, record.end_date || record.start_date);
+        return (
+          <div className="text-xs text-slate-600">
+            <div>{record.start_date || '-'} {'->'} {record.end_date || record.start_date || '-'}</div>
+            <div className="mt-1 text-slate-400">{days == null ? '-' : `${days} working days`}</div>
+          </div>
+        );
+      },
+    },
+    {
+      title: 'Actual',
+      key: 'actual',
+      width: 150,
+      render: (_, record) => (
+        <div className="text-xs text-slate-600">
+          <div>Start: {record.actual_start_date || '-'}</div>
+          <div className="mt-1">End: {record.actual_end_date || '-'}</div>
+        </div>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 140,
+      render: (value: WorkItem['status'], record) => {
+        const patch = nextStatusPatch(record);
+        const disabled = record.type === 'milestone' || !patch || !onWorkItemUpdate;
+        return (
+          <Space direction="vertical" size={4}>
+            <Tag color={STATUS_COLORS[value]} className="m-0 uppercase text-[10px] font-semibold">
+              {value.replace('_', ' ')}
+            </Tag>
+            <Button size="small" disabled={disabled} onClick={(event) => {
+              event.stopPropagation();
+              void handleStatusClick(record);
+            }}>
+              {patch?.status === 'in_progress' ? 'Start' : patch?.status === 'done' ? 'Finish' : 'Review'}
+            </Button>
+          </Space>
+        );
+      },
+    },
+    {
+      title: 'Owner',
+      dataIndex: 'owner',
+      key: 'owner',
+      width: 130,
+      render: (value: string | null) => <Text className="text-xs text-slate-600">{value || '-'}</Text>,
+    },
+    {
+      title: 'Priority',
+      dataIndex: 'priority',
+      key: 'priority',
+      width: 100,
+      render: (value: WorkItem['priority']) => <Text className="text-xs text-slate-600 uppercase">{value || '-'}</Text>,
+    },
+  ], [handleStatusClick, onWorkItemUpdate]);
+
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <div className="h-14 px-5 bg-white border-b border-slate-200 flex items-center justify-between">
@@ -468,7 +512,6 @@ export function WorkItemExcelGantt({
               { label: 'Day', value: 'day' },
               { label: 'Week', value: 'week' },
               { label: 'Month', value: 'month' },
-              { label: 'Quarter', value: 'quarter' },
             ]}
           />
           <Tooltip title="Status / Type / Owner / Priority / Date filters">
@@ -546,8 +589,8 @@ export function WorkItemExcelGantt({
           }}>
             Reset
           </Button>
-          <Button icon={<ZoomOutOutlined />} size="small" onClick={() => timelineRef.current?.zoomOut(0.2)} />
-          <Button icon={<ZoomInOutlined />} size="small" onClick={() => timelineRef.current?.zoomIn(0.2)} />
+          <Button icon={<ZoomOutOutlined />} size="small" onClick={() => setScale((current) => zoomScale(current, 'out'))} />
+          <Button icon={<ZoomInOutlined />} size="small" onClick={() => setScale((current) => zoomScale(current, 'in'))} />
           <Button icon={<CalendarOutlined />} size="small" onClick={() => timelineRef.current?.moveTo(new Date())}>
             Today
           </Button>
@@ -619,7 +662,7 @@ export function WorkItemExcelGantt({
           <span className="inline-flex items-center gap-1"><span className="w-2 h-2 bg-amber-500 rounded-sm" /> At Risk</span>
           <span className="inline-flex items-center gap-1"><span className="w-2 h-2 bg-rose-500 rounded-sm" /> Blocked</span>
         </Space>
-        <span>{isSaving ? 'Saving...' : 'Double-click to edit | Drag bars to reschedule | Ctrl+Scroll to zoom'}</span>
+        <span>{isSaving ? 'Saving...' : 'Double-click rows to edit dates | Timeline blocks are read-only | +/- switches scale'}</span>
       </div>
 
       <Modal

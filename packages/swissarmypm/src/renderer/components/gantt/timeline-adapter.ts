@@ -7,6 +7,7 @@
 import type { Project, WorkItem, Portfolio } from '@/shared/types';
 import type { VisTimelineItem } from './VisTimelineWrapper';
 import type { TimelineGroup } from 'vis-timeline';
+import { deriveRiskDelayState } from '@/lib/timeline-workitems';
 
 /**
  * Convert WorkItems to vis-timeline items
@@ -36,10 +37,13 @@ export function workItemsToTimelineItems(workItems: WorkItem[]): VisTimelineItem
     }
 
 
+    const riskDelayState = deriveRiskDelayState(item);
+
     // Generate CSS class for styling
     const classNames = [
       `timeline-${item.type}`,
       `status-${item.status}`,
+      riskDelayState.severity !== 'none' ? `timeline-${riskDelayState.severity}` : '',
     ];
 
     return {
@@ -54,12 +58,12 @@ export function workItemsToTimelineItems(workItems: WorkItem[]): VisTimelineItem
 
       type,
 
-      className: classNames.join(' '),
+      className: classNames.filter(Boolean).join(' '),
 
       group: item.parent_id || 'root',
-      title: `${item.type.toUpperCase()}: ${item.title} (${item.status})`,
+      title: `${item.type.toUpperCase()}: ${item.title} (${item.status}) - ${riskDelayState.label}`,
       editable: {
-        updateTime: true,
+        updateTime: false,
         updateGroup: false,
         remove: false,
       },

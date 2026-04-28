@@ -46,6 +46,8 @@ export interface WorkItem {
   status: 'not_started' | 'in_progress' | 'done' | 'blocked';
   start_date: string | null;
   end_date: string | null;
+  actual_start_date: string | null;
+  actual_end_date: string | null;
   level: 1 | 2;
   notes: string | null;
   owner: string | null;
@@ -132,6 +134,8 @@ export interface CreateWorkItemDTO {
   status?: 'not_started' | 'in_progress' | 'done' | 'blocked';
   start_date?: string;
   end_date?: string;
+  actual_start_date?: string;
+  actual_end_date?: string;
   notes?: string;
   owner?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
@@ -142,6 +146,8 @@ export interface UpdateWorkItemDTO {
   status?: 'not_started' | 'in_progress' | 'done' | 'blocked';
   start_date?: string;
   end_date?: string;
+  actual_start_date?: string;
+  actual_end_date?: string;
   notes?: string;
   type?: 'task' | 'issue' | 'milestone' | 'phase' | 'remark' | 'clash';
   owner?: string;

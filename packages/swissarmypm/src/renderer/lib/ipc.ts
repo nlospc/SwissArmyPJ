@@ -187,6 +187,8 @@ async function mockInvoke<T = any>(channel: string, ...args: any[]): Promise<IPC
           status: data.status ?? 'not_started',
           start_date: data.start_date ?? null,
           end_date: data.end_date ?? null,
+          actual_start_date: data.actual_start_date ?? null,
+          actual_end_date: data.actual_end_date ?? null,
           level: data.parent_id ? 2 : 1,
           notes: data.notes ?? null,
           owner: data.owner ?? null,

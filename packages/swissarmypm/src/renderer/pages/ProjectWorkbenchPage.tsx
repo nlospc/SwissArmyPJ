@@ -290,7 +290,15 @@ function buildSnapshot(projectId: number, workItems: WorkItem[]): WorkbenchSnaps
 
 export function ProjectWorkbenchPage() {
   const { projects, loadProjects } = useProjectStore();
-  const { workItems, loadAllWorkItems } = useWorkItemStore();
+  const {
+    workItems,
+    isLoading: workItemsLoading,
+    isSaving: workItemsSaving,
+    loadAllWorkItems,
+    createWorkItem,
+    updateWorkItem,
+    deleteWorkItem,
+  } = useWorkItemStore();
   const { selectedProjectId, setCurrentView } = useUIStore();
   const { activeModule, setActiveModule, reset } = useWorkbenchStore();
   const { language } = useI18n();
@@ -454,9 +462,16 @@ export function ProjectWorkbenchPage() {
 
               {activeModule === 'timeline' && (
                 <WorkbenchTimelinePanel
+                  project={project}
+                  workItems={projectWorkItems}
                   phases={phases}
                   milestones={milestones}
                   copy={copy.timeline}
+                  loading={workItemsLoading}
+                  isSaving={workItemsSaving}
+                  onWorkItemUpdate={updateWorkItem}
+                  onWorkItemCreate={createWorkItem}
+                  onWorkItemDelete={deleteWorkItem}
                 />
               )}
 

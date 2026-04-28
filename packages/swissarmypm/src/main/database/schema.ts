@@ -54,6 +54,16 @@ function ensureSchemaUpToDate(): void {
       console.log('Adding missing priority column to work_items...');
       db.exec('ALTER TABLE work_items ADD COLUMN priority TEXT CHECK(priority IN (\'low\',\'medium\',\'high\',\'critical\')) DEFAULT \'medium\';');
     }
+
+    if (!workItemsColumns.includes('actual_start_date')) {
+      console.log('Adding missing actual_start_date column to work_items...');
+      db.exec('ALTER TABLE work_items ADD COLUMN actual_start_date TEXT;');
+    }
+
+    if (!workItemsColumns.includes('actual_end_date')) {
+      console.log('Adding missing actual_end_date column to work_items...');
+      db.exec('ALTER TABLE work_items ADD COLUMN actual_end_date TEXT;');
+    }
   } catch (error) {
     console.error('Schema update failed:', error);
     // Don't throw - this is just a safety net
@@ -120,6 +130,8 @@ function createTables(): void {
       status TEXT CHECK(status IN ('not_started','in_progress','done','blocked')) DEFAULT 'not_started',
       start_date TEXT,
       end_date TEXT,
+      actual_start_date TEXT,
+      actual_end_date TEXT,
       level INTEGER CHECK(level IN (1,2)) DEFAULT 1,
       notes TEXT,
       owner TEXT,
