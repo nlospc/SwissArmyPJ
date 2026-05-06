@@ -1,14 +1,126 @@
-task_id: none
-title: none
-status: idle
+task_id: swissarmypj-reset-2026-05-06
+title: Reset master to PMBrain-first SwissArmyPM Web direction
+status: evaluating
 
-active_agent: none
-active_role: none
-active_writer: none
+intent:
+  goal: "Clean master after preserving the Electron implementation, then make the repo Codex-first and PMBrain-first with SwissArmyPM Web documented as the next implementation direction."
+  non_goals:
+    - "Do not continue Electron implementation on master."
+    - "Do not archive old SwissArmyPM implementation files on master."
+    - "Do not implement the new SwissArmyPM Web app in this cleanup slice."
+    - "Do not make PMBrain depend on a UI package."
+  invariants:
+    - "PMBrain is the canonical local PM kernel."
+    - "SwissArmyPM Web will consume typed PMBrain contracts."
+    - "Open Design is for exploration; Figma is canonical design handoff when MCP is available."
+    - "AI may propose project facts but must not silently confirm them."
+  constraints:
+    - "Preserve the old Electron state on a separate branch before deleting it from master."
+    - "Remove Claude/Alma-specific framework files from master after migrating useful rules into AGENTS.md and docs."
+    - "Keep master small and design-forward."
+  success_metrics:
+    - "Old Electron SwissArmyPM implementation is removed from master."
+    - "Codex-first AGENTS.md exists at repo root."
+    - "New PMBrain-first architecture and workflow docs exist under docs."
+    - "Workflow verification passes."
+  unacceptable_shortcuts:
+    - "Deleting old files before preserving a recovery branch."
+    - "Keeping stale Claude or Electron instructions as current guidance."
+    - "Leaving root scripts pointing to removed packages."
 
-branch: swissarmypm
-package_scope: packages/swissarmypm
+execution_package:
+  spec: "Preserve current Electron implementation on a fit branch, then clean master and replace guidance with Codex-first PMBrain-first design and workflow docs."
+  acceptance:
+    - id: A1
+      description: "Current Electron-based state is preserved on a separate branch."
+    - id: A2
+      description: "Master removes old Electron SwissArmyPM implementation files."
+    - id: A3
+      description: "Master removes Claude/Alma framework files after migration."
+    - id: A4
+      description: "AGENTS.md defines the new product, architecture, and Codex workflow."
+    - id: A5
+      description: "Docs define PMBrain-first architecture, design workflow, development workflow, and schema contract."
+    - id: A6
+      description: "Root scripts no longer reference removed SwissArmyPM Electron commands."
+  task_contract:
+    allowed_paths:
+      - "AGENTS.md"
+      - "README.md"
+      - "package.json"
+      - "scripts/**"
+      - "docs/**"
+      - "workflow/**"
+      - "packages/pmbrain/**"
+      - "packages/swissarmypm/**"
+      - ".claude/**"
+      - ".alma-snapshots/**"
+      - "CLAUDE.md"
+    forbidden_paths: []
+    required_outputs:
+      - "Preservation branch name."
+      - "Updated AGENTS.md."
+      - "New design and workflow docs."
+      - "Workflow verification result."
+  edge_cases:
+    - "Existing master is ahead of origin."
+    - "Git ref creation may require elevated permissions."
+    - "Some old files are ignored and not tracked."
+  verification_checklist:
+    - "Run git status."
+    - "Run npm run verify:workflow."
+    - "Confirm root package scripts do not reference removed packages."
+  forbidden_changes:
+    - "Do not delete PMBrain."
+    - "Do not recreate old Electron app on master."
+    - "Do not keep CLAUDE.md as active guidance."
 
-current_goal: ""
-next_step: ""
-updated_at: ""
+current_agreement:
+  assumptions:
+    - "The user wants future development to be Codex-first."
+    - "The user wants the old Electron work preserved off master."
+    - "The new SwissArmyPM should be local web plus PMBrain first."
+  boundaries:
+    - "This slice cleans and documents; it does not scaffold the new web app."
+    - "PMBrain remains in the repository."
+  acceptance_mapping:
+    - acceptance_id: A1
+      verification: "Check branch fit-electron-legacy and commit 07f0b28."
+    - acceptance_id: A2
+      verification: "Check packages/swissarmypm is absent from master."
+    - acceptance_id: A3
+      verification: "Check .claude, .alma-snapshots, and CLAUDE.md are absent from master."
+    - acceptance_id: A4
+      verification: "Review AGENTS.md."
+    - acceptance_id: A5
+      verification: "Review docs directory."
+    - acceptance_id: A6
+      verification: "Review package.json scripts."
+  risks:
+    - "This is a large cleanup and should be committed separately after review."
+  split_recommendation: none
+
+schema_contract:
+  applies: false
+  notes:
+    - "No PMBrain schema change in this cleanup slice."
+
+design_contract:
+  applies: true
+  source: "docs/DESIGN-SYSTEM-WORKFLOW.md"
+  notes:
+    - "Figma will become canonical design handoff once a file is provided."
+
+fixture_contract:
+  applies: false
+  notes:
+    - "No app fixture data required in this cleanup slice."
+
+visual_acceptance:
+  applies: false
+  notes:
+    - "No UI implementation in this cleanup slice."
+
+current_goal: "Evaluate master cleanup and new Codex-first documentation."
+next_step: "Remove old implementation/framework files, run workflow verification, then report status."
+updated_at: "2026-05-06"

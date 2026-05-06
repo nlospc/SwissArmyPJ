@@ -1,14 +1,26 @@
 # Workflow
 
-This directory stores the repo-level workflow handoff state shared by Hermes, Claude Code, and future agents.
+This directory stores Codex task state.
 
-Start here before implementation/debugging/review:
-- `project-profile.yaml`
+Read before implementation:
+
 - `active-task.yaml`
 - `handoff.md`
+- `task.schema.json`
+- `../docs/DEVELOPMENT-WORKFLOW.md`
 
-Rules:
-- Treat these files as the shared workflow state.
-- Keep `active-task.yaml` current when taking or releasing the active writer role.
-- Update `handoff.md` before ending a work session.
-- Use the verify command defined in `project-profile.yaml`.
+## Layers
+
+- `intent`: human-owned task skeleton
+- `execution_package`: AI-authored work package
+- `current_agreement`: current-slice agreement
+- `schema_contract`: data/API/persistence contract
+- `design_contract`: design and UI source contract
+- `fixture_contract`: deterministic data contract
+- `visual_acceptance`: screenshot and layout acceptance contract
+
+Run this after workflow edits:
+
+```bash
+npm run verify:workflow
+```
