@@ -1,0 +1,46 @@
+name: Monorepo CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Verify Workspace
+        run: npm run verify:workspace --if-present
+
+      - name: Lint Root
+        run: npm run lint --if-present
+
+      - name: Typecheck Root
+        run: npm run typecheck --if-present
+
+      - name: Test Root
+        run: npm test --if-present
+
+      - name: Build swissarmypm
+        run: npm run build -w packages/swissarmypm --if-present
+
+      - name: Build pmbrain
+        run: npm run build -w packages/pmbrain --if-present

@@ -108,6 +108,7 @@ export interface VisTimelineHandle {
   zoomOut: (percentage?: number) => void;
   moveTo: (date: Date) => void;
   fit: () => void;
+  redraw: () => void;
   setWindow: (start: Date, end: Date) => void;
 }
 
@@ -220,6 +221,13 @@ export const VisTimelineWrapper = forwardRef<VisTimelineHandle, VisTimelineWrapp
       mergedOptions
     );
 
+    requestAnimationFrame(() => {
+      timelineRef.current?.redraw();
+      if (items.length > 0) {
+        timelineRef.current?.fit({ animation: false });
+      }
+    });
+
     // Event listeners for non-CRUD events
     timelineRef.current.on('click', (props) => {
       if (props.item && handlersRef.current.onItemClick) {
@@ -257,6 +265,18 @@ export const VisTimelineWrapper = forwardRef<VisTimelineHandle, VisTimelineWrapp
       }
     };
   }, []); // Run once
+
+  useEffect(() => {
+    if (!containerRef.current || typeof ResizeObserver === 'undefined') return undefined;
+
+    const observer = new ResizeObserver(() => {
+      if (!timelineRef.current) return;
+      timelineRef.current.redraw();
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Update DataSets when items/groups change
 
@@ -298,6 +318,15 @@ export const VisTimelineWrapper = forwardRef<VisTimelineHandle, VisTimelineWrapp
 
       itemsDataSet.update(itemsToUpsert as any);
 
+    }
+
+    if (idsToRemove.length > 0 || itemsToUpsert.length > 0) {
+      requestAnimationFrame(() => {
+        timelineRef.current?.redraw();
+        if (items.length > 0) {
+          timelineRef.current?.fit({ animation: false });
+        }
+      });
     }
 
   }, [items]);
@@ -360,6 +389,12 @@ export const VisTimelineWrapper = forwardRef<VisTimelineHandle, VisTimelineWrapp
 
     }
 
+    if (idsToRemove.length > 0 || groupsToUpsert.length > 0) {
+      requestAnimationFrame(() => {
+        timelineRef.current?.redraw();
+      });
+    }
+
   }, [groups]);
 
 
@@ -367,6 +402,9 @@ export const VisTimelineWrapper = forwardRef<VisTimelineHandle, VisTimelineWrapp
   useEffect(() => {
     if (timelineRef.current && options) {
       timelineRef.current.setOptions(options);
+      requestAnimationFrame(() => {
+        timelineRef.current?.redraw();
+      });
     }
   }, [options]);
 
@@ -383,6 +421,9 @@ export const VisTimelineWrapper = forwardRef<VisTimelineHandle, VisTimelineWrapp
     fit: () => {
       timelineRef.current?.fit();
     },
+    redraw: () => {
+      timelineRef.current?.redraw();
+    },
     setWindow: (start: Date, end: Date) => {
       timelineRef.current?.setWindow(start, end, { animation: true });
     },
@@ -391,6 +432,7 @@ export const VisTimelineWrapper = forwardRef<VisTimelineHandle, VisTimelineWrapp
   return (
     <div
       ref={containerRef}
+      data-sap-vis-timeline
       className={className}
       style={{
         width: '100%',

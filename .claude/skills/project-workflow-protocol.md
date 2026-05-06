@@ -30,7 +30,8 @@ Before making changes:
 1. Check `git status --short --branch`.
 2. Confirm the current active task, role, and active writer from `workflow/active-task.yaml`.
 3. Confirm scope and forbidden areas from `workflow/project-profile.yaml` and the task handoff.
-4. If PRD/design is missing, or scope is unclear, stop before implementation.
+4. Run `npm run verify:workflow` if `workflow/active-task.yaml` changed or if the task is not idle.
+5. If PRD/design is missing, or scope is unclear, stop before implementation.
 
 ## Execution Rules
 
@@ -40,6 +41,26 @@ Before making changes:
 4. Prefer reusable, extensible changes over throwaway scaffolding.
 5. Do not continue Portfolio / My Work / Pomodoro drift unless explicitly requested.
 6. Preserve SwissArmyPM desktop-first workbench semantics.
+7. Executor work must follow `execution_package` and `current_agreement`, not free-form chat context alone.
+
+## Planner And Evaluator Boundary
+
+Planner and evaluator may only interpret the current task slice:
+- current task assumptions
+- current task boundaries
+- acceptance mapping
+- risk notes
+- whether the task should be split smaller
+
+Planner and evaluator must not silently modify:
+- `intent.goal`
+- `intent.non_goals`
+- `intent.invariants`
+- `intent.constraints`
+- acceptance root definitions
+- system-level forbidden changes
+
+Changing those fields requires returning to human review before implementation continues.
 
 ## Exit Protocol
 
@@ -53,6 +74,10 @@ Before ending work:
    - open risks / blockers
    - recommended next step
 3. Update `workflow/active-task.yaml` with current status and active writer state.
+
+Evaluator review should be reported in two passes:
+1. Spec compliance: acceptance, required outputs, scope boundaries, and forbidden changes.
+2. Code quality: maintainability, tests, regressions, and implementation risks.
 
 ## Escalate Instead of Guessing
 

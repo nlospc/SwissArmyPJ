@@ -39,8 +39,9 @@ export function WorkbenchTimelinePanel({
   onWorkItemDelete,
 }: WorkbenchTimelinePanelProps) {
   return (
-    <div className="h-[720px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-slate-950">
       <WorkItemExcelGantt
+        key={`workitem-gantt-${project.id}`}
         project={project}
         workItems={workItems}
         loading={loading}

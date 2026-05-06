@@ -14,9 +14,10 @@
     "type-check:swissarmypm": "npm run type-check --workspace swissarmypm",
     "type-check:pmbrain": "npm run check --workspace pmbrain",
     "cleanup:verify-artifacts": "node scripts/run-with-temp-cleanup.mjs cleanup-only \"true\"",
+    "verify:workflow": "node scripts/verify-workflow-task.mjs",
     "verify:swissarmypm": "node scripts/run-with-temp-cleanup.mjs verify-swissarmypm \"npm run build --workspace swissarmypm\"",
     "verify:swissarmypm:strict": "node scripts/run-with-temp-cleanup.mjs verify-swissarmypm-strict \"npm run type-check --workspace swissarmypm && npm run build --workspace swissarmypm\"",
     "verify:pmbrain": "node scripts/run-with-temp-cleanup.mjs verify-pmbrain \"npm run check --workspace pmbrain\"",
-    "verify:workspace": "node scripts/run-with-temp-cleanup.mjs verify-workspace \"npm run build --workspace swissarmypm && npm run check --workspace pmbrain\""
+    "verify:workspace": "node scripts/run-with-temp-cleanup.mjs verify-workspace \"npm run verify:workflow && npm run build --workspace swissarmypm && npm run check --workspace pmbrain\""
   }
 }

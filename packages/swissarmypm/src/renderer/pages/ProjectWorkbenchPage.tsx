@@ -1,8 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AppstoreOutlined, DeploymentUnitOutlined, FileSearchOutlined, FlagOutlined, InfoCircleOutlined, ProfileOutlined, TeamOutlined } from '@ant-design/icons';
-import { Button, Card, Drawer, Empty, Typography } from 'antd';
+import {
+  AppstoreOutlined,
+  CompressOutlined,
+  DeploymentUnitOutlined,
+  FileSearchOutlined,
+  FilterOutlined,
+  FlagOutlined,
+  InfoCircleOutlined,
+  PlusOutlined,
+  ProfileOutlined,
+  TeamOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+} from '@ant-design/icons';
+import { Button, Drawer, Empty, List, Space, Tabs, Tag, Tooltip, Typography } from 'antd';
 
-import { WorkbenchCanvasPanel } from '@/features/workbench/components/WorkbenchCanvasPanel';
+import { WorkbenchCanvasPanel, type CanvasBlockSelection } from '@/features/workbench/components/WorkbenchCanvasPanel';
 import { WorkbenchHeader } from '@/features/workbench/components/WorkbenchHeader';
 import { WorkbenchInspector } from '@/features/workbench/components/WorkbenchInspector';
 import { WorkbenchPlaceholderPanel } from '@/features/workbench/components/WorkbenchPlaceholderPanel';
@@ -299,11 +312,12 @@ export function ProjectWorkbenchPage() {
     updateWorkItem,
     deleteWorkItem,
   } = useWorkItemStore();
-  const { selectedProjectId, setCurrentView } = useUIStore();
+  const { currentView, selectedProjectId, setCurrentView } = useUIStore();
   const { activeModule, setActiveModule, reset } = useWorkbenchStore();
   const { language } = useI18n();
   const { isCompactWorkbench } = useWorkbenchLayoutMode();
   const [isInspectorDrawerOpen, setInspectorDrawerOpen] = useState(false);
+  const [selectedCanvasBlock, setSelectedCanvasBlock] = useState<CanvasBlockSelection | null>(null);
   const copy = copyByLanguage[language];
 
   useEffect(() => {
@@ -357,6 +371,78 @@ export function ProjectWorkbenchPage() {
     [project?.id, projectWorkItems],
   );
 
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return undefined;
+
+    const readRect = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!element) return null;
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      return {
+        x: Math.round(rect.x),
+        y: Math.round(rect.y),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        display: style.display,
+        visibility: style.visibility,
+        overflow: style.overflow,
+      };
+    };
+
+    const collectDebug = () => {
+      const payload = {
+        currentView,
+        activeModule,
+        selectedProjectId,
+        projectId: project?.id ?? null,
+        projectName: project?.name ?? null,
+        totalProjects: projects.length,
+        totalWorkItems: workItems.length,
+        projectWorkItems: projectWorkItems.length,
+        isLoading: workItemsLoading,
+        workItemsError: useWorkItemStore.getState().error,
+        rects: {
+          app: readRect('.ant-app'),
+          workbench: readRect('[data-sap-workbench]'),
+          header: readRect('[data-sap-workbench-header]'),
+          body: readRect('[data-sap-workbench-body]'),
+          rail: readRect('[data-sap-workbench-rail]'),
+          main: readRect('[data-sap-workbench-main]'),
+          panel: readRect('[data-sap-workbench-panel]'),
+          ganttRoot: readRect('[data-sap-gantt-root]'),
+          ganttTimelinePane: readRect('[data-sap-gantt-timeline-pane]'),
+          visTimeline: readRect('[data-sap-vis-timeline]'),
+        },
+      };
+      const debugWindow = window as unknown as {
+        __swissArmyWorkbenchDebug?: () => typeof payload;
+        __swissArmyWorkbenchSetModule?: (module: WorkbenchModuleKey) => void;
+      };
+      debugWindow.__swissArmyWorkbenchDebug = () => payload;
+      debugWindow.__swissArmyWorkbenchSetModule = setActiveModule;
+      console.log('[SwissArmyPM workbench debug]', payload);
+      return payload;
+    };
+
+    const timeout = window.setTimeout(collectDebug, 250);
+    window.addEventListener('resize', collectDebug);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener('resize', collectDebug);
+    };
+  }, [
+    activeModule,
+    currentView,
+    project,
+    projectWorkItems.length,
+    projects.length,
+    selectedProjectId,
+    setActiveModule,
+    workItems.length,
+    workItemsLoading,
+  ]);
+
   const modules = useMemo<WorkbenchModuleDefinition[]>(() => [
     { key: 'canvas', label: copy.modules.canvas.label, description: copy.modules.canvas.description },
     { key: 'stakeholders', label: copy.modules.stakeholders.label, description: copy.modules.stakeholders.description },
@@ -367,6 +453,22 @@ export function ProjectWorkbenchPage() {
   ], [copy, snapshot]);
 
   const activeModuleDefinition = modules.find((item) => item.key === activeModule) || modules[0];
+
+  const handleModuleChange = (module: WorkbenchModuleKey) => {
+    setActiveModule(module);
+    setSelectedCanvasBlock(null);
+    setInspectorDrawerOpen(false);
+  };
+
+  const openCanvasBlock = (block: CanvasBlockSelection) => {
+    setSelectedCanvasBlock(block);
+    setInspectorDrawerOpen(true);
+  };
+
+  const closeContextPanel = () => {
+    setInspectorDrawerOpen(false);
+    setSelectedCanvasBlock(null);
+  };
 
   if (!project) {
     return (
@@ -381,167 +483,200 @@ export function ProjectWorkbenchPage() {
   }
 
   return (
-    <div className="h-full overflow-auto bg-slate-50 dark:bg-slate-950">
-      <div className="mx-auto max-w-[1600px] space-y-6 px-6 py-6 xl:px-8">
-        <WorkbenchHeader
-          project={project}
-          snapshot={snapshot}
-          copy={{
-            back: copy.back,
-            ownerTbd: copy.ownerTbd,
-            noDescription: copy.noDescription,
-            progress: copy.progress,
-            currentPhase: copy.currentPhase,
-            nextMilestone: copy.nextMilestone,
-            statusLabels: copy.statusLabels,
-          }}
-          onBack={() => setCurrentView('projects')}
-        />
+    <div data-sap-workbench className="flex h-full min-h-0 flex-col bg-slate-50 dark:bg-slate-950">
+      <WorkbenchHeader
+        project={project}
+        snapshot={snapshot}
+        copy={{
+          back: copy.back,
+          ownerTbd: copy.ownerTbd,
+          noDescription: copy.noDescription,
+          progress: copy.progress,
+          currentPhase: copy.currentPhase,
+          nextMilestone: copy.nextMilestone,
+          statusLabels: copy.statusLabels,
+        }}
+        onBack={() => setCurrentView('projects')}
+      />
 
-        <div className="overflow-x-auto pb-2">
-          <div
-            className={[
-              'grid min-w-[1280px] items-start gap-6',
-              isCompactWorkbench ? 'grid-cols-[240px_minmax(0,1fr)]' : 'grid-cols-[240px_minmax(0,1fr)_300px]',
-            ].join(' ')}
-          >
-            <Card title={<span className="font-semibold">{copy.railTitle}</span>} bodyStyle={{ padding: 12 }}>
-              <div className="space-y-2">
-              {modules.map((module) => {
-                const isActive = module.key === activeModule;
-                return (
-                  <button
-                    key={module.key}
-                    type="button"
-                    onClick={() => setActiveModule(module.key)}
-                    className={[
-                      'w-full rounded-2xl border p-3 text-left transition-all',
-                      isActive
-                        ? 'border-blue-500 bg-blue-50 shadow-sm dark:border-blue-500 dark:bg-blue-950/20'
-                        : 'border-slate-200 bg-white hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900',
-                    ].join(' ')}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 text-slate-500 dark:text-slate-400">{moduleIcons[module.key]}</div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="font-medium text-slate-900 dark:text-slate-100">{module.label}</div>
-                          {module.count !== undefined && (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                              {module.count}
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{module.description}</div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-              </div>
-            </Card>
+      <div data-sap-workbench-body className="flex min-h-0 flex-1">
+        <aside data-sap-workbench-rail className="flex w-[72px] shrink-0 flex-col items-center gap-2 border-r border-slate-200 bg-white py-3 dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex flex-col gap-1">
+            {modules.map((module) => {
+              const isActive = module.key === activeModule;
+              return (
+                <Tooltip key={module.key} title={module.label} placement="right">
+                  <Button
+                    type={isActive ? 'primary' : 'text'}
+                    icon={moduleIcons[module.key]}
+                    onClick={() => handleModuleChange(module.key)}
+                    className="h-10 w-10"
+                    aria-label={module.label}
+                  />
+                </Tooltip>
+              );
+            })}
+          </div>
 
-            <div className="min-w-0">
-              {isCompactWorkbench && (
-                <div className="mb-4 flex justify-end">
-                  <Button icon={<InfoCircleOutlined />} onClick={() => setInspectorDrawerOpen(true)}>
-                    {copy.inspector.openDrawer}
-                  </Button>
-                </div>
-              )}
+          <div className="my-2 h-px w-8 bg-slate-200 dark:bg-slate-800" />
 
-              {activeModule === 'canvas' && (
-                <WorkbenchCanvasPanel
-                  project={project}
-                  snapshot={snapshot}
-                  phases={phases}
-                  milestones={milestones}
-                  activeRisks={activeRisks}
-                />
-              )}
+          <Space direction="vertical" size={4}>
+            <Tooltip title="Add module item" placement="right">
+              <Button type="text" icon={<PlusOutlined />} className="h-10 w-10" />
+            </Tooltip>
+            <Tooltip title="Filters" placement="right">
+              <Button type="text" icon={<FilterOutlined />} className="h-10 w-10" />
+            </Tooltip>
+            <Tooltip title="Fit canvas" placement="right">
+              <Button type="text" icon={<CompressOutlined />} className="h-10 w-10" />
+            </Tooltip>
+            <Tooltip title="Zoom in" placement="right">
+              <Button type="text" icon={<ZoomInOutlined />} className="h-10 w-10" />
+            </Tooltip>
+            <Tooltip title="Zoom out" placement="right">
+              <Button type="text" icon={<ZoomOutOutlined />} className="h-10 w-10" />
+            </Tooltip>
+          </Space>
 
-              {activeModule === 'timeline' && (
-                <WorkbenchTimelinePanel
-                  project={project}
-                  workItems={projectWorkItems}
-                  phases={phases}
-                  milestones={milestones}
-                  copy={copy.timeline}
-                  loading={workItemsLoading}
-                  isSaving={workItemsSaving}
-                  onWorkItemUpdate={updateWorkItem}
-                  onWorkItemCreate={createWorkItem}
-                  onWorkItemDelete={deleteWorkItem}
-                />
-              )}
+          <div className="mt-auto">
+            <Tooltip title={copy.inspector.openDrawer} placement="right">
+              <Button type="text" icon={<InfoCircleOutlined />} className="h-10 w-10" onClick={() => setInspectorDrawerOpen(true)} />
+            </Tooltip>
+          </div>
+        </aside>
 
-              {activeModule === 'risks' && (
-                <WorkbenchRiskPanel
-                  risks={activeRisks}
-                  copy={copy.risks}
-                />
-              )}
-
-              {activeModule === 'stakeholders' && (
-                <WorkbenchPlaceholderPanel
-                  title={copy.modules.stakeholders.label}
-                  description={copy.modules.stakeholders.description}
-                />
-              )}
-
-              {activeModule === 'work-packages' && (
-                <WorkbenchPlaceholderPanel
-                  title={copy.modules['work-packages'].label}
-                  description={copy.modules['work-packages'].description}
-                />
-              )}
-
-              {activeModule === 'evidence' && (
-                <WorkbenchPlaceholderPanel
-                  title={copy.modules.evidence.label}
-                  description={copy.modules.evidence.description}
-                />
-              )}
-            </div>
-
-            {!isCompactWorkbench && (
-              <WorkbenchInspector
+        <main data-sap-workbench-main className="min-w-0 flex-1 p-3">
+          <div data-sap-workbench-panel className="h-full min-h-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            {activeModule === 'canvas' && (
+              <WorkbenchCanvasPanel
                 project={project}
                 snapshot={snapshot}
-                activeModule={activeModuleDefinition}
-                recentUpdates={recentUpdates}
-                copy={copy.inspector}
+                phases={phases}
+                milestones={milestones}
+                activeRisks={activeRisks}
+                selectedBlockKey={selectedCanvasBlock?.key}
+                onSelectBlock={openCanvasBlock}
               />
             )}
-          </div>
-        </div>
 
-        {isCompactWorkbench && (
-          <Drawer
-            title={
-              <div>
-                <div className="font-semibold">{copy.inspector.title}</div>
-                <div className="mt-1 text-xs text-slate-500">{activeModuleDefinition.label}</div>
+            {activeModule === 'timeline' && (
+              <WorkbenchTimelinePanel
+                project={project}
+                workItems={projectWorkItems}
+                phases={phases}
+                milestones={milestones}
+                copy={copy.timeline}
+                loading={workItemsLoading}
+                isSaving={workItemsSaving}
+                onWorkItemUpdate={updateWorkItem}
+                onWorkItemCreate={createWorkItem}
+                onWorkItemDelete={deleteWorkItem}
+              />
+            )}
+
+            {activeModule === 'risks' && (
+              <div className="h-full overflow-auto p-4">
+                <WorkbenchRiskPanel risks={activeRisks} copy={copy.risks} />
               </div>
-            }
-            placement="right"
-            width={360}
-            open={isInspectorDrawerOpen}
-            onClose={() => setInspectorDrawerOpen(false)}
-            maskClosable={true}
-            keyboard={true}
-          >
-            <WorkbenchInspector
-              project={project}
-              snapshot={snapshot}
-              activeModule={activeModuleDefinition}
-              recentUpdates={recentUpdates}
-              copy={copy.inspector}
-              variant="drawer"
-            />
-          </Drawer>
-        )}
+            )}
+
+            {activeModule === 'stakeholders' && (
+              <div className="h-full overflow-auto p-4">
+                <WorkbenchPlaceholderPanel title={copy.modules.stakeholders.label} description={copy.modules.stakeholders.description} />
+              </div>
+            )}
+
+            {activeModule === 'work-packages' && (
+              <div className="h-full overflow-auto p-4">
+                <WorkbenchPlaceholderPanel title={copy.modules['work-packages'].label} description={copy.modules['work-packages'].description} />
+              </div>
+            )}
+
+            {activeModule === 'evidence' && (
+              <div className="h-full overflow-auto p-4">
+                <WorkbenchPlaceholderPanel title={copy.modules.evidence.label} description={copy.modules.evidence.description} />
+              </div>
+            )}
+          </div>
+        </main>
       </div>
+
+      <Drawer
+        title={
+          <div>
+            <div className="font-semibold">{selectedCanvasBlock?.title || copy.inspector.title}</div>
+            <div className="mt-1 text-xs text-slate-500">{selectedCanvasBlock?.titleEn || activeModuleDefinition.label}</div>
+          </div>
+        }
+        placement="right"
+        width={isCompactWorkbench ? 360 : 420}
+        open={isInspectorDrawerOpen}
+        onClose={closeContextPanel}
+        maskClosable={true}
+        keyboard={true}
+      >
+        <Tabs
+          items={[
+            {
+              key: 'details',
+              label: 'Details',
+              children: selectedCanvasBlock ? (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Tag>{selectedCanvasBlock.metadata.source}</Tag>
+                    <Tag>{selectedCanvasBlock.metadata.itemCount} items</Tag>
+                  </div>
+                  <List
+                    size="small"
+                    dataSource={selectedCanvasBlock.lines}
+                    renderItem={(item) => <List.Item>{item}</List.Item>}
+                  />
+                </div>
+              ) : (
+                <WorkbenchInspector
+                  project={project}
+                  snapshot={snapshot}
+                  activeModule={activeModuleDefinition}
+                  recentUpdates={recentUpdates}
+                  copy={copy.inspector}
+                  variant="drawer"
+                />
+              ),
+            },
+            {
+              key: 'edit',
+              label: 'Edit',
+              children: <Text type="secondary">Select a canvas card to edit detailed project facts.</Text>,
+            },
+            {
+              key: 'comments',
+              label: 'Comments',
+              children: <Text type="secondary">Comments attach here without crowding the canvas.</Text>,
+            },
+            {
+              key: 'activity',
+              label: 'Activity',
+              children: (
+                <List
+                  size="small"
+                  dataSource={recentUpdates.slice(0, 6)}
+                  locale={{ emptyText: copy.inspector.sourceHint }}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <List.Item.Meta title={item.title} description={item.updated_at} />
+                    </List.Item>
+                  )}
+                />
+              ),
+            },
+            {
+              key: 'ai',
+              label: 'AI',
+              children: <Text type="secondary">AI suggestions appear here for review before they change project facts.</Text>,
+            },
+          ]}
+        />
+      </Drawer>
     </div>
   );
 }

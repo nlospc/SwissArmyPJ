@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SwissArmyPJ workflow active task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id",
+    "title",
+    "status",
+    "active_agent",
+    "active_role",
+    "active_writer",
+    "branch",
+    "package_scope",
+    "intent",
+    "execution_package",
+    "current_agreement",
+    "current_goal",
+    "next_step",
+    "updated_at"
+  ],
+  "properties": {
+    "task_id": { "type": "string" },
+    "title": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "drafting_intent",
+        "generating_execution_package",
+        "awaiting_human_review",
+        "planning_slice",
+        "ready_for_execution",
+        "executing",
+        "evaluating",
+        "blocked",
+        "done"
+      ]
+    },
+    "active_agent": { "type": "string" },
+    "active_role": {
+      "type": "string",
+      "enum": ["none", "human", "planner", "evaluator", "executor", "reviewer"]
+    },
+    "active_writer": { "type": "string" },
+    "branch": { "type": "string" },
+    "package_scope": { "type": "string" },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "goal",
+        "non_goals",
+        "invariants",
+        "constraints",
+        "success_metrics",
+        "unacceptable_shortcuts"
+      ],
+      "properties": {
+        "goal": { "type": "string" },
+        "non_goals": { "type": "array", "items": { "type": "string" } },
+        "invariants": { "type": "array", "items": { "type": "string" } },
+        "constraints": { "type": "array", "items": { "type": "string" } },
+        "success_metrics": { "type": "array", "items": { "type": "string" } },
+        "unacceptable_shortcuts": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "execution_package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spec",
+        "acceptance",
+        "task_contract",
+        "edge_cases",
+        "verification_checklist",
+        "forbidden_changes"
+      ],
+      "properties": {
+        "spec": { "type": "string" },
+        "acceptance": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "description"],
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "task_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["allowed_paths", "forbidden_paths", "required_outputs"],
+          "properties": {
+            "allowed_paths": { "type": "array", "items": { "type": "string" } },
+            "forbidden_paths": { "type": "array", "items": { "type": "string" } },
+            "required_outputs": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "edge_cases": { "type": "array", "items": { "type": "string" } },
+        "verification_checklist": { "type": "array", "items": { "type": "string" } },
+        "forbidden_changes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "current_agreement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assumptions",
+        "boundaries",
+        "acceptance_mapping",
+        "risks",
+        "split_recommendation"
+      ],
+      "properties": {
+        "assumptions": { "type": "array", "items": { "type": "string" } },
+        "boundaries": { "type": "array", "items": { "type": "string" } },
+        "acceptance_mapping": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["acceptance_id", "verification"],
+            "properties": {
+              "acceptance_id": { "type": "string" },
+              "verification": { "type": "string" }
+            }
+          }
+        },
+        "risks": { "type": "array", "items": { "type": "string" } },
+        "split_recommendation": {
+          "type": "string",
+          "enum": ["none", "split", "escalate"]
+        }
+      }
+    },
+    "current_goal": { "type": "string" },
+    "next_step": { "type": "string" },
+    "updated_at": { "type": "string" }
+  }
+}

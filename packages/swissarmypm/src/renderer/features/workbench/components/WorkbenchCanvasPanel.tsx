@@ -18,7 +18,7 @@ import { useI18n } from '@/hooks/useI18n';
 import type { Project, WorkItem } from '@/shared/types';
 import type { WorkbenchSnapshot } from '@/shared/types/workbench';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 type CanvasBlockKey =
   | 'purpose'
@@ -48,12 +48,21 @@ interface CanvasBlock {
   tone?: CanvasBlockTone;
 }
 
+export interface CanvasBlockSelection extends CanvasBlock {
+  metadata: {
+    source: string;
+    itemCount: number;
+  };
+}
+
 interface WorkbenchCanvasPanelProps {
   project: Project;
   snapshot: WorkbenchSnapshot;
   phases: WorkItem[];
   milestones: WorkItem[];
   activeRisks: WorkItem[];
+  selectedBlockKey?: CanvasBlockKey | null;
+  onSelectBlock?: (block: CanvasBlockSelection) => void;
 }
 
 type Copy = {
@@ -199,7 +208,15 @@ function buildSponsorLines(project: Project, copy: Copy) {
   return [copy.sponsorEmpty, `${copy.ownerTbd !== 'Owner TBD' ? '当前项目负责人' : 'Current project owner'}: ${project.owner || copy.ownerTbd}`];
 }
 
-export function WorkbenchCanvasPanel({ project, snapshot, phases, milestones, activeRisks }: WorkbenchCanvasPanelProps) {
+export function WorkbenchCanvasPanel({
+  project,
+  snapshot,
+  phases,
+  milestones,
+  activeRisks,
+  selectedBlockKey,
+  onSelectBlock,
+}: WorkbenchCanvasPanelProps) {
   const { language } = useI18n();
   const copy = copyByLanguage[language];
 
@@ -390,29 +407,53 @@ export function WorkbenchCanvasPanel({ project, snapshot, phases, milestones, ac
   ], [project, snapshot, phases, milestones, activeRisks, teamLines, phaseLines, milestoneLines, riskLines, projectDescription, copy, language]);
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <div className="space-y-3">
-          <Text type="secondary">{copy.title}</Text>
-          <Paragraph className="mb-0 text-sm leading-6 text-slate-600 dark:text-slate-300">
-            {copy.subtitle}
-          </Paragraph>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+        <div>
+          <Text strong className="text-sm text-slate-950 dark:text-slate-50">{copy.title}</Text>
+          <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            {snapshot.totalWorkItems} work items / {snapshot.milestoneCount} milestones / {snapshot.activeRiskCount} risks
+          </div>
         </div>
-      </Card>
+        <div className="flex items-center gap-2">
+          <Tag>{copy.derived}</Tag>
+          <Tag>{copy.mixed}</Tag>
+        </div>
+      </div>
 
-      <div className="overflow-x-auto pb-2">
-        <div className="grid min-w-[1040px] grid-cols-4 auto-rows-[minmax(220px,auto)] gap-4">
+      <div className="min-h-0 flex-1 overflow-auto p-4">
+        <div className="grid min-w-[1040px] grid-cols-4 auto-rows-[minmax(168px,auto)] gap-4">
           {blocks.map((block) => {
             const tone = getToneClasses(block.tone);
+            const summary = block.lines[0] || copy.noData;
+            const extraCount = Math.max(block.lines.length - 1, 0);
+            const metadata = {
+              source: block.note || copy.pendingModel,
+              itemCount: block.lines.length,
+            };
+            const isSelected = selectedBlockKey === block.key;
+            const handleClick = () => {
+              onSelectBlock?.({
+                ...block,
+                metadata,
+              });
+            };
             return (
               <Card
                 key={block.key}
-                bodyStyle={{ padding: 0 }}
-                className={`${gridClassByKey[block.key]} min-h-[220px] overflow-hidden rounded-xl ${tone.border}`}
+                styles={{ body: { padding: 0 } }}
+                hoverable
+                onClick={handleClick}
+                className={[
+                  gridClassByKey[block.key],
+                  'min-h-[168px] overflow-hidden rounded-lg transition-all',
+                  tone.border,
+                  isSelected ? 'ring-2 ring-blue-500' : '',
+                ].join(' ')}
               >
                 <div className={`h-1 w-full ${tone.top}`} />
-                <div className="flex h-full flex-col gap-4 p-5">
-                  <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-3 dark:border-slate-800">
+                <div className="flex h-full flex-col gap-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <div className="text-slate-500 dark:text-slate-400">
@@ -432,35 +473,31 @@ export function WorkbenchCanvasPanel({ project, snapshot, phases, milestones, ac
                           {block.key === 'lessons' && <BulbOutlined />}
                         </div>
                         <div>
-                          <div className="text-base font-semibold text-slate-900 dark:text-slate-100">{block.title}</div>
-                          <div className="text-[11px] uppercase tracking-wide text-blue-600 dark:text-blue-400">{block.titleEn}</div>
+                          <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{block.title}</div>
+                          <div className="text-[11px] uppercase text-blue-600 dark:text-blue-400">{block.titleEn}</div>
                         </div>
                       </div>
                     </div>
                     <Tooltip title={block.tooltip}>
-                      <Tag className="cursor-help">?</Tag>
+                      <span onClick={(event) => event.stopPropagation()}>
+                        <Tag className="cursor-help">{block.note || copy.pendingModel}</Tag>
+                      </span>
                     </Tooltip>
                   </div>
 
-                  <div className="min-h-[132px] max-h-[220px] flex-1 overflow-y-auto rounded-lg bg-slate-50/70 p-3 dark:bg-slate-900/60">
-                    {block.lines.length > 0 ? (
-                      <div className="space-y-2">
-                        {block.lines.map((line, index) => (
-                          <div key={`${block.key}-${index}`} className="text-sm leading-6 text-slate-700 dark:text-slate-300">
-                            {line}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={copy.noData} />
-                    )}
-                  </div>
-
-                  {block.note && (
-                    <div className={`shrink-0 text-xs ${tone.note}`}>
-                      {block.note}
+                  {block.lines.length > 0 ? (
+                    <div className="line-clamp-2 min-h-[44px] text-sm leading-6 text-slate-700 dark:text-slate-300">
+                      {summary}
                     </div>
+                  ) : (
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={copy.noData} />
                   )}
+
+                  <div className="mt-auto flex flex-wrap items-center gap-2">
+                    <Tag>{metadata.itemCount}</Tag>
+                    {extraCount > 0 && <Tag>+{extraCount}</Tag>}
+                    <span className={`text-xs ${tone.note}`}>{metadata.source}</span>
+                  </div>
                 </div>
               </Card>
             );

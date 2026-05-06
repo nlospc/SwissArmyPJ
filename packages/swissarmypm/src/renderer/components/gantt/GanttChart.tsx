@@ -76,7 +76,7 @@ export function GanttChart({ data, config: userConfig, onBarClick, onExport }: G
   return (
     <Card
       className="w-full"
-      bodyStyle={{ padding: 0 }}
+      styles={{ body: { padding: 0 } }}
       extra={
         <Space size="middle">
           {/* View Mode Selector */}

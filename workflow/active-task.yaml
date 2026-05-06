@@ -1,14 +1,142 @@
-task_id: none
-title: none
-status: idle
+task_id: workbench-layout-design-language-2026-04-28
+title: Project Workspace layout and design language
+status: evaluating
 
-active_agent: none
-active_role: none
+active_agent: codex
+active_role: evaluator
 active_writer: none
 
 branch: swissarmypm
 package_scope: packages/swissarmypm
 
-current_goal: ""
-next_step: ""
-updated_at: ""
+intent:
+  goal: "Redefine the SwissArmyPM Project Workspace layout and design language so the left sidebar is fully used for workspace navigation, the page no longer duplicates a second module menu, and the main work surface becomes clearer, wider, and less visually crowded."
+  non_goals:
+    - Redesigning every module's internal CRUD model in this slice.
+    - Changing Timeline domain behavior already defined in the Timeline Work Items slice.
+    - Expanding Portfolio, My Work, or Pomodoro as product centers.
+    - Replacing Ant Design or the existing Electron/React architecture.
+    - Adding a package-manager-level dependency from SwissArmyPM to PMBrain.
+  invariants:
+    - PM Workspace remains the product center.
+    - The app-level left sidebar owns primary navigation.
+    - Project Workspace modules must stay directly reachable.
+    - The main module surface must receive priority over summaries and duplicate navigation.
+    - The right inspector remains contextual and secondary.
+    - Evidence remains a supporting source layer, not a competing product center.
+    - AI may suggest UI organization but must not silently rewrite core project facts.
+  constraints:
+    - Follow document priority root CLAUDE.md, package CLAUDE.md, then shared workflow docs.
+    - Scope is packages/swissarmypm unless explicitly changed.
+    - PMBrain must not depend on SwissArmyPM.
+    - SwissArmyPM must not add a package-manager-level dependency on PMBrain.
+    - Do not expand Portfolio, My Work, or Pomodoro as the product center.
+    - Use Ant Design theme tokens and existing theme conventions.
+    - Preserve desktop-first workbench semantics.
+    - Avoid nested page-layout cards and duplicate module rails.
+  success_metrics:
+    - Project Workspace no longer renders a second full module rail inside the page.
+    - The left sidebar exposes Canvas, Stakeholders, Timeline, Risks, Work Packages, and Evidence in the workbench context.
+    - Timeline and other dense modules gain horizontal space compared with the current three-column layout.
+    - Navigation labels become concise and scannable without paragraph descriptions.
+    - The project header remains useful but more compact.
+    - The right inspector remains available without competing with the main work surface.
+  unacceptable_shortcuts:
+    - Keeping the existing page rail and merely changing colors or spacing.
+    - Moving duplication from the page into another nested card.
+    - Hiding important workspace modules behind unclear menus.
+    - Making the workbench feel like a marketing dashboard instead of an operational PM tool.
+    - Hardcoding one-off colors outside the theme system.
+    - Expanding unrelated modules while solving layout hierarchy.
+
+execution_package:
+  spec: "Prepare the first executable layout/design-language slice for SwissArmyPM. The design package must make the app-level sidebar responsible for Project Workspace module navigation, remove the duplicate in-page module rail, define the main workspace/inspector hierarchy, and document the design language constraints before implementation starts."
+  acceptance:
+    - id: A1
+      description: "Document the new Workbench layout and design-language rules under docs/PRD/cross-cutting."
+    - id: A2
+      description: "Define that the left sidebar owns Project Workspace module navigation and the page must not render a duplicate full module rail."
+    - id: A3
+      description: "Define a two-region Project Workspace page model: main work surface plus optional right inspector."
+    - id: A4
+      description: "Define visual-density and design-language rules for operational desktop PM screens."
+    - id: A5
+      description: "Identify the first implementation slice and follow-up cleanup slice."
+    - id: A6
+      description: "Implement the accepted first layout slice after human approval."
+  task_contract:
+    allowed_paths:
+      - packages/swissarmypm/src/**
+      - packages/swissarmypm/CLAUDE.md
+      - docs/**
+      - workflow/**
+      - CLAUDE.md
+      - AGENTS.md
+      - package.json
+      - package-lock.json
+    forbidden_paths:
+      - packages/pmbrain/**
+    required_outputs:
+      - "Workbench layout and design language PRD under docs/PRD/cross-cutting."
+      - "Human approval before code changes begin."
+      - "If implementation starts later, update Sidebar, ProjectWorkbenchPage, workbench store usage, and relevant layout styles consistently."
+      - "Update workflow/handoff.md after each workflow transition."
+      - "Run npm run verify workflow after workflow state changes."
+      - "Run the verify command from workflow/project-profile.yaml before finishing implementation work."
+  edge_cases:
+    - "No project is selected but the user opens Project Workspace."
+    - "A project is selected and the sidebar must show both app navigation and workspace modules."
+    - "The window is narrow enough that the right inspector must become a drawer."
+    - "Module counts are expensive or unavailable at sidebar render time."
+    - "Long translated labels need to fit without widening the sidebar unpredictably."
+    - "Timeline needs maximum horizontal space without hiding critical project context."
+  verification_checklist:
+    - "Run npm run verify workflow after active-task.yaml changes."
+    - "Before implementation, review package-level SwissArmyPM CLAUDE.md and PRD-202."
+    - "For implementation, run npm run verify swissarmypm from repo root before completion."
+    - "If broader workspace contracts change, run npm run verify workspace."
+    - "Verify no changes are made under packages/pmbrain."
+    - "Verify the Project Workspace does not render a duplicate full module rail."
+    - "Verify the left sidebar exposes workspace modules in workbench context."
+  forbidden_changes:
+    - "Do not implement Portfolio, My Work, or Pomodoro expansion as part of this task."
+    - "Do not add a package-manager-level dependency from SwissArmyPM to PMBrain."
+    - "Do not make PMBrain depend on SwissArmyPM."
+    - "Do not replace Ant Design as part of this task."
+    - "Do not change Timeline domain rules while solving layout hierarchy."
+    - "Do not treat future layout drafts as implementation approval until human review is complete."
+
+current_agreement:
+  assumptions:
+    - "The human review of the Timeline slice found a broader Workbench layout problem."
+    - "The duplicate in-page Project Workspace module menu is the main source of hierarchy depth and crowding."
+    - "The human approved implementation of the layout direction on 2026-04-29."
+    - "The first code slice should focus on navigation ownership and workspace width before detailed visual polish."
+  boundaries:
+    - "This agreement covers Project Workspace layout hierarchy and design language."
+    - "Timeline domain behavior from the previous slice remains intact."
+    - "The task remains inside packages/swissarmypm plus docs and workflow files."
+    - "The implementation slice is now ready for verification and human inspection."
+  acceptance_mapping:
+    - acceptance_id: A1
+      verification: "Review docs/PRD/cross-cutting/PRD-202-WorkbenchLayoutDesignLanguage.md."
+    - acceptance_id: A2
+      verification: "Review PRD-202 sidebar responsibility and implementation direction sections."
+    - acceptance_id: A3
+      verification: "Review PRD-202 layout model and responsive behavior sections."
+    - acceptance_id: A4
+      verification: "Review PRD-202 design language section."
+    - acceptance_id: A5
+      verification: "Review PRD-202 implementation direction section."
+    - acceptance_id: A6
+      verification: "Confirm the accepted first implementation slice is present in ProjectWorkbenchPage and workbench components."
+  risks:
+    - "Moving module navigation into the sidebar may require changing Sidebar data dependencies so it can read workbench module state and project context."
+    - "Sidebar module counts may add render coupling if they are computed directly from heavy stores."
+    - "Translations currently appear to have encoding issues in some renderer copy and may need a separate cleanup pass."
+    - "Visual cleanup can sprawl if it starts before the navigation hierarchy is accepted."
+  split_recommendation: split
+
+current_goal: "Evaluate the implemented Project Workspace canvas-first layout slice."
+next_step: "Run package verification, then inspect the SwissArmyPM Project Workspace in the dev app."
+updated_at: "2026-04-29"

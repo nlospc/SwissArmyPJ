@@ -485,7 +485,7 @@ export function WorkItemExcelGantt({
   ], [handleStatusClick, onWorkItemUpdate]);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-slate-50">
+    <div data-sap-gantt-root className="flex h-full min-h-0 flex-col overflow-hidden bg-slate-50">
       <div className="h-14 px-5 bg-white border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button
@@ -603,8 +603,8 @@ export function WorkItemExcelGantt({
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden flex">
-        <div style={{ width: leftWidth }} className="bg-white border-r border-slate-200 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div style={{ width: leftWidth }} className="min-h-0 bg-white border-r border-slate-200 overflow-hidden">
           <Table
             size="small"
             loading={loading}
@@ -632,7 +632,7 @@ export function WorkItemExcelGantt({
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden bg-slate-50">
+        <div data-sap-gantt-timeline-pane className="min-h-0 flex-1 overflow-hidden bg-slate-50">
           <VisTimelineWrapper
             ref={timelineRef}
             className="professional-timeline"
