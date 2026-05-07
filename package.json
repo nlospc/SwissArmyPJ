@@ -1,17 +1,15 @@
 {
-  "name": "swissarmypm-workspace",
+  "name": "swissarmypj",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.2.0",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "install:all": "npm install",
-    "dev:swissarmypm": "npm run dev --workspace swissarmypm",
     "dev:pmbrain": "npm run dev --workspace pmbrain",
-    "build:swissarmypm": "npm run build --workspace swissarmypm",
-    "build:pmbrain": "npm run build --workspace pmbrain",
-    "type-check:swissarmypm": "npm run type-check --workspace swissarmypm",
-    "type-check:pmbrain": "npm run type-check --workspace pmbrain"
+    "check:pmbrain": "npm run check --workspace pmbrain",
+    "verify:workflow": "node scripts/verify-workflow-task.mjs",
+    "verify:pmbrain": "npm run check --workspace pmbrain",
+    "verify:workspace": "npm run verify:workflow && npm run verify:pmbrain"
   }
 }

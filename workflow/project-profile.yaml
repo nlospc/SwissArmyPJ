@@ -1,0 +1,29 @@
+project_name: SwissArmyPJ
+primary_package: packages/pmbrain
+
+verify_command: npm run verify:workspace
+strict_verify_command: npm run verify:workspace
+workspace_verify_command: npm run verify:workspace
+
+default_allowed_paths:
+  - AGENTS.md
+  - README.md
+  - package.json
+  - scripts/**
+  - docs/**
+  - workflow/**
+  - packages/pmbrain/**
+
+default_forbidden_paths:
+  - packages/swissarmypm/**
+  - CLAUDE.md
+  - .claude/**
+  - .alma-snapshots/**
+
+architecture_rules:
+  - PMBrain is the canonical local PM kernel.
+  - SwissArmyPM Web consumes typed PMBrain contracts.
+  - Open Design is for exploration; Figma is canonical design handoff when available.
+  - Obsidian is a projection layer, not the only source of truth.
+  - AI may propose project facts but must not silently confirm them.
+  - Keep executable slices small enough for Codex to verify.

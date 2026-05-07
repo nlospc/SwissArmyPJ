@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SwissArmyPJ Codex active task",
+  "type": "object",
+  "required": [
+    "task_id",
+    "title",
+    "status",
+    "intent",
+    "execution_package",
+    "current_agreement",
+    "schema_contract",
+    "design_contract",
+    "fixture_contract",
+    "visual_acceptance",
+    "current_goal",
+    "next_step",
+    "updated_at"
+  ],
+  "properties": {
+    "status": {
+      "enum": [
+        "idle",
+        "drafting_intent",
+        "generating_execution_package",
+        "awaiting_human_review",
+        "planning_slice",
+        "ready_for_execution",
+        "executing",
+        "evaluating",
+        "blocked",
+        "done"
+      ]
+    }
+  }
+}
