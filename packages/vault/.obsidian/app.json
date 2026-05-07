@@ -1,0 +1,10 @@
+{
+  "alwaysUpdateLinks": true,
+  "attachmentFolderPath": "90_Attachments",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "00_Inbox",
+  "promptDelete": false,
+  "showLineNumber": true,
+  "spellcheck": false,
+  "useMarkdownLinks": true
+}

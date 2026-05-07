@@ -1,0 +1,8 @@
+{
+  "fileClassAlias": "fileClass",
+  "classFilesPath": "99_Templates/Metadata",
+  "isAutosuggestEnabled": true,
+  "isAutoCalculationEnabled": true,
+  "displayFieldsInContextMenu": true,
+  "frontmatterListDisplay": "asArray"
+}

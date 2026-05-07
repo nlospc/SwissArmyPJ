@@ -1,10 +1,13 @@
 import { existsSync, mkdirSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { PMBrainConfig } from './types'
 
-const DEFAULT_HOME = '.pmbrain'
-const DEFAULT_DB = '.pmbrain/pmbrain.db'
-const DEFAULT_VAULT = '../vault'
+const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+const PACKAGES_ROOT = resolve(PACKAGE_ROOT, '..')
+const DEFAULT_HOME = join(PACKAGE_ROOT, '.pmbrain')
+const DEFAULT_DB = join(DEFAULT_HOME, 'pmbrain.db')
+const DEFAULT_VAULT = join(PACKAGES_ROOT, 'vault')
 
 export function loadConfig(): PMBrainConfig {
   return {

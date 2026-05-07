@@ -1,0 +1,10 @@
+{
+  "id": "chinese-calendar",
+  "name": "Chinese Calendar",
+  "version": "1.0.13",
+  "minAppVersion": "1.5.12",
+  "description": "Chinese lunar calendar, holidays, adjusted workdays, solar terms, month/year views, and note creation support.",
+  "author": "DevilRoshan",
+  "authorUrl": "https://github.com/DevilRoshan",
+  "isDesktopOnly": true
+}

@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import * as crypto from 'node:crypto';
 
-import { getDatabase } from '../database/schema';
+import { getDatabase, hasPMBrainDB, getPMBrainAdapter } from '../database/schema';
 
 import { registerMyWorkHandlers } from './myWorkHandlers';
 
@@ -353,6 +353,14 @@ function handleRemoveProjectFromPortfolio(_event: any, portfolioId: number, proj
 
 function handleGetAllProjects(): IPCResponse<Project[]> {
   try {
+    // ✅ 优先使用 PMBrain 数据库
+    if (hasPMBrainDB()) {
+      const adapter = getPMBrainAdapter();
+      const projects = adapter.getProjects();
+      return { success: true, data: projects };
+    }
+
+    // 回退到原有 SwissArmyPM 数据库
     const db = getDatabase();
     const projects = db.prepare('SELECT * FROM projects ORDER BY created_at DESC').all() as Project[];
 
@@ -533,6 +541,14 @@ function handleDeleteProject(_event: any, id: number): IPCResponse<void> {
 
 function handleGetAllWorkItems(): IPCResponse<WorkItem[]> {
   try {
+    // ✅ 优先使用 PMBrain 数据库
+    if (hasPMBrainDB()) {
+      const adapter = getPMBrainAdapter();
+      const workItems = adapter.getWorkItems();
+      return { success: true, data: workItems };
+    }
+
+    // 回退到原有 SwissArmyPM 数据库
     const db = getDatabase();
     const workItems = db.prepare('SELECT * FROM work_items ORDER BY created_at DESC').all() as WorkItem[];
     return { success: true, data: workItems };
@@ -543,6 +559,21 @@ function handleGetAllWorkItems(): IPCResponse<WorkItem[]> {
 
 function handleGetWorkItemsByProject(_event: any, projectId: number): IPCResponse<WorkItem[]> {
   try {
+    // ✅ 优先使用 PMBrain 数据库
+    if (hasPMBrainDB()) {
+      const adapter = getPMBrainAdapter();
+      // 先获取所有项目，找到对应 UUID（因为 projectId 可能是临时整数 ID）
+      const projects = adapter.getProjects();
+      const project = projects.find(p => p.id === projectId);
+      
+      if (project) {
+        const workItems = adapter.getWorkItemsByProjectUuid(project.uuid);
+        return { success: true, data: workItems };
+      }
+      return { success: true, data: [] };
+    }
+
+    // 回退到原有 SwissArmyPM 数据库
     const db = getDatabase();
     const workItems = db.prepare(`
       SELECT * FROM work_items

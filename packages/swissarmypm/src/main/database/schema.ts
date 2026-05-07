@@ -2,6 +2,9 @@ import Database from 'better-sqlite3';
 import * as path from 'path';
 import { MigrationRunner } from './migrationRunner';
 
+// PMBrain 适配器（优先读取模式）
+export { PMBrainAdapter, getPMBrainAdapter, hasPMBrainDB, resetPMBrainAdapter } from './pmbrainAdapter';
+
 let db: Database.Database | null = null;
 
 export function initDatabase(): void {

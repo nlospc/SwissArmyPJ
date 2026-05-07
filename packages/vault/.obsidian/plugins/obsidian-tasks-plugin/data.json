@@ -1,0 +1,45 @@
+{
+  "globalFilter": "",
+  "removeGlobalFilter": false,
+  "setDoneDate": true,
+  "autoSuggestInEditor": true,
+  "autoSuggestMinMatch": 0,
+  "dateFormat": "YYYY-MM-DD",
+  "dateFormatForFilename": "YYYY-MM-DD",
+  "filenameAsScheduledDate": false,
+  "filenameAsDateFolders": [],
+  "useFilenameAsScheduledDate": false,
+  "statusSettings": {
+    "coreStatuses": [
+      {
+        "symbol": " ",
+        "name": "Todo",
+        "nextStatusSymbol": "x",
+        "availableAsCommand": true,
+        "type": "TODO"
+      },
+      {
+        "symbol": "x",
+        "name": "Done",
+        "nextStatusSymbol": " ",
+        "availableAsCommand": true,
+        "type": "DONE"
+      },
+      {
+        "symbol": "/",
+        "name": "In Progress",
+        "nextStatusSymbol": "x",
+        "availableAsCommand": true,
+        "type": "IN_PROGRESS"
+      },
+      {
+        "symbol": "-",
+        "name": "Cancelled",
+        "nextStatusSymbol": " ",
+        "availableAsCommand": true,
+        "type": "CANCELLED"
+      }
+    ],
+    "customStatuses": []
+  }
+}

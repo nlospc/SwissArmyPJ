@@ -1,11 +1,11 @@
-import { mkdirSync } from 'node:fs'
 import { ensureConfigDirs, loadConfig } from '../core/config'
 import { bootstrapDatabase, readSchemaSql } from '../core/db'
+import { ensureVaultSkeleton } from '../core/vault'
 
 export async function runSetup(): Promise<void> {
   const config = loadConfig()
   ensureConfigDirs(config)
-  mkdirSync(config.vaultPath, { recursive: true })
+  const vaultCreated = ensureVaultSkeleton(config.vaultPath)
 
   const boot = bootstrapDatabase(config)
   const schemaPreview = readSchemaSql().split('\n').slice(0, 6).join('\n')
@@ -16,6 +16,7 @@ export async function runSetup(): Promise<void> {
     dbPath: boot.dbPath,
     schemaPath: boot.schemaPath,
     vaultPath: config.vaultPath,
+    vaultCreated,
     schemaApplied: boot.schemaApplied,
     note: 'SQLite bootstrap completed and required tables are initialized.',
     schemaPreview,

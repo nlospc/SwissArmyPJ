@@ -1,0 +1,5 @@
+{
+  "format": "YYYY-MM-DD",
+  "folder": "00_Inbox/Daily",
+  "template": "99_Templates/Daily Report.md"
+}

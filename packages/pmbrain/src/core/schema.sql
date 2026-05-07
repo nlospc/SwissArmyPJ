@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS pages (
   canonical_path TEXT,
   source_kind TEXT,
   checksum TEXT,
+  tags TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   archived_at TEXT
@@ -196,22 +197,94 @@ CREATE TABLE IF NOT EXISTS risks (
 );
 
 -- Core PM objects: stakeholders
+-- Core PM objects: stakeholders (可跨项目复用)
 CREATE TABLE IF NOT EXISTS stakeholders (
   id TEXT PRIMARY KEY,
-  project_id TEXT NOT NULL,
   page_id TEXT NOT NULL,
   name TEXT NOT NULL,
-  role TEXT,
+  email TEXT,
+  phone TEXT,
+  title TEXT,               -- 职位头衔
   organization TEXT,
-  contact TEXT,
-  influence TEXT,          -- high/medium/low
-  interest TEXT,          -- high/medium/low
+  influence TEXT,           -- high/medium/low
+  interest TEXT,            -- high/medium/low
+  engagement_level TEXT,    -- unaware/resistant/supportive/leading
   engagement_strategy TEXT,
   notes TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
-  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
   FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+);
+
+-- ============================================
+-- FTS5 全文搜索虚拟表
+-- ============================================
+CREATE VIRTUAL TABLE IF NOT EXISTS pmbrain_fts USING fts5(
+  entity_id,
+  entity_type,  -- project, risk, work_item, stakeholder, organization, process
+  title,
+  content,
+  tags,
+  tokenize = 'unicode61'
+);
+
+-- FTS 索引更新触发器: pages
+CREATE TRIGGER IF NOT EXISTS pages_ai AFTER INSERT ON pages BEGIN
+  INSERT INTO pmbrain_fts(entity_id, entity_type, title, content, tags)
+  VALUES (new.id, new.page_type, new.title, new.summary, new.tags);
+END;
+
+CREATE TRIGGER IF NOT EXISTS pages_ad AFTER DELETE ON pages BEGIN
+  DELETE FROM pmbrain_fts WHERE entity_id = old.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS pages_au AFTER UPDATE ON pages BEGIN
+  UPDATE pmbrain_fts SET title = new.title, content = new.summary, tags = new.tags
+  WHERE entity_id = new.id;
+END;
+
+-- 索引已存在的数据（首次创建 FTS 表时需要）
+INSERT OR IGNORE INTO pmbrain_fts(entity_id, entity_type, title, content, tags)
+SELECT id, page_type, title, summary, tags FROM pages;
+
+-- 项目-干系人 关联表 (支持一个干系人参与多个项目，每个项目中有不同角色)
+CREATE TABLE IF NOT EXISTS project_stakeholders (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  stakeholder_id TEXT NOT NULL,
+  role TEXT NOT NULL,       -- 该项目中的角色: 项目经理/产品经理/开发/测试/客户等
+  responsibility TEXT,      -- 职责描述
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (stakeholder_id) REFERENCES stakeholders(id) ON DELETE CASCADE,
+  UNIQUE(project_id, stakeholder_id)
+);
+
+-- Core PM objects: work_items (工作项: 问题/缺陷/需求/行动项)
+CREATE TABLE IF NOT EXISTS work_items (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  page_id TEXT NOT NULL,
+  code TEXT UNIQUE,         -- 工作项编号: ISSUE-001, DEFECT-001
+  title TEXT NOT NULL,
+  description TEXT,
+  item_type TEXT NOT NULL,  -- issue/defect/requirement/action_item
+  status TEXT NOT NULL,     -- new/analysis/in_progress/done/cancelled/on_hold
+  priority TEXT,            -- critical/high/medium/low
+  severity TEXT,            -- blocker/critical/major/minor
+  owner TEXT,               -- 负责人 stakeholder_id
+  reporter TEXT,            -- 报告人 stakeholder_id
+  parent_id TEXT,           -- 父工作项 (支持层级)
+  due_date TEXT,
+  resolved_at TEXT,
+  resolution TEXT,          -- 解决方式: fixed/wontfix/duplicate/by_design
+  tags TEXT,                -- 逗号分隔的标签
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE,
+  FOREIGN KEY (parent_id) REFERENCES work_items(id) ON DELETE SET NULL
 );
 
 -- Core PM objects: work packages
@@ -287,7 +360,14 @@ CREATE INDEX IF NOT EXISTS idx_timeline_event_at ON timeline_entries(event_at);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_risks_project ON risks(project_id);
 CREATE INDEX IF NOT EXISTS idx_risks_status ON risks(status);
-CREATE INDEX IF NOT EXISTS idx_stakeholders_project ON stakeholders(project_id);
+CREATE INDEX IF NOT EXISTS idx_stakeholders_name ON stakeholders(name);
+CREATE INDEX IF NOT EXISTS idx_project_stakeholders_project ON project_stakeholders(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_stakeholders_stakeholder ON project_stakeholders(stakeholder_id);
+CREATE INDEX IF NOT EXISTS idx_work_items_project ON work_items(project_id);
+CREATE INDEX IF NOT EXISTS idx_work_items_type ON work_items(item_type);
+CREATE INDEX IF NOT EXISTS idx_work_items_status ON work_items(status);
+CREATE INDEX IF NOT EXISTS idx_work_items_priority ON work_items(priority);
+CREATE INDEX IF NOT EXISTS idx_work_items_code ON work_items(code);
 CREATE INDEX IF NOT EXISTS idx_work_packages_project ON work_packages(project_id);
 CREATE INDEX IF NOT EXISTS idx_work_packages_status ON work_packages(status);
 CREATE INDEX IF NOT EXISTS idx_evidence_project ON evidence(project_id);

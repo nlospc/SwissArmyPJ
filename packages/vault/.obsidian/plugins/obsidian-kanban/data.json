@@ -1,0 +1,16 @@
+{
+  "newNoteFolder": "30_WorkItems",
+  "lane-width": 320,
+  "show-checkboxes": true,
+  "date-picker-week-start": 1,
+  "date-colors": [
+    {
+      "distance": 0,
+      "unit": "days",
+      "direction": "after",
+      "backgroundColor": "rgba(255, 0, 0, 0.18)",
+      "color": "rgba(255, 255, 255, 1)",
+      "isToday": true
+    }
+  ]
+}
